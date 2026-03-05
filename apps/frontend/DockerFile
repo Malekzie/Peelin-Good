@@ -1,0 +1,50 @@
+# ---- Stage 1: Build ----
+FROM node:22-alpine AS build
+
+WORKDIR /app
+
+# Copy package files first to cache dependency installation
+COPY package.json package-lock.json* ./
+
+# Install dependencies (clean install for reproducible builds)
+RUN npm ci
+
+# Copy source code and build the application
+COPY . .
+RUN npm run build
+
+# Remove dev dependencies to slim the output
+RUN npm prune --production
+
+# ---- Stage 2: Runtime ----
+FROM node:22-alpine AS runtime
+
+# Create a non-root user for security
+RUN groupadd --system appgroup && useradd --system --gid appgroup appuser
+
+WORKDIR /app
+
+# Copy only the built output and production dependencies
+COPY --from=build /app/build ./build
+COPY --from=build /app/node_modules ./node_modules
+COPY --from=build /app/package.json ./
+
+# Set environment variables
+ENV NODE_ENV=production
+ENV PORT=3000
+
+# Set ownership to the non-root user
+RUN chown -R appuser:appgroup /app
+
+# Switch to non-root user
+USER appuser
+
+# Expose the default SvelteKit port
+EXPOSE 3000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD node -e "fetch('http://localhost:3000').then(r => { if (!r.ok) process.exit(1) }).catch(() => process.exit(1))"
+
+# Start the application
+ENTRYPOINT ["node", "build"]
