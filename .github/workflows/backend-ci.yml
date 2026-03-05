@@ -38,3 +38,4 @@ jobs:
 
       - name: Build Docker image
         run: docker build -t peelin-backend:test .
+# Renamed

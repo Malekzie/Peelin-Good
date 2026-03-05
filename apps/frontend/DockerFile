@@ -17,6 +17,7 @@ RUN npm run build
 RUN npm prune --production
 
 # ---- Stage 2: Runtime ----
+# ignore for now
 FROM node:22-alpine AS runtime
 
 # Create a non-root user for security
