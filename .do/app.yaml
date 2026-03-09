@@ -5,7 +5,6 @@ alerts:
 databases:
   - cluster_name: app-b7493311-40ec-49aa-ae94-19730fc9fceb
     db_name: dev-database
-    db_user: dev-database
     engine: PG
     name: dev-database
     production: true
