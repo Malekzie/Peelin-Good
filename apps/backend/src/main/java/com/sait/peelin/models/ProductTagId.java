@@ -4,11 +4,13 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import jakarta.validation.constraints.NotNull;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Objects;
 
 @Embeddable
 public class ProductTagId implements Serializable {
+    @Serial
     private static final long serialVersionUID = 4017601294454789008L;
     @NotNull
     @Column(name = "product_id", nullable = false)

@@ -1,58 +1,87 @@
 package com.sait.peelin.models;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Table;
-import org.springframework.data.annotation.Id;
-
-import java.util.UUID;
+import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
 @Entity
 @Table(name = "address")
 public class Address {
-
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID addressId;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "address_id", nullable = false)
+    private Integer id;
 
+    @Size(max = 120)
+    @NotNull
+    @Column(name = "address_line1", nullable = false, length = 120)
     private String addressLine1;
-    private String addressLine2;
-    private String city;
-    private String province;
-    private String postalCode;
 
-    public Address(String addressLine1, String addressLine2, String city, String province, String postalCode) {
-        this.addressLine1 = addressLine1;
-        this.addressLine2 = addressLine2;
-        this.city = city;
-        this.province = province;
-        this.postalCode = postalCode;
+    @Size(max = 120)
+    @Column(name = "address_line2", length = 120)
+    private String addressLine2;
+
+    @Size(max = 120)
+    @NotNull
+    @Column(name = "address_city", nullable = false, length = 120)
+    private String addressCity;
+
+    @Size(max = 80)
+    @NotNull
+    @Column(name = "address_province", nullable = false, length = 80)
+    private String addressProvince;
+
+    @Size(max = 10)
+    @NotNull
+    @Column(name = "address_postal_code", nullable = false, length = 10)
+    private String addressPostalCode;
+
+    public Integer getId() {
+        return id;
     }
 
-    public Address() {
-
+    public void setId(Integer id) {
+        this.id = id;
     }
 
     public String getAddressLine1() {
         return addressLine1;
     }
 
+    public void setAddressLine1(String addressLine1) {
+        this.addressLine1 = addressLine1;
+    }
+
     public String getAddressLine2() {
         return addressLine2;
     }
 
-    public String getCity() {
-        return city;
+    public void setAddressLine2(String addressLine2) {
+        this.addressLine2 = addressLine2;
     }
 
-    public CharSequence getProvince() {
-        return province;
+    public String getAddressCity() {
+        return addressCity;
     }
 
-    public String getPostalCode() {
-        return postalCode;
+    public void setAddressCity(String addressCity) {
+        this.addressCity = addressCity;
     }
 
+    public String getAddressProvince() {
+        return addressProvince;
+    }
+
+    public void setAddressProvince(String addressProvince) {
+        this.addressProvince = addressProvince;
+    }
+
+    public String getAddressPostalCode() {
+        return addressPostalCode;
+    }
+
+    public void setAddressPostalCode(String addressPostalCode) {
+        this.addressPostalCode = addressPostalCode;
+    }
 
 }
