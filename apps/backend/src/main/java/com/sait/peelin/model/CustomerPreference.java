@@ -1,6 +1,9 @@
 package com.sait.peelin.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "customer_preference")
@@ -18,8 +21,11 @@ public class CustomerPreference {
     @JoinColumn(name = "tag_id", nullable = false)
     private Tag tag;
 
-    @Column(name = "preference_type", columnDefinition = "preference_type not null")
-    private Object preferenceType;
+    @NotNull
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "preference_type", nullable = false)
+    private PreferenceType preferenceType;
 
     @Column(name = "preference_strength")
     private Short preferenceStrength;
@@ -48,11 +54,11 @@ public class CustomerPreference {
         this.tag = tag;
     }
 
-    public Object getPreferenceType() {
+    public PreferenceType getPreferenceType() {
         return preferenceType;
     }
 
-    public void setPreferenceType(Object preferenceType) {
+    public void setPreferenceType(PreferenceType preferenceType) {
         this.preferenceType = preferenceType;
     }
 

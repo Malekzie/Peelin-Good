@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
@@ -67,8 +69,11 @@ public class Order {
     @Column(name = "order_delivered_datetime")
     private OffsetDateTime orderDeliveredDatetime;
 
-    @Column(name = "order_method", columnDefinition = "order_method not null")
-    private Object orderMethod;
+    @NotNull
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "order_method", nullable = false)
+    private OrderMethod orderMethod;
 
     @Size(max = 500)
     @Column(name = "order_comment", length = 500)
@@ -83,9 +88,12 @@ public class Order {
     @Column(name = "order_discount", nullable = false, precision = 10, scale = 2)
     private BigDecimal orderDiscount;
 
+    @NotNull
     @ColumnDefault("'pending_payment'")
-    @Column(name = "order_status", columnDefinition = "order_status not null")
-    private Object orderStatus;
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "order_status", nullable = false)
+    private OrderStatus orderStatus;
 
     public UUID getId() {
         return id;
@@ -175,11 +183,11 @@ public class Order {
         this.orderDeliveredDatetime = orderDeliveredDatetime;
     }
 
-    public Object getOrderMethod() {
+    public OrderMethod getOrderMethod() {
         return orderMethod;
     }
 
-    public void setOrderMethod(Object orderMethod) {
+    public void setOrderMethod(OrderMethod orderMethod) {
         this.orderMethod = orderMethod;
     }
 
@@ -207,11 +215,11 @@ public class Order {
         this.orderDiscount = orderDiscount;
     }
 
-    public Object getOrderStatus() {
+    public OrderStatus getOrderStatus() {
         return orderStatus;
     }
 
-    public void setOrderStatus(Object orderStatus) {
+    public void setOrderStatus(OrderStatus orderStatus) {
         this.orderStatus = orderStatus;
     }
 

@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
@@ -26,16 +28,22 @@ public class Payment {
     @Column(name = "payment_amount", nullable = false, precision = 10, scale = 2)
     private BigDecimal paymentAmount;
 
-    @Column(name = "payment_method", columnDefinition = "payment_method not null")
-    private Object paymentMethod;
+    @NotNull
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "payment_method", nullable = false)
+    private PaymentMethod paymentMethod;
 
     @Size(max = 100)
     @Column(name = "payment_transaction_id", length = 100)
     private String paymentTransactionId;
 
+    @NotNull
     @ColumnDefault("'pending'")
-    @Column(name = "payment_status", columnDefinition = "payment_status not null")
-    private Object paymentStatus;
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "payment_status", nullable = false)
+    private PaymentStatus paymentStatus;
 
     @Column(name = "payment_paid_at")
     private OffsetDateTime paymentPaidAt;
@@ -64,11 +72,11 @@ public class Payment {
         this.paymentAmount = paymentAmount;
     }
 
-    public Object getPaymentMethod() {
+    public PaymentMethod getPaymentMethod() {
         return paymentMethod;
     }
 
-    public void setPaymentMethod(Object paymentMethod) {
+    public void setPaymentMethod(PaymentMethod paymentMethod) {
         this.paymentMethod = paymentMethod;
     }
 
@@ -80,11 +88,11 @@ public class Payment {
         this.paymentTransactionId = paymentTransactionId;
     }
 
-    public Object getPaymentStatus() {
+    public PaymentStatus getPaymentStatus() {
         return paymentStatus;
     }
 
-    public void setPaymentStatus(Object paymentStatus) {
+    public void setPaymentStatus(PaymentStatus paymentStatus) {
         this.paymentStatus = paymentStatus;
     }
 

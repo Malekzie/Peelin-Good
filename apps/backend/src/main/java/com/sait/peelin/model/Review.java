@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;
@@ -44,9 +46,12 @@ public class Review {
     @Column(name = "review_submitted_date", nullable = false)
     private OffsetDateTime reviewSubmittedDate;
 
+    @NotNull
     @ColumnDefault("'pending'")
-    @Column(name = "review_status", columnDefinition = "review_status not null")
-    private Object reviewStatus;
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "review_status", nullable = false)
+    private ReviewStatus reviewStatus;
 
     @Column(name = "review_approval_date")
     private OffsetDateTime reviewApprovalDate;
@@ -107,11 +112,11 @@ public class Review {
         this.reviewSubmittedDate = reviewSubmittedDate;
     }
 
-    public Object getReviewStatus() {
+    public ReviewStatus getReviewStatus() {
         return reviewStatus;
     }
 
-    public void setReviewStatus(Object reviewStatus) {
+    public void setReviewStatus(ReviewStatus reviewStatus) {
         this.reviewStatus = reviewStatus;
     }
 

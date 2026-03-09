@@ -35,7 +35,7 @@ public class Employee {
     private String employeeFirstName;
 
     @Size(max = 2)
-    @Column(name = "employee_middle_initial", length = 2)
+    @Column(name = "employee_middle_initial", columnDefinition = "CHAR(2)")
     private String employeeMiddleInitial;
 
     @Size(max = 50)

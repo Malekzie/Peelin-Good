@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;
@@ -35,8 +37,11 @@ public class User {
     @Column(name = "user_password_hash", nullable = false)
     private String userPasswordHash;
 
-    @Column(name = "user_role", columnDefinition = "user_role not null")
-    private Object userRole;
+    @NotNull
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "user_role", nullable = false)
+    private UserRole userRole;
 
     @NotNull
     @ColumnDefault("now()")
@@ -75,11 +80,11 @@ public class User {
         this.userPasswordHash = userPasswordHash;
     }
 
-    public Object getUserRole() {
+    public UserRole getUserRole() {
         return userRole;
     }
 
-    public void setUserRole(Object userRole) {
+    public void setUserRole(UserRole userRole) {
         this.userRole = userRole;
     }
 
