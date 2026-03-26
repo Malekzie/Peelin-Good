@@ -84,18 +84,19 @@ services:
       branch: main
       repo: Malekzie/Workshop7
     health_check:
-      failure_threshold: 9
+      failure_threshold: 18
+      initial_delay_seconds: 90
       period_seconds: 10
       success_threshold: 1
-      timeout_seconds: 1
+      timeout_seconds: 5
     http_port: 8080
     instance_count: 1
     instance_size_slug: apps-s-1vcpu-1gb
     liveness_health_check:
-      failure_threshold: 9
-      initial_delay_seconds: 30
+      failure_threshold: 18
+      initial_delay_seconds: 90
       period_seconds: 10
       success_threshold: 1
-      timeout_seconds: 1
+      timeout_seconds: 5
     name: workshop7-apps-backend
     source_dir: apps/backend
