@@ -22,6 +22,12 @@ Dockerfile
 ----------
 Build stage copies the executable JAR only (skips *-plain.jar) into app.jar, so the running container always has the full app including everything under classpath:db/migration.
 
+V3 seed — integer PKs (matches JPA)
+------------------------------------
+Surrogate keys in the app are INTEGER (see User, Employee, Customer, Order, etc.). V3__seed_data.sql uses OVERRIDING SYSTEM VALUE with explicit integer PKs/FKs; uuid columns hold stable public identifiers. Regenerate with: python apps/backend/scripts/generate_v3_seed.py
+
+If PostgreSQL logs "cannot cast type integer to uuid" on INSERT INTO "user", the seed was treating integer PK columns as UUIDs — fix the migration, then repair Flyway if the failed version was recorded.
+
 
 Not Flyway itself, but related to "it works on DO"
 ==================================================

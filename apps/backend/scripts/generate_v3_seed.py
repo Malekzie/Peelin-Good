@@ -21,7 +21,9 @@ def dow(u):
     return 0 if u == 7 else u
 
 lines = []
-lines.append("-- V3: Seed data adapted from unified_postgres.sql for Flyway V1/V2 schema (UUID PKs).")
+lines.append("-- V3: Seed data adapted from unified_postgres.sql for Flyway V1/V2 schema.")
+lines.append("-- Surrogate PKs (user_id, employee_id, customer_id, order_id, …) are INTEGER (matches JPA).")
+lines.append("-- Stable public identifiers remain in uuid columns where present.")
 lines.append("-- Passwords: Admin123! (admin), Emp123! (employees), Cust123! (customers).")
 lines.append("-- Run on an empty DB after V2 (or reset). Flyway wraps this in a transaction.")
 lines.append("")
@@ -112,11 +114,12 @@ users = [
     (24, 'wyatt.martinez',   'wyatt.martinez@northharbourmail.ca',   'customer', True, '2025-12-02 12:00:00+00'),
 ]
 lines.append("INSERT INTO \"user\" (user_id, uuid, username, user_email, user_password_hash, user_role, is_active, user_created_at)")
-lines.append("VALUES")
+lines.append("OVERRIDING SYSTEM VALUE VALUES")
 for i, (uid, uname, email, role, active, ts) in enumerate(users):
     h = H_ADMIN if role == "admin" else (H_EMP if role == "employee" else H_CUST)
     comma = "," if i < len(users) - 1 else ";"
-    lines.append(f"    ({uuser(uid)}::uuid, {uuser(uid)}::uuid, '{uname}', '{email}', '{h}', '{role}'::user_role, {str(active).upper()}, '{ts}'){comma}")
+    lines.append(f"    ({uid}, '{uuser(uid)}'::uuid, '{uname}', '{email}', '{h}', '{role}'::user_role, {str(active).upper()}, '{ts}'){comma}")
+lines.append("SELECT setval(pg_get_serial_sequence('\"user\"', 'user_id'), (SELECT MAX(user_id) FROM \"user\"));")
 lines.append("")
 
 # bakery
@@ -251,16 +254,17 @@ lines.append("")
 
 # employee — middle_initial CHAR(2): pad single char with space
 lines.append("INSERT INTO employee (employee_id, uuid, user_id, address_id, bakery_id, employee_first_name, employee_middle_initial, employee_last_name, employee_position, employee_phone, employee_business_phone, employee_work_email, photo_approval_pending)")
-lines.append("VALUES")
-lines.append(f"    ({uemployee(1)}::uuid, {uemployee(1)}::uuid, {uuser(2)}::uuid, 2,  1, 'Mason',   NULL, 'Clark',   'Baker',            '(403) 555-3101', '(403) 555-4101', 'mason.clark@northharbourbakery.ca', FALSE),")
-lines.append(f"    ({uemployee(2)}::uuid, {uemployee(2)}::uuid, {uuser(3)}::uuid, 3,  1, 'Sophia',  'R ', 'Patel',   'Baker',            '(403) 555-3102', '(403) 555-4102', 'sophia.patel@northharbourbakery.ca', FALSE),")
-lines.append(f"    ({uemployee(3)}::uuid, {uemployee(3)}::uuid, {uuser(4)}::uuid, 4,  1, 'Ethan',   NULL, 'Wright',  'Shift Lead',       '(403) 555-3103', '(403) 555-4103', 'ethan.wright@northharbourbakery.ca', FALSE),")
-lines.append(f"    ({uemployee(4)}::uuid, {uemployee(4)}::uuid, {uuser(5)}::uuid, 5,  1, 'Isabella','M ', 'Chen',    'Baker',            '(403) 555-3104', '(403) 555-4104', 'isabella.chen@northharbourbakery.ca', FALSE),")
-lines.append(f"    ({uemployee(5)}::uuid, {uemployee(5)}::uuid, {uuser(6)}::uuid, 6,  2, 'Noah',    NULL, 'Martin',  'Baker',            '(403) 555-3105', '(403) 555-4105', 'noah.martin@northharbourbakery.ca', FALSE),")
-lines.append(f"    ({uemployee(6)}::uuid, {uemployee(6)}::uuid, {uuser(7)}::uuid, 7,  2, 'Ava',     NULL, 'Roberts', 'Customer Support', '(403) 555-3106', '(403) 555-4106', 'ava.roberts@northharbourbakery.ca', FALSE),")
-lines.append(f"    ({uemployee(7)}::uuid, {uemployee(7)}::uuid, {uuser(8)}::uuid, 8,  2, 'Logan',   'J ', 'Scott',   'Quality Control',  '(403) 555-3107', '(403) 555-4107', 'logan.scott@northharbourbakery.ca', FALSE),")
-lines.append(f"    ({uemployee(8)}::uuid, {uemployee(8)}::uuid, {uuser(9)}::uuid, 9,  3, 'Mia',     NULL, 'Kim',     'Baker',            '(403) 555-3108', '(403) 555-4108', 'mia.kim@northharbourbakery.ca', FALSE),")
-lines.append(f"    ({uemployee(9)}::uuid, {uemployee(9)}::uuid, {uuser(10)}::uuid, 10, 3, 'Jackson', NULL, 'Hall',    'Baker',            '(403) 555-3109', '(403) 555-4109', 'jackson.hall@northharbourbakery.ca', FALSE);")
+lines.append("OVERRIDING SYSTEM VALUE VALUES")
+lines.append(f"    (1, '{uemployee(1)}'::uuid, 2, 2,  1, 'Mason',   NULL, 'Clark',   'Baker',            '(403) 555-3101', '(403) 555-4101', 'mason.clark@northharbourbakery.ca', FALSE),")
+lines.append(f"    (2, '{uemployee(2)}'::uuid, 3, 3,  1, 'Sophia',  'R ', 'Patel',   'Baker',            '(403) 555-3102', '(403) 555-4102', 'sophia.patel@northharbourbakery.ca', FALSE),")
+lines.append(f"    (3, '{uemployee(3)}'::uuid, 4, 4,  1, 'Ethan',   NULL, 'Wright',  'Shift Lead',       '(403) 555-3103', '(403) 555-4103', 'ethan.wright@northharbourbakery.ca', FALSE),")
+lines.append(f"    (4, '{uemployee(4)}'::uuid, 5, 5,  1, 'Isabella','M ', 'Chen',    'Baker',            '(403) 555-3104', '(403) 555-4104', 'isabella.chen@northharbourbakery.ca', FALSE),")
+lines.append(f"    (5, '{uemployee(5)}'::uuid, 6, 6,  2, 'Noah',    NULL, 'Martin',  'Baker',            '(403) 555-3105', '(403) 555-4105', 'noah.martin@northharbourbakery.ca', FALSE),")
+lines.append(f"    (6, '{uemployee(6)}'::uuid, 7, 7,  2, 'Ava',     NULL, 'Roberts', 'Customer Support', '(403) 555-3106', '(403) 555-4106', 'ava.roberts@northharbourbakery.ca', FALSE),")
+lines.append(f"    (7, '{uemployee(7)}'::uuid, 8, 8,  2, 'Logan',   'J ', 'Scott',   'Quality Control',  '(403) 555-3107', '(403) 555-4107', 'logan.scott@northharbourbakery.ca', FALSE),")
+lines.append(f"    (8, '{uemployee(8)}'::uuid, 9, 9,  3, 'Mia',     NULL, 'Kim',     'Baker',            '(403) 555-3108', '(403) 555-4108', 'mia.kim@northharbourbakery.ca', FALSE),")
+lines.append(f"    (9, '{uemployee(9)}'::uuid, 10, 10, 3, 'Jackson', NULL, 'Hall',    'Baker',            '(403) 555-3109', '(403) 555-4109', 'jackson.hall@northharbourbakery.ca', FALSE);")
+lines.append("SELECT setval(pg_get_serial_sequence('employee', 'employee_id'), (SELECT MAX(employee_id) FROM employee));")
 lines.append("")
 
 # customer — unified customer_id c maps to ucustomer(c), user_id u maps to uuser(u)
@@ -281,35 +285,36 @@ cust_rows = [
     (14, 24, 39, 1, 'Wyatt',     None, 'Martinez', '(403) 555-1214', None, 'wyatt.martinez@northharbourmail.ca',   180000,  '2025-12-13'),
 ]
 lines.append("INSERT INTO customer (customer_id, uuid, user_id, address_id, reward_tier_id, customer_first_name, customer_middle_initial, customer_last_name, customer_phone, customer_business_phone, customer_email, customer_reward_balance, customer_tier_assigned_date, photo_approval_pending)")
-lines.append("VALUES")
+lines.append("OVERRIDING SYSTEM VALUE VALUES")
 for i, (cid, uid, aid, tid, fn, mi, ln, ph, bph, em, bal, td) in enumerate(cust_rows):
     mi_sql = "NULL" if mi is None else f"'{mi}'"
     bph_sql = "NULL" if bph is None else f"'{bph}'"
     comma = "," if i < len(cust_rows) - 1 else ";"
-    lines.append(f"    ({ucustomer(cid)}::uuid, {ucustomer(cid)}::uuid, {uuser(uid)}::uuid, {aid}, {tid}, '{fn}', {mi_sql}, '{ln}', '{ph}', {bph_sql}, '{em}', {bal}, '{td}', FALSE){comma}")
+    lines.append(f"    ({cid}, '{ucustomer(cid)}'::uuid, {uid}, {aid}, {tid}, '{fn}', {mi_sql}, '{ln}', '{ph}', {bph_sql}, '{em}', {bal}, '{td}', FALSE){comma}")
+lines.append("SELECT setval(pg_get_serial_sequence('customer', 'customer_id'), (SELECT MAX(customer_id) FROM customer));")
 lines.append("")
 
 # batch — DATE casts
 lines.append("INSERT INTO batch (batch_id, bakery_id, product_id, employee_id, batch_production_date, batch_expiry_date, batch_quantity_produced)")
 lines.append("OVERRIDING SYSTEM VALUE VALUES")
-lines.append("""    (1,  1, 1,  """ + f"{uemployee(1)}::uuid" + """, '2025-12-14'::date, '2025-12-19'::date, 60),
-    (2,  1, 3,  """ + f"{uemployee(2)}::uuid" + """, '2025-12-17'::date, '2025-12-22'::date, 90),
-    (3,  1, 5,  """ + f"{uemployee(3)}::uuid" + """, '2025-12-18'::date, '2025-12-22'::date, 120),
-    (4,  1, 8,  """ + f"{uemployee(4)}::uuid" + """, '2025-12-16'::date, '2025-12-26'::date, 200),
-    (5,  1, 13, """ + f"{uemployee(3)}::uuid" + """, '2025-12-19'::date, '2025-12-23'::date, 12),
-    (6,  1, 21, """ + f"{uemployee(2)}::uuid" + """, '2025-12-20'::date, '2025-12-25'::date, 80),
-    (7,  2, 2,  """ + f"{uemployee(5)}::uuid" + """, '2025-12-15'::date, '2025-12-22'::date, 55),
-    (8,  2, 6,  """ + f"{uemployee(6)}::uuid" + """, '2025-12-18'::date, '2025-12-23'::date, 140),
-    (9,  2, 10, """ + f"{uemployee(7)}::uuid" + """, '2025-12-18'::date, '2025-12-24'::date, 110),
-    (10, 2, 14, """ + f"{uemployee(8)}::uuid" + """, '2025-12-19'::date, '2025-12-23'::date, 40),
-    (11, 2, 18, """ + f"{uemployee(9)}::uuid" + """, '2025-12-20'::date, '2025-12-26'::date, 90),
-    (12, 3, 4,  """ + f"{uemployee(6)}::uuid" + """, '2025-12-17'::date, '2025-12-22'::date, 70),
-    (13, 3, 7,  """ + f"{uemployee(7)}::uuid" + """, '2025-12-14'::date, '2025-12-21'::date, 120),
-    (14, 3, 12, """ + f"{uemployee(8)}::uuid" + """, '2025-12-18'::date, '2025-12-25'::date, 30),
-    (15, 3, 15, """ + f"{uemployee(9)}::uuid" + """, '2025-12-19'::date, '2025-12-23'::date, 75),
-    (16, 3, 16, """ + f"{uemployee(5)}::uuid" + """, '2025-12-20'::date, '2025-12-24'::date, 65),
-    (17, 3, 17, """ + f"{uemployee(4)}::uuid" + """, '2025-12-20'::date, '2025-12-24'::date, 40),
-    (18, 3, 26, """ + f"{uemployee(2)}::uuid" + """, '2025-12-19'::date, '2025-12-22'::date, 50);""")
+lines.append("""    (1,  1, 1,  1, '2025-12-14'::date, '2025-12-19'::date, 60),
+    (2,  1, 3,  2, '2025-12-17'::date, '2025-12-22'::date, 90),
+    (3,  1, 5,  3, '2025-12-18'::date, '2025-12-22'::date, 120),
+    (4,  1, 8,  4, '2025-12-16'::date, '2025-12-26'::date, 200),
+    (5,  1, 13, 3, '2025-12-19'::date, '2025-12-23'::date, 12),
+    (6,  1, 21, 2, '2025-12-20'::date, '2025-12-25'::date, 80),
+    (7,  2, 2,  5, '2025-12-15'::date, '2025-12-22'::date, 55),
+    (8,  2, 6,  6, '2025-12-18'::date, '2025-12-23'::date, 140),
+    (9,  2, 10, 7, '2025-12-18'::date, '2025-12-24'::date, 110),
+    (10, 2, 14, 8, '2025-12-19'::date, '2025-12-23'::date, 40),
+    (11, 2, 18, 9, '2025-12-20'::date, '2025-12-26'::date, 90),
+    (12, 3, 4,  6, '2025-12-17'::date, '2025-12-22'::date, 70),
+    (13, 3, 7,  7, '2025-12-14'::date, '2025-12-21'::date, 120),
+    (14, 3, 12, 8, '2025-12-18'::date, '2025-12-25'::date, 30),
+    (15, 3, 15, 9, '2025-12-19'::date, '2025-12-23'::date, 75),
+    (16, 3, 16, 5, '2025-12-20'::date, '2025-12-24'::date, 65),
+    (17, 3, 17, 4, '2025-12-20'::date, '2025-12-24'::date, 40),
+    (18, 3, 26, 2, '2025-12-19'::date, '2025-12-22'::date, 50);""")
 lines.append("SELECT setval(pg_get_serial_sequence('batch', 'batch_id'), 18);")
 lines.append("")
 
@@ -375,7 +380,7 @@ orders = [
     (15, 'ORD-0015', 8,  1, 41,   '2026-03-25 15:31:54+00', '2026-04-03 18:00:00+00', None,                     'pickup',   None,                              17.45,  0.00, 'ready'),
 ]
 lines.append("INSERT INTO \"order\" (order_id, uuid, order_number, customer_id, bakery_id, address_id, order_placed_datetime, order_scheduled_datetime, order_delivered_datetime, order_method, order_comment, order_total, order_discount, order_status)")
-lines.append("VALUES")
+lines.append("OVERRIDING SYSTEM VALUE VALUES")
 for i, row in enumerate(orders):
     oid, onum, cid, bid, aid, op, os, od, ometh, oc, tot, disc, ostat = row
     aid_sql = "NULL" if aid is None else str(aid)
@@ -383,113 +388,117 @@ for i, row in enumerate(orders):
     od_sql = "NULL" if od is None else f"'{od}'"
     oc_sql = "NULL" if oc is None else f"'{oc.replace(chr(39), chr(39)+chr(39))}'"
     comma = "," if i < len(orders) - 1 else ";"
-    lines.append(f"    ({uorder(oid)}::uuid, {uorder(oid)}::uuid, '{onum}', {ucustomer(cid)}::uuid, {bid}, {aid_sql}, '{op}', {os_sql}, {od_sql}, '{ometh}'::order_method, {oc_sql}, {tot}, {disc}, '{ostat}'::order_status){comma}")
+    lines.append(f"    ({oid}, '{uorder(oid)}'::uuid, '{onum}', {cid}, {bid}, {aid_sql}, '{op}', {os_sql}, {od_sql}, '{ometh}'::order_method, {oc_sql}, {tot}, {disc}, '{ostat}'::order_status){comma}")
+lines.append("SELECT setval(pg_get_serial_sequence('\"order\"', 'order_id'), (SELECT MAX(order_id) FROM \"order\"));")
 lines.append("")
 
 # order_item — order_id UUID, batch_id nullable
 lines.append("INSERT INTO order_item (order_item_id, order_id, product_id, batch_id, order_item_quantity, order_item_unit_price_at_time, order_item_line_total)")
 lines.append("OVERRIDING SYSTEM VALUE VALUES")
-lines.append("""    (1,  """ + f"{uorder(1)}::uuid" + """,  14, 10, 1, 7.25,  7.25),
-    (2,  """ + f"{uorder(1)}::uuid" + """,  8,  4,  2, 2.25,  4.50),
-    (3,  """ + f"{uorder(1)}::uuid" + """,  5,  3,  2, 3.95,  7.90),
-    (4,  """ + f"{uorder(2)}::uuid" + """,  1,  2,  2, 6.49,  12.98),
-    (5,  """ + f"{uorder(3)}::uuid" + """,  13, 5,  1, 29.99, 29.99),
-    (6,  """ + f"{uorder(3)}::uuid" + """,  8,  4,  1, 2.25,  2.25),
-    (7,  """ + f"{uorder(3)}::uuid" + """,  21, 6,  1, 3.75,  3.75),
-    (8,  """ + f"{uorder(4)}::uuid" + """,  18, 11, 1, 3.75,  3.75),
-    (9,  """ + f"{uorder(4)}::uuid" + """,  6,  8,  2, 3.00,  6.00),
-    (10, """ + f"{uorder(5)}::uuid" + """,  12, 14, 2, 6.95,  13.90),
-    (11, """ + f"{uorder(5)}::uuid" + """,  26, 18, 1, 5.25,  5.25),
-    (12, """ + f"{uorder(5)}::uuid" + """,  5,  3,  2, 3.95,  7.90),
-    (13, """ + f"{uorder(5)}::uuid" + """,  8,  4,  1, 2.25,  2.25),
-    (14, """ + f"{uorder(5)}::uuid" + """,  17, 17, 1, 6.50,  6.50),
-    (15, """ + f"{uorder(6)}::uuid" + """,  15, 15, 1, 4.10,  4.10),
-    (16, """ + f"{uorder(6)}::uuid" + """,  16, 16, 1, 4.75,  4.75),
-    (17, """ + f"{uorder(6)}::uuid" + """,  18, 11, 1, 3.75,  3.75),
-    (18, """ + f"{uorder(6)}::uuid" + """,  8,  4,  2, 2.25,  4.50),
-    (19, """ + f"{uorder(6)}::uuid" + """,  6,  8,  1, 3.10,  3.10),
-    (20, """ + f"{uorder(7)}::uuid" + """,  10, 9,  2, 3.50,  7.00),
-    (21, """ + f"{uorder(7)}::uuid" + """,  5,  3,  1, 3.95,  3.95),
-    (22, """ + f"{uorder(7)}::uuid" + """,  1,  2,  1, 6.49,  6.49),
-    (23, """ + f"{uorder(7)}::uuid" + """,  8,  4,  2, 2.25,  4.50),
-    (24, """ + f"{uorder(8)}::uuid" + """,  14, 10, 1, 7.25,  7.25),
-    (25, """ + f"{uorder(9)}::uuid" + """,  13, 5,  1, 29.99, 29.99),
-    (26, """ + f"{uorder(9)}::uuid" + """,  12, 14, 1, 6.95,  6.95),
-    (27, """ + f"{uorder(9)}::uuid" + """,  17, 17, 2, 6.50,  13.00),
-    (28, """ + f"{uorder(9)}::uuid" + """,  26, 18, 1, 5.25,  5.25),
-    (29, """ + f"{uorder(9)}::uuid" + """,  8,  4,  2, 2.25,  4.50),
-    (30, """ + f"{uorder(10)}::uuid" + """,  1,  2,  1, 6.49,  6.49),
-    (31, """ + f"{uorder(11)}::uuid" + """,  4,  12, 1, 4.25,  4.25),
-    (32, """ + f"{uorder(11)}::uuid" + """,  5,  3,  1, 3.95,  3.95),
-    (33, """ + f"{uorder(11)}::uuid" + """,  18, 11, 2, 3.75,  7.50),
-    (34, """ + f"{uorder(11)}::uuid" + """,  14, 10, 1, 7.25,  7.25),
-    (35, """ + f"{uorder(11)}::uuid" + """,  8,  4,  2, 2.25,  4.50),
-    (36, """ + f"{uorder(12)}::uuid" + """,  6,  8,  2, 3.25,  6.50),
-    (37, """ + f"{uorder(12)}::uuid" + """,  8,  4,  2, 2.25,  4.50),
-    (38, """ + f"{uorder(12)}::uuid" + """,  9,  4,  1, 2.25,  2.25),
-    (39, """ + f"{uorder(12)}::uuid" + """,  24, 7,  1, 3.25,  3.25),
-    (40, """ + f"{uorder(13)}::uuid" + """,  21, 6,  2, 3.75,  7.50),
-    (41, """ + f"{uorder(13)}::uuid" + """,  5,  3,  1, 3.95,  3.95),
-    (42, """ + f"{uorder(13)}::uuid" + """,  16, 16, 1, 4.75,  4.75),
-    (43, """ + f"{uorder(13)}::uuid" + """,  8,  4,  1, 2.25,  2.25),
-    (44, """ + f"{uorder(13)}::uuid" + """,  6,  8,  1, 1.50,  1.50),
-    (45, """ + f"{uorder(14)}::uuid" + """,  13, 5,  1, 29.99, 29.99),
-    (46, """ + f"{uorder(15)}::uuid" + """,  3,  NULL,5, 3.49,  17.45);""")
+lines.append("""    (1,  1,  14, 10, 1, 7.25,  7.25),
+    (2,  1,  8,  4,  2, 2.25,  4.50),
+    (3,  1,  5,  3,  2, 3.95,  7.90),
+    (4,  2,  1,  2,  2, 6.49,  12.98),
+    (5,  3,  13, 5,  1, 29.99, 29.99),
+    (6,  3,  8,  4,  1, 2.25,  2.25),
+    (7,  3,  21, 6,  1, 3.75,  3.75),
+    (8,  4,  18, 11, 1, 3.75,  3.75),
+    (9,  4,  6,  8,  2, 3.00,  6.00),
+    (10, 5,  12, 14, 2, 6.95,  13.90),
+    (11, 5,  26, 18, 1, 5.25,  5.25),
+    (12, 5,  5,  3,  2, 3.95,  7.90),
+    (13, 5,  8,  4,  1, 2.25,  2.25),
+    (14, 5,  17, 17, 1, 6.50,  6.50),
+    (15, 6,  15, 15, 1, 4.10,  4.10),
+    (16, 6,  16, 16, 1, 4.75,  4.75),
+    (17, 6,  18, 11, 1, 3.75,  3.75),
+    (18, 6,  8,  4,  2, 2.25,  4.50),
+    (19, 6,  6,  8,  1, 3.10,  3.10),
+    (20, 7,  10, 9,  2, 3.50,  7.00),
+    (21, 7,  5,  3,  1, 3.95,  3.95),
+    (22, 7,  1,  2,  1, 6.49,  6.49),
+    (23, 7,  8,  4,  2, 2.25,  4.50),
+    (24, 8,  14, 10, 1, 7.25,  7.25),
+    (25, 9,  13, 5,  1, 29.99, 29.99),
+    (26, 9,  12, 14, 1, 6.95,  6.95),
+    (27, 9,  17, 17, 2, 6.50,  13.00),
+    (28, 9,  26, 18, 1, 5.25,  5.25),
+    (29, 9,  8,  4,  2, 2.25,  4.50),
+    (30, 10,  1,  2,  1, 6.49,  6.49),
+    (31, 11,  4,  12, 1, 4.25,  4.25),
+    (32, 11,  5,  3,  1, 3.95,  3.95),
+    (33, 11,  18, 11, 2, 3.75,  7.50),
+    (34, 11,  14, 10, 1, 7.25,  7.25),
+    (35, 11,  8,  4,  2, 2.25,  4.50),
+    (36, 12,  6,  8,  2, 3.25,  6.50),
+    (37, 12,  8,  4,  2, 2.25,  4.50),
+    (38, 12,  9,  4,  1, 2.25,  2.25),
+    (39, 12,  24, 7,  1, 3.25,  3.25),
+    (40, 13,  21, 6,  2, 3.75,  7.50),
+    (41, 13,  5,  3,  1, 3.95,  3.95),
+    (42, 13,  16, 16, 1, 4.75,  4.75),
+    (43, 13,  8,  4,  1, 2.25,  2.25),
+    (44, 13,  6,  8,  1, 1.50,  1.50),
+    (45, 14,  13, 5,  1, 29.99, 29.99),
+    (46, 15,  3,  NULL,5, 3.49,  17.45);""")
 lines.append("SELECT setval(pg_get_serial_sequence('order_item', 'order_item_id'), 46);")
 lines.append("")
 
 # payment — paid -> completed
 lines.append("INSERT INTO payment (payment_id, uuid, order_id, payment_amount, payment_method, payment_transaction_id, payment_status, payment_paid_at)")
-lines.append("VALUES")
-lines.append(f"    ({upayment(1)}::uuid, {upayment(1)}::uuid, {uorder(1)}::uuid,  26.95, 'credit_card'::payment_method, 'TRX-98314501', 'completed'::payment_status, '2025-12-09 12:00:00+00'),")
-lines.append(f"    ({upayment(2)}::uuid, {upayment(2)}::uuid, {uorder(2)}::uuid,  12.98, 'debit_card'::payment_method,  'TRX-98314502', 'completed'::payment_status, '2025-12-10 12:00:00+00'),")
-lines.append(f"    ({upayment(3)}::uuid, {upayment(3)}::uuid, {uorder(3)}::uuid,  32.20, 'credit_card'::payment_method, 'TRX-98314503', 'completed'::payment_status, '2025-12-12 12:00:00+00'),")
-lines.append(f"    ({upayment(4)}::uuid, {upayment(4)}::uuid, {uorder(4)}::uuid,  9.75,  'credit_card'::payment_method, 'TRX-98314504', 'completed'::payment_status, '2025-12-12 12:00:00+00'),")
-lines.append(f"    ({upayment(5)}::uuid, {upayment(5)}::uuid, {uorder(5)}::uuid,  37.90, 'credit_card'::payment_method, 'TRX-98314505', 'completed'::payment_status, '2025-12-14 12:00:00+00'),")
-lines.append(f"    ({upayment(6)}::uuid, {upayment(6)}::uuid, {uorder(6)}::uuid,  18.20, 'debit_card'::payment_method,  'TRX-98314506', 'completed'::payment_status, '2025-12-14 12:00:00+00'),")
-lines.append(f"    ({upayment(7)}::uuid, {upayment(7)}::uuid, {uorder(7)}::uuid,  22.45, 'credit_card'::payment_method, 'TRX-98314507', 'authorized'::payment_status, NULL),")
-lines.append(f"    ({upayment(8)}::uuid, {upayment(8)}::uuid, {uorder(8)}::uuid,  7.25,  'credit_card'::payment_method, 'TRX-98314508', 'completed'::payment_status, '2025-12-15 12:00:00+00'),")
-lines.append(f"    ({upayment(9)}::uuid, {upayment(9)}::uuid, {uorder(9)}::uuid,  53.48, 'credit_card'::payment_method, 'TRX-98314509', 'completed'::payment_status, '2025-12-17 12:00:00+00'),")
-lines.append(f"    ({upayment(10)}::uuid, {upayment(10)}::uuid, {uorder(10)}::uuid, 6.49,  'debit_card'::payment_method,  'TRX-98314510', 'pending'::payment_status, NULL),")
-lines.append(f"    ({upayment(11)}::uuid, {upayment(11)}::uuid, {uorder(11)}::uuid, 27.70, 'credit_card'::payment_method, 'TRX-98314511', 'completed'::payment_status, '2025-12-18 12:00:00+00'),")
-lines.append(f"    ({upayment(12)}::uuid, {upayment(12)}::uuid, {uorder(12)}::uuid, 14.50, 'credit_card'::payment_method, 'TRX-98314512', 'completed'::payment_status, '2025-12-18 12:00:00+00'),")
-lines.append(f"    ({upayment(13)}::uuid, {upayment(13)}::uuid, {uorder(13)}::uuid, 19.95, 'debit_card'::payment_method,  'TRX-98314513', 'completed'::payment_status, '2025-12-19 12:00:00+00'),")
-lines.append(f"    ({upayment(14)}::uuid, {upayment(14)}::uuid, {uorder(14)}::uuid, 29.99, 'credit_card'::payment_method, 'TRX-98314514', 'pending'::payment_status, NULL);")
+lines.append("OVERRIDING SYSTEM VALUE VALUES")
+lines.append(f"    (1, '{upayment(1)}'::uuid, 1,  26.95, 'credit_card'::payment_method, 'TRX-98314501', 'completed'::payment_status, '2025-12-09 12:00:00+00'),")
+lines.append(f"    (2, '{upayment(2)}'::uuid, 2,  12.98, 'debit_card'::payment_method,  'TRX-98314502', 'completed'::payment_status, '2025-12-10 12:00:00+00'),")
+lines.append(f"    (3, '{upayment(3)}'::uuid, 3,  32.20, 'credit_card'::payment_method, 'TRX-98314503', 'completed'::payment_status, '2025-12-12 12:00:00+00'),")
+lines.append(f"    (4, '{upayment(4)}'::uuid, 4,  9.75,  'credit_card'::payment_method, 'TRX-98314504', 'completed'::payment_status, '2025-12-12 12:00:00+00'),")
+lines.append(f"    (5, '{upayment(5)}'::uuid, 5,  37.90, 'credit_card'::payment_method, 'TRX-98314505', 'completed'::payment_status, '2025-12-14 12:00:00+00'),")
+lines.append(f"    (6, '{upayment(6)}'::uuid, 6,  18.20, 'debit_card'::payment_method,  'TRX-98314506', 'completed'::payment_status, '2025-12-14 12:00:00+00'),")
+lines.append(f"    (7, '{upayment(7)}'::uuid, 7,  22.45, 'credit_card'::payment_method, 'TRX-98314507', 'authorized'::payment_status, NULL),")
+lines.append(f"    (8, '{upayment(8)}'::uuid, 8,  7.25,  'credit_card'::payment_method, 'TRX-98314508', 'completed'::payment_status, '2025-12-15 12:00:00+00'),")
+lines.append(f"    (9, '{upayment(9)}'::uuid, 9,  53.48, 'credit_card'::payment_method, 'TRX-98314509', 'completed'::payment_status, '2025-12-17 12:00:00+00'),")
+lines.append(f"    (10, '{upayment(10)}'::uuid, 10, 6.49,  'debit_card'::payment_method,  'TRX-98314510', 'pending'::payment_status, NULL),")
+lines.append(f"    (11, '{upayment(11)}'::uuid, 11, 27.70, 'credit_card'::payment_method, 'TRX-98314511', 'completed'::payment_status, '2025-12-18 12:00:00+00'),")
+lines.append(f"    (12, '{upayment(12)}'::uuid, 12, 14.50, 'credit_card'::payment_method, 'TRX-98314512', 'completed'::payment_status, '2025-12-18 12:00:00+00'),")
+lines.append(f"    (13, '{upayment(13)}'::uuid, 13, 19.95, 'debit_card'::payment_method,  'TRX-98314513', 'completed'::payment_status, '2025-12-19 12:00:00+00'),")
+lines.append(f"    (14, '{upayment(14)}'::uuid, 14, 29.99, 'credit_card'::payment_method, 'TRX-98314514', 'pending'::payment_status, NULL);")
+lines.append("SELECT setval(pg_get_serial_sequence('payment', 'payment_id'), (SELECT MAX(payment_id) FROM payment));")
 lines.append("")
 
 # reward
 lines.append("INSERT INTO reward (reward_id, uuid, customer_id, order_id, reward_points_earned, reward_transaction_date)")
-lines.append("VALUES")
-lines.append(f"    ({ureward(1)}::uuid, {ureward(1)}::uuid, {ucustomer(1)}::uuid, {uorder(1)}::uuid,  26950, '2025-12-09 12:00:00+00'),")
-lines.append(f"    ({ureward(2)}::uuid, {ureward(2)}::uuid, {ucustomer(2)}::uuid, {uorder(2)}::uuid,  12980, '2025-12-10 12:00:00+00'),")
-lines.append(f"    ({ureward(3)}::uuid, {ureward(3)}::uuid, {ucustomer(3)}::uuid, {uorder(3)}::uuid,  32200, '2025-12-12 12:00:00+00'),")
-lines.append(f"    ({ureward(4)}::uuid, {ureward(4)}::uuid, {ucustomer(4)}::uuid, {uorder(4)}::uuid,  9750,  '2025-12-12 12:00:00+00'),")
-lines.append(f"    ({ureward(5)}::uuid, {ureward(5)}::uuid, {ucustomer(5)}::uuid, {uorder(5)}::uuid,  37900, '2025-12-14 12:00:00+00'),")
-lines.append(f"    ({ureward(6)}::uuid, {ureward(6)}::uuid, {ucustomer(6)}::uuid, {uorder(6)}::uuid,  18200, '2025-12-14 12:00:00+00'),")
-lines.append(f"    ({ureward(7)}::uuid, {ureward(7)}::uuid, {ucustomer(8)}::uuid, {uorder(8)}::uuid,  7250,  '2025-12-15 12:00:00+00'),")
-lines.append(f"    ({ureward(8)}::uuid, {ureward(8)}::uuid, {ucustomer(9)}::uuid, {uorder(9)}::uuid,  53480, '2025-12-17 12:00:00+00'),")
-lines.append(f"    ({ureward(9)}::uuid, {ureward(9)}::uuid, {ucustomer(11)}::uuid, {uorder(11)}::uuid, 27700, '2025-12-18 12:00:00+00'),")
-lines.append(f"    ({ureward(10)}::uuid, {ureward(10)}::uuid, {ucustomer(12)}::uuid, {uorder(12)}::uuid, 14500, '2025-12-18 12:00:00+00'),")
-lines.append(f"    ({ureward(11)}::uuid, {ureward(11)}::uuid, {ucustomer(13)}::uuid, {uorder(13)}::uuid, 19950, '2025-12-19 12:00:00+00');")
+lines.append("OVERRIDING SYSTEM VALUE VALUES")
+lines.append(f"    (1, '{ureward(1)}'::uuid, 1, 1,  26950, '2025-12-09 12:00:00+00'),")
+lines.append(f"    (2, '{ureward(2)}'::uuid, 2, 2,  12980, '2025-12-10 12:00:00+00'),")
+lines.append(f"    (3, '{ureward(3)}'::uuid, 3, 3,  32200, '2025-12-12 12:00:00+00'),")
+lines.append(f"    (4, '{ureward(4)}'::uuid, 4, 4,  9750,  '2025-12-12 12:00:00+00'),")
+lines.append(f"    (5, '{ureward(5)}'::uuid, 5, 5,  37900, '2025-12-14 12:00:00+00'),")
+lines.append(f"    (6, '{ureward(6)}'::uuid, 6, 6,  18200, '2025-12-14 12:00:00+00'),")
+lines.append(f"    (7, '{ureward(7)}'::uuid, 8, 8,  7250,  '2025-12-15 12:00:00+00'),")
+lines.append(f"    (8, '{ureward(8)}'::uuid, 9, 9,  53480, '2025-12-17 12:00:00+00'),")
+lines.append(f"    (9, '{ureward(9)}'::uuid, 11, 11, 27700, '2025-12-18 12:00:00+00'),")
+lines.append(f"    (10, '{ureward(10)}'::uuid, 12, 12, 14500, '2025-12-18 12:00:00+00'),")
+lines.append(f"    (11, '{ureward(11)}'::uuid, 13, 13, 19950, '2025-12-19 12:00:00+00');")
+lines.append("SELECT setval(pg_get_serial_sequence('reward', 'reward_id'), (SELECT MAX(reward_id) FROM reward));")
 lines.append("")
 
-# review — employee_id NULL or uuid
+# review — employee_id NULL or integer FK
 lines.append("INSERT INTO review (review_id, uuid, customer_id, product_id, employee_id, review_rating, review_comment, review_submitted_date, review_status, review_approval_date)")
-lines.append("VALUES")
-lines.append(f"    ({ureview(1)}::uuid, {ureview(1)}::uuid, {ucustomer(1)}::uuid,  5,  {uemployee(7)}::uuid, 5, 'Fresh and flaky, exactly what I hoped for.',     '2025-12-11 12:00:00+00', 'approved'::review_status, '2025-12-12 12:00:00+00'),")
-lines.append(f"    ({ureview(2)}::uuid, {ureview(2)}::uuid, {ucustomer(2)}::uuid,  1,  {uemployee(7)}::uuid, 4, 'Good loaf with a nice crust.',                  '2025-12-12 12:00:00+00', 'approved'::review_status, '2025-12-13 12:00:00+00'),")
-lines.append(f"    ({ureview(3)}::uuid, {ureview(3)}::uuid, {ucustomer(3)}::uuid,  13, {uemployee(7)}::uuid, 5, 'Excellent cake, rich and not overly sweet.',     '2025-12-13 12:00:00+00', 'approved'::review_status, '2025-12-14 12:00:00+00'),")
-lines.append(f"    ({ureview(4)}::uuid, {ureview(4)}::uuid, {ucustomer(4)}::uuid,  6,  NULL, 4, 'Muffin was soft and well-balanced.',             '2025-12-13 12:00:00+00', 'pending'::review_status, NULL),")
-lines.append(f"    ({ureview(5)}::uuid, {ureview(5)}::uuid, {ucustomer(5)}::uuid,  12, {uemployee(7)}::uuid, 5, 'Great flavour and texture.',                     '2025-12-14 12:00:00+00', 'approved'::review_status, '2025-12-15 12:00:00+00'),")
-lines.append(f"    ({ureview(6)}::uuid, {ureview(6)}::uuid, {ucustomer(6)}::uuid,  16, {uemployee(7)}::uuid, 3, 'Filling was good, pastry slightly dry.',         '2025-12-14 12:00:00+00', 'approved'::review_status, '2025-12-15 12:00:00+00'),")
-lines.append(f"    ({ureview(7)}::uuid, {ureview(7)}::uuid, {ucustomer(7)}::uuid,  10, NULL, 4, 'Cupcake was moist and frosting was smooth.',     '2025-12-15 12:00:00+00', 'pending'::review_status, NULL),")
-lines.append(f"    ({ureview(8)}::uuid, {ureview(8)}::uuid, {ucustomer(8)}::uuid,  14, {uemployee(7)}::uuid, 5, 'Very creamy slice and good crust.',              '2025-12-15 12:00:00+00', 'approved'::review_status, '2025-12-16 12:00:00+00'),")
-lines.append(f"    ({ureview(9)}::uuid, {ureview(9)}::uuid, {ucustomer(9)}::uuid,  17, {uemployee(7)}::uuid, 4, 'Bright flavour and a nice finish.',              '2025-12-16 12:00:00+00', 'approved'::review_status, '2025-12-17 12:00:00+00'),")
-lines.append(f"    ({ureview(10)}::uuid, {ureview(10)}::uuid, {ucustomer(10)}::uuid, 3,  NULL, 4, 'Crisp outside and soft inside.',                 '2025-12-17 12:00:00+00', 'pending'::review_status, NULL),")
-lines.append(f"    ({ureview(11)}::uuid, {ureview(11)}::uuid, {ucustomer(11)}::uuid, 18, {uemployee(7)}::uuid, 5, 'Perfect brownie, very fudgy.',                   '2025-12-18 12:00:00+00', 'approved'::review_status, '2025-12-18 12:00:00+00'),")
-lines.append(f"    ({ureview(12)}::uuid, {ureview(12)}::uuid, {ucustomer(12)}::uuid, 8,  {uemployee(7)}::uuid, 4, 'Classic cookie, good texture.',                  '2025-12-18 12:00:00+00', 'approved'::review_status, '2025-12-19 12:00:00+00'),")
-lines.append(f"    ({ureview(13)}::uuid, {ureview(13)}::uuid, {ucustomer(13)}::uuid, 21, NULL, 4, 'Nice seasonal option, would buy again.',         '2025-12-19 12:00:00+00', 'pending'::review_status, NULL),")
-lines.append(f"    ({ureview(14)}::uuid, {ureview(14)}::uuid, {ucustomer(14)}::uuid, 13, NULL, 5, 'Great for an occasion, everyone enjoyed it.',    '2025-12-19 12:00:00+00', 'pending'::review_status, NULL);")
+lines.append("OVERRIDING SYSTEM VALUE VALUES")
+lines.append(f"    (1, '{ureview(1)}'::uuid, 1,  5,  7, 5, 'Fresh and flaky, exactly what I hoped for.',     '2025-12-11 12:00:00+00', 'approved'::review_status, '2025-12-12 12:00:00+00'),")
+lines.append(f"    (2, '{ureview(2)}'::uuid, 2,  1,  7, 4, 'Good loaf with a nice crust.',                  '2025-12-12 12:00:00+00', 'approved'::review_status, '2025-12-13 12:00:00+00'),")
+lines.append(f"    (3, '{ureview(3)}'::uuid, 3,  13, 7, 5, 'Excellent cake, rich and not overly sweet.',     '2025-12-13 12:00:00+00', 'approved'::review_status, '2025-12-14 12:00:00+00'),")
+lines.append(f"    (4, '{ureview(4)}'::uuid, 4,  6,  NULL, 4, 'Muffin was soft and well-balanced.',             '2025-12-13 12:00:00+00', 'pending'::review_status, NULL),")
+lines.append(f"    (5, '{ureview(5)}'::uuid, 5,  12, 7, 5, 'Great flavour and texture.',                     '2025-12-14 12:00:00+00', 'approved'::review_status, '2025-12-15 12:00:00+00'),")
+lines.append(f"    (6, '{ureview(6)}'::uuid, 6,  16, 7, 3, 'Filling was good, pastry slightly dry.',         '2025-12-14 12:00:00+00', 'approved'::review_status, '2025-12-15 12:00:00+00'),")
+lines.append(f"    (7, '{ureview(7)}'::uuid, 7,  10, NULL, 4, 'Cupcake was moist and frosting was smooth.',     '2025-12-15 12:00:00+00', 'pending'::review_status, NULL),")
+lines.append(f"    (8, '{ureview(8)}'::uuid, 8,  14, 7, 5, 'Very creamy slice and good crust.',              '2025-12-15 12:00:00+00', 'approved'::review_status, '2025-12-16 12:00:00+00'),")
+lines.append(f"    (9, '{ureview(9)}'::uuid, 9,  17, 7, 4, 'Bright flavour and a nice finish.',              '2025-12-16 12:00:00+00', 'approved'::review_status, '2025-12-17 12:00:00+00'),")
+lines.append(f"    (10, '{ureview(10)}'::uuid, 10, 3,  NULL, 4, 'Crisp outside and soft inside.',                 '2025-12-17 12:00:00+00', 'pending'::review_status, NULL),")
+lines.append(f"    (11, '{ureview(11)}'::uuid, 11, 18, 7, 5, 'Perfect brownie, very fudgy.',                   '2025-12-18 12:00:00+00', 'approved'::review_status, '2025-12-18 12:00:00+00'),")
+lines.append(f"    (12, '{ureview(12)}'::uuid, 12, 8,  7, 4, 'Classic cookie, good texture.',                  '2025-12-18 12:00:00+00', 'approved'::review_status, '2025-12-19 12:00:00+00'),")
+lines.append(f"    (13, '{ureview(13)}'::uuid, 13, 21, NULL, 4, 'Nice seasonal option, would buy again.',         '2025-12-19 12:00:00+00', 'pending'::review_status, NULL),")
+lines.append(f"    (14, '{ureview(14)}'::uuid, 14, 13, NULL, 5, 'Great for an occasion, everyone enjoyed it.',    '2025-12-19 12:00:00+00', 'pending'::review_status, NULL);")
+lines.append("SELECT setval(pg_get_serial_sequence('review', 'review_id'), (SELECT MAX(review_id) FROM review));")
 lines.append("")
 
 # customer_preference — strength 1..5, map allergic
@@ -517,7 +526,7 @@ lines.append("INSERT INTO customer_preference (customer_id, tag_id, preference_t
 for i, (cid, tid, pt, strn) in enumerate(prefs):
     ps = pref_strength(strn)
     comma = "," if i < len(prefs) - 1 else ";"
-    lines.append(f"    ({ucustomer(cid)}::uuid, {tid}, '{pt}'::preference_type, {ps}::smallint){comma}")
+    lines.append(f"    ({cid}, {tid}, '{pt}'::preference_type, {ps}::smallint){comma}")
 lines.append("")
 
 out = Path(__file__).resolve().parent.parent / "src" / "main" / "resources" / "db" / "migration" / "V3__seed_data.sql"
