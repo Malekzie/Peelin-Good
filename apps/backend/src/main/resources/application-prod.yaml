@@ -13,7 +13,6 @@ spring:
     locations: classpath:db/migration
     default-schema: public
     schemas: public
-    validate-on-migrate: false
   spaces:
     endpoint: ${DO_SPACES_ENDPOINT:}
     bucket: ${DO_SPACES_BUCKET:}
