@@ -1,4 +1,4 @@
-# 🍌 Peelin' Good
+# 🍊 Peelin' Good
 
 An e-commerce bakery platform where customers can browse and order baked goods online, earn loyalty rewards, and leave product reviews. Built as a full-stack monorepo with a **SvelteKit** frontend and a **Spring Boot** backend, deployed on **DigitalOcean**.
 
