@@ -20,6 +20,23 @@ Detailed documentation for the Spring Boot backend located in `apps/backend/`.
 
 ---
 
+## Platform Context
+
+Peelin' Good is a **three-tier system**. This backend is the API tier — it does not operate in isolation.
+
+| Tier | Project | Stack | Connects to |
+| --- | --- | --- | --- |
+| Desktop management app | Workshop5 | Java 23 + JavaFX + MySQL | MySQL directly via JDBC |
+| REST API (this project) | Workshop7 / `apps/backend` | Spring Boot + PostgreSQL | PostgreSQL via JPA |
+| Web frontend | Workshop7 / `apps/frontend` | SvelteKit + TypeScript | This API over HTTP |
+| Android mobile app | Workshop06 | Kotlin + Room | This API over HTTP |
+
+**Important:** Workshop5 (the desktop app) connects **directly to MySQL** and never calls this API. It has its own standalone authentication system (BCrypt + in-memory `UserSession`). Do not design Workshop7 features to accommodate Workshop5 — they are independent systems that share a domain but not infrastructure.
+
+The API's clients are the **SvelteKit web frontend** and the **Android mobile app**. Both authenticate using JWT Bearer tokens.
+
+---
+
 ## Architecture Overview
 
 The backend is a REST API built with **Spring Boot 3.5.11** running on **Java 21**. It uses:
@@ -212,11 +229,36 @@ Activate a profile at runtime:
 
 ## Security
 
-The backend includes **Spring Security** as a dependency. By default, Spring Security locks down all endpoints and generates a random password on startup.
+The backend uses **stateless JWT authentication** via Spring Security and the Nimbus JOSE library.
 
-When adding new endpoints, you will need to update the security configuration to define which paths require authentication and which are publicly accessible.
+### Auth flow
 
-> Look for or create a configuration class in `com.sait.peelin.config` annotated with `@Configuration` and `@EnableWebSecurity`.
+1. Client sends credentials to `POST /api/v1/auth/login` or `POST /api/v1/auth/register`
+2. Server validates credentials, returns a signed JWT in the response body
+3. Client stores the JWT and includes it as `Authorization: Bearer <token>` on every subsequent request
+4. `JwtAuthenticationFilter` validates the token and populates the `SecurityContext` on each request
+
+### Roles
+
+| Role | Access |
+| --- | --- |
+| `CUSTOMER` | `/api/v1/customer/**` |
+| `EMPLOYEE` | `/api/v1/employee/**` and customer endpoints |
+| `ADMIN` | `/api/v1/admin/**` and all other endpoints |
+
+Public endpoints (no token required): `/api/v1/auth/**`, `/api/v1/products/**`, `/api/v1/bakeries/**`, `/actuator/**`
+
+### JWT configuration
+
+| Environment variable | Default | Description |
+| --- | --- | --- |
+| `JWT_SECRET` | — (required) | HMAC-SHA256 signing key |
+| `JWT_EXPIRATION` | `864000000` (10 days) | Token lifetime in milliseconds |
+| `JWT_ISSUER` | `peelin-good` | Token issuer claim |
+
+### Security configuration
+
+The `SecurityConfig` class is in `com.sait.peelin.security`. When adding new endpoints, update the `authorizeHttpRequests` rules there to define access level.
 
 ---
 
