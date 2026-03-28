@@ -27,7 +27,7 @@ public class AuthService {
                 )
         );
 
-        User user = userRepository.findByUsernameOrEmail(request.getUsername(), request.getEmail()).orElseThrow();
+        User user = userRepository.findByUsernameOrUserEmail(request.getUsername(), request.getEmail()).orElseThrow();
 
         UserDetails userDetails = org.springframework.security.core.userdetails.User
                 .withUsername(user.getUsername())
