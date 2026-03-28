@@ -4,6 +4,10 @@ spring:
     username: ${SPRING_DATASOURCE_USERNAME}
     password: ${SPRING_DATASOURCE_PASSWORD}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      data-source-properties:
+        # DigitalOcean Managed PostgreSQL requires SSL; URL in secrets may omit sslmode.
+        sslmode: require
   jpa:
     hibernate:
       ddl-auto: none

@@ -85,9 +85,9 @@ services:
       deploy_on_push: true
       repo: Malekzie/Workshop7
     health_check:
-      failure_threshold: 18
-      http_path: /actuator/health
-      initial_delay_seconds: 90
+      failure_threshold: 24
+      http_path: /actuator/health/liveness
+      initial_delay_seconds: 120
       period_seconds: 10
       success_threshold: 1
       timeout_seconds: 5
@@ -95,9 +95,9 @@ services:
     instance_count: 1
     instance_size_slug: apps-s-1vcpu-1gb
     liveness_health_check:
-      failure_threshold: 18
-      http_path: /actuator/health
-      initial_delay_seconds: 90
+      failure_threshold: 24
+      http_path: /actuator/health/liveness
+      initial_delay_seconds: 120
       period_seconds: 10
       success_threshold: 1
       timeout_seconds: 5

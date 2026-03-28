@@ -1,0 +1,43 @@
+Flyway and database (why migrations work)
+==========================================
+
+application-prod.yaml — Flyway baseline
+---------------------------------------
+Removed baseline-on-migrate and baseline-version: 1. With baseline at 1, Flyway can treat history oddly and skip or confuse V0. Your app now relies on the normal chain V0 → V1 → V2 only.
+
+Checksum mismatch on V1
+------------------------
+The DB had 275243618 in flyway_schema_history (from an old manual fix) while the current V1__baseline.sql in the JAR checksums as 801152755, so Flyway refused to start.
+
+You ran:
+  UPDATE flyway_schema_history SET checksum = 801152755 WHERE version = '1';
+
+We briefly used validate-on-migrate: false so the service could start until that UPDATE was done, then removed it so validation is on again.
+
+scripts/repair-flyway-checksum.sql
+----------------------------------
+Checked in the same UPDATE so it's documented and repeatable if needed.
+
+Dockerfile
+----------
+Build stage copies the executable JAR only (skips *-plain.jar) into app.jar, so the running container always has the full app including everything under classpath:db/migration.
+
+
+Not Flyway itself, but related to "it works on DO"
+==================================================
+
+application-prod.yaml — spring.datasource.hikari.data-source-properties.sslmode=require so the JDBC driver uses TLS to DigitalOcean Managed PostgreSQL even if SPRING_DATASOURCE_URL omits sslmode.
+
+.do/app.yaml — http_path /actuator/health/liveness (with management.endpoint.health.probes.enabled); longer initial_delay / failure_threshold for Flyway + cold start; deploy_on_push: true on the backend GitHub source.
+
+SecurityConfig — /actuator/health (and /actuator/info) allowed without auth so health checks don't get 401.
+
+application-prod.yaml — management.* so health (and probes) behave as expected; Spaces keys aligned to DO_SPACES_KEY / DO_SPACES_SECRET.
+
+application.yaml — dropped explicit hibernate.dialect (Boot picks PostgreSQL on its own).
+
+
+Entities / tests (not required for DO migrations, but for a green build)
+======================================================================
+
+SqlTypes.NAMED_ENUM → SqlTypes.VARCHAR on enum columns in Bakery, Order, Payment, Review, User, CustomerPreference so mvn verify with H2 + ddl-auto: create-drop doesn't blow up; production still talks to real PostgreSQL enum columns fine via string values.
