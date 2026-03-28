@@ -13,11 +13,20 @@ spring:
     locations: classpath:db/migration
     default-schema: public
     schemas: public
-    baseline-on-migrate: true
-    baseline-version: 1
   spaces:
-    endpoint: ${DO_SPACES_ENDPOINT}
-    bucket: ${DO_SPACES_BUCKET}
-    access-key: ${DO_SPACES_ACCESS_KEY}
-    secret-key: ${DO_SPACES_SECRET_KEY}
-    base_url: ${DO_SPACES_BASE_URL}
+    endpoint: ${DO_SPACES_ENDPOINT:}
+    bucket: ${DO_SPACES_BUCKET:}
+    access-key: ${DO_SPACES_KEY:}
+    secret-key: ${DO_SPACES_SECRET:}
+    base_url: ${DO_SPACES_BASE_URL:}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: never

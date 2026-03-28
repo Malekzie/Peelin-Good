@@ -39,7 +39,7 @@ public class Bakery {
 
     @NotNull
     @Enumerated(EnumType.STRING)
-    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @JdbcTypeCode(SqlTypes.VARCHAR)
     @ColumnDefault("'open'")
     @Column(name = "status", nullable = false)
     private BakeryStatus status;

@@ -43,7 +43,7 @@ public class User {
 
     @NotNull
     @Enumerated(EnumType.STRING)
-    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @JdbcTypeCode(SqlTypes.VARCHAR)
     @Column(name = "user_role", nullable = false)
     private UserRole userRole;
 

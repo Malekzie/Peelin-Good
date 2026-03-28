@@ -23,7 +23,7 @@ public class CustomerPreference {
 
     @NotNull
     @Enumerated(EnumType.STRING)
-    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @JdbcTypeCode(SqlTypes.VARCHAR)
     @Column(name = "preference_type", nullable = false)
     private PreferenceType preferenceType;
 

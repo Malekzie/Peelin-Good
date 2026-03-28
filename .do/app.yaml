@@ -82,9 +82,11 @@ services:
         value: EV[1:RjkTXpeJjYsM+G54BNPgBh6OdeqxnmRy:8DQTmCTjBNtEPi/sQcFnkh6lGgk8ztzMQlxMrYkLSWhh1lfVwg4w1Q==]
     github:
       branch: main
+      deploy_on_push: true
       repo: Malekzie/Workshop7
     health_check:
       failure_threshold: 18
+      http_path: /actuator/health
       initial_delay_seconds: 90
       period_seconds: 10
       success_threshold: 1
@@ -94,6 +96,7 @@ services:
     instance_size_slug: apps-s-1vcpu-1gb
     liveness_health_check:
       failure_threshold: 18
+      http_path: /actuator/health
       initial_delay_seconds: 90
       period_seconds: 10
       success_threshold: 1

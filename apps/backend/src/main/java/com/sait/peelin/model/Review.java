@@ -54,7 +54,7 @@ public class Review {
     @NotNull
     @ColumnDefault("'pending'")
     @Enumerated(EnumType.STRING)
-    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @JdbcTypeCode(SqlTypes.VARCHAR)
     @Column(name = "review_status", nullable = false)
     private ReviewStatus reviewStatus;
 

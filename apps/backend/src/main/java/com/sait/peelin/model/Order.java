@@ -75,7 +75,7 @@ public class Order {
 
     @NotNull
     @Enumerated(EnumType.STRING)
-    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @JdbcTypeCode(SqlTypes.VARCHAR)
     @Column(name = "order_method", nullable = false)
     private OrderMethod orderMethod;
 
@@ -95,7 +95,7 @@ public class Order {
     @NotNull
     @ColumnDefault("'placed'")
     @Enumerated(EnumType.STRING)
-    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @JdbcTypeCode(SqlTypes.VARCHAR)
     @Column(name = "order_status", nullable = false)
     private OrderStatus orderStatus;
 
