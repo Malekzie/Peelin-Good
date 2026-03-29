@@ -1,6 +1,36 @@
 <script>
+	let email = '';
+	let password = '';
+
+	let emailError = '';
+	let passwordError = '';
+
+	let emailTouched = false;
+	let passwordTouched = false;
+
+	function validateEmail(value) {
+		if (!value.trim()) return 'Email is required.';
+		if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return 'Enter a valid email address.';
+		return '';
+	}
+
+	function validatePassword(value) {
+		if (!value) return 'Password is required.';
+		if (value.length < 8) return 'Must be at least 8 characters.';
+		return '';
+	}
+
 	function handleSignIn(event) {
 		event.preventDefault();
+
+		emailTouched = true;
+		passwordTouched = true;
+
+		emailError = validateEmail(email);
+		passwordError = validatePassword(password);
+
+		if (emailError || passwordError) return;
+
 		alert('Signed in!');
 	}
 </script>
@@ -40,9 +70,7 @@
 
 			<!-- Social proof -->
 			<div class="flex items-center gap-4 pt-2">
-				<div class="flex -space-x-2">
-					<!-- Optional avatars -->
-				</div>
+				<div class="flex -space-x-2"></div>
 				<p class="text-sm font-medium text-white/90">5,000+ happy bakers</p>
 			</div>
 		</div>
@@ -53,8 +81,8 @@
 		<div class="w-full max-w-md space-y-8">
 			<!-- Mobile Branding -->
 			<div class="flex items-center gap-3 lg:hidden">
-				<span class="material-symbols-outlined text-4xl text-primary"> bakery_dining </span>
-				<span class="text-2xl font-bold text-primary"> Peelin' Good </span>
+				<span class="material-symbols-outlined text-4xl text-primary">bakery_dining</span>
+				<span class="text-2xl font-bold text-primary">Peelin' Good</span>
 			</div>
 
 			<!-- Header -->
@@ -72,24 +100,35 @@
 			<!-- Divider -->
 			<div class="flex items-center gap-4">
 				<div class="h-px flex-1 bg-border"></div>
-				<span class="text-xs tracking-widest text-muted-foreground uppercase"> or </span>
+				<span class="text-xs tracking-widest text-muted-foreground uppercase">or</span>
 				<div class="h-px flex-1 bg-border"></div>
 			</div>
 
 			<!-- Form Card -->
 			<div class="bg-surface-container rounded-2xl border border-border p-6 shadow-sm">
-				<form class="space-y-6" on:submit|preventDefault={handleSignIn}>
+				<form class="space-y-6" on:submit={handleSignIn}>
 					<!-- Email -->
 					<div class="space-y-2">
 						<label class="block text-xs font-semibold tracking-wide text-primary uppercase">
 							Email Address
 						</label>
 						<input
-							class="input w-full rounded-md border border-border p-3 transition focus:border-primary focus:ring-2 focus:ring-primary/40 focus:outline-none"
+							class="input w-full rounded-md border border-border p-3 transition focus:border-primary focus:ring-2 focus:ring-primary/40 focus:outline-none
+								{emailError && emailTouched ? 'border-red-400 ring-2 ring-red-400' : ''}"
 							type="email"
 							placeholder="you@example.com"
-							required
+							bind:value={email}
+							on:blur={() => {
+								emailTouched = true;
+								emailError = validateEmail(email);
+							}}
+							on:input={() => {
+								if (emailTouched) emailError = validateEmail(email);
+							}}
 						/>
+						{#if emailError && emailTouched}
+							<p class="text-xs text-red-500">{emailError}</p>
+						{/if}
 					</div>
 
 					<!-- Password -->
@@ -98,14 +137,25 @@
 							<label class="block text-xs font-semibold tracking-wide text-primary uppercase">
 								Password
 							</label>
-							<a class="text-xs text-primary hover:underline" href="#"> Forgot? </a>
+							<a class="text-xs text-primary hover:underline" href="#">Forgot?</a>
 						</div>
 						<input
-							class="input w-full rounded-md border border-border p-3 transition focus:border-primary focus:ring-2 focus:ring-primary/40 focus:outline-none"
+							class="input w-full rounded-md border border-border p-3 transition focus:border-primary focus:ring-2 focus:ring-primary/40 focus:outline-none
+								{passwordError && passwordTouched ? 'border-red-400 ring-2 ring-red-400' : ''}"
 							type="password"
 							placeholder="••••••••"
-							required
+							bind:value={password}
+							on:blur={() => {
+								passwordTouched = true;
+								passwordError = validatePassword(password);
+							}}
+							on:input={() => {
+								if (passwordTouched) passwordError = validatePassword(password);
+							}}
 						/>
+						{#if passwordError && passwordTouched}
+							<p class="text-xs text-red-500">{passwordError}</p>
+						{/if}
 					</div>
 
 					<!-- Remember -->
@@ -119,7 +169,7 @@
 					<!-- Submit -->
 					<button
 						type="submit"
-						class="btn-primary w-full transition hover:scale-[1.01] active:scale-[0.99]"
+						class="text-on-primary mt-2 w-full rounded-full bg-primary py-4 text-base font-bold transition hover:scale-[1.01] hover:cursor-pointer active:scale-[0.99]"
 					>
 						Sign In
 					</button>
@@ -127,7 +177,7 @@
 					<!-- Signup -->
 					<p class="text-center text-sm">
 						No account?
-						<a href="/register" class="font-semibold text-primary hover:underline"> Sign up </a>
+						<a href="/register" class="font-semibold text-primary hover:underline">Sign up</a>
 					</p>
 				</form>
 			</div>
