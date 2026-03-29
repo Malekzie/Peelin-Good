@@ -77,6 +77,16 @@
 		}
 	}
 
+	// format phone number as (123) 456-7890 while typing
+	function formatPhone(value) {
+		const digits = value.replace(/\D/g, '').substring(0, 10);
+		const parts = [];
+		if (digits.length > 0) parts.push('(' + digits.substring(0, 3));
+		if (digits.length >= 4) parts.push(') ' + digits.substring(3, 6));
+		if (digits.length >= 7) parts.push('-' + digits.substring(6, 10));
+		return parts.join('');
+	}
+
 	// on submit, check all fields for errors and alert if valid
 	function handleRegister(event) {
 		event.preventDefault();
@@ -164,7 +174,7 @@
 					<label class="text-on-surface-variant px-1 text-sm font-bold">Username</label>
 					<input
 						type="text"
-						placeholder="username"
+						placeholder="Username"
 						bind:value={fields.username}
 						on:blur={() => handleBlur('username')}
 						on:input={() => handleInput('username')}
@@ -181,7 +191,7 @@
 					<label class="text-on-surface-variant px-1 text-sm font-bold">Password</label>
 					<input
 						type="password"
-						placeholder="password"
+						placeholder="Password"
 						bind:value={fields.password}
 						on:blur={() => handleBlur('password')}
 						on:input={() => handleInput('password')}
@@ -198,8 +208,12 @@
 					<label class="text-on-surface-variant px-1 text-sm font-bold">Phone Number</label>
 					<input
 						type="tel"
-						placeholder="403-555-0100"
+						placeholder="(403) 555-0100"
 						bind:value={fields.phone}
+						on:input={(e) => {
+							fields.phone = formatPhone(e.target.value);
+							handleInput('phone');
+						}}
 						on:blur={() => handleBlur('phone')}
 						on:input={() => handleInput('phone')}
 						class="bg-surface-container-highest w-full rounded-xl px-6 py-4 font-medium transition
