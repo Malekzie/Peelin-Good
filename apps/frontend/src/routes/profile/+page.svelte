@@ -8,52 +8,49 @@
 				<div
 					class="flex h-11 w-11 items-center justify-center rounded-full bg-primary text-white shadow-md"
 				>
-					<span class="material-symbols-outlined">bakery_dining</span>
+					<span>Bakery</span>
 				</div>
 				<div>
-					<h2 class="text-lg font-bold text-[#703210]">My Kitchen</h2>
-					<p class="text-xs text-stone-500">Manage your artisanal hearth</p>
+					<h2 class="text-lg font-bold text-[#703210]">My Profile</h2>
+					<p class="text-xs text-stone-500">Manage your bakery account</p>
 				</div>
 			</div>
 		</div>
 
 		<nav class="mt-4 flex-1 space-y-1">
 			<a class="flex items-center gap-3 rounded-full bg-[#703210] px-4 py-2.5 text-white" href="#">
-				<span class="material-symbols-outlined">person</span>
 				<span>Profile</span>
 			</a>
 			<a
 				class="flex items-center gap-3 rounded-full px-4 py-2.5 text-stone-600 hover:bg-[#8e4e14]/10"
 				href="#"
 			>
-				<span class="material-symbols-outlined">home_pin</span>
-				<span>Addresses</span>
+				<span>Orders</span>
 			</a>
 			<a
 				class="flex items-center gap-3 rounded-full px-4 py-2.5 text-stone-600 hover:bg-[#8e4e14]/10"
 				href="#"
 			>
-				<span class="material-symbols-outlined">shield</span>
-				<span>Security</span>
+				<span>Preferences</span>
 			</a>
 		</nav>
 
 		<div class="mt-auto space-y-2 border-t pt-4">
-			<button class="w-full rounded-full bg-primary py-2.5 text-sm font-semibold text-white">
+			<button
+				class="w-full rounded-full bg-primary py-2.5 text-sm font-semibold text-white hover:cursor-pointer hover:bg-primary/90"
+			>
 				New Order
 			</button>
 			<a
 				class="flex items-center space-x-3 rounded-full px-4 py-2 text-stone-500 hover:bg-[#8e4e14]/10"
 				href="#"
 			>
-				<span class="material-symbols-outlined">contact_support</span>
 				<span>Support</span>
 			</a>
 			<a
 				class="flex items-center space-x-3 rounded-full px-4 py-2 text-stone-500 hover:bg-[#8e4e14]/10"
 				href="#"
 			>
-				<span class="material-symbols-outlined">logout</span>
 				<span>Logout</span>
 			</a>
 		</div>
@@ -62,7 +59,7 @@
 	<!-- Main Content -->
 	<main class="flex-1 overflow-y-auto p-10">
 		<div class="mx-auto max-w-5xl space-y-12">
-			<!-- Baker's Profile Header -->
+			<!-- Header -->
 			<section
 				class="border-surface-container-high flex flex-col justify-between gap-8 border-b pb-6 md:flex-row md:items-center"
 			>
@@ -73,197 +70,135 @@
 						>
 							<img
 								class="h-full w-full object-cover"
-								alt="A friendly baker smiling in a rustic kitchen"
-								src="https://lh3.googleusercontent.com/aida-public/AB6AXuBV2-AJN7walhHrRpvxlgjC9-jUe9pdWhh1rtVW5BR7Wkvy0SHg6_bxgTtsxy5UkS7JnDMlA1UaY1EZiIFmRW1iV6jwpEp83m7Zq_u-tIeAWCWQ_vtQDTQ_xDf502HzFyL6tRYCuxW1oJ0RFSoPjAPwQEqh0oHz-7oXghPLFAfdb4ZZt2BsEL_oulq3yQAbtxMBQcEfgNv7U5OqV7m1B1oGLzJc53k-hE6t15ZKHvtgRIGbcdOHtaeMFZECYbE4nLIW_aQQR0WZ3mxS"
+								alt="Customer profile picture"
+								src="https://via.placeholder.com/150"
 							/>
 						</div>
 						<button
-							class="absolute right-1 bottom-1 rounded-full border border-stone-100 bg-white p-2.5 text-primary shadow-md transition-all hover:bg-primary hover:text-white"
+							class="absolute right-1 bottom-1 rounded-full border border-stone-100 bg-white p-2.5 text-primary shadow-md"
 						>
-							<span class="material-symbols-outlined text-sm">edit</span>
+							<span>Edit</span>
 						</button>
 					</div>
 
 					<div class="space-y-2">
 						<h1 class="font-headline text-on-surface text-4xl font-black tracking-tight">
-							Alex Thompson
+							John Chungus
 						</h1>
-						<p class="text-on-surface-variant font-medium">alex.the.baker@peelingood.com</p>
+						<p class="text-on-surface-variant font-medium">example@example.com</p>
 						<div class="mt-3 flex flex-wrap gap-3">
+							<span class="rounded-full bg-[#ffdbcd] px-4 py-1 text-[10px] font-bold uppercase">
+								Loyalty Tier: Silver
+							</span>
 							<span
-								class="rounded-full bg-[#ffdbcd] px-4 py-1 text-[10px] font-bold tracking-wider text-[#360f00] uppercase"
-								>Baker's Club Elite</span
+								class="bg-surface-container-highest rounded-full px-4 py-1 text-[10px] font-bold uppercase"
 							>
-							<span
-								class="bg-surface-container-highest text-on-surface-variant rounded-full px-4 py-1 text-[10px] font-bold tracking-wider uppercase"
-								>Pro Kneader</span
-							>
+								Frequent Buyer
+							</span>
 						</div>
 					</div>
 				</div>
 			</section>
 
-			<!-- Bento Grid Layout -->
+			<!-- Grid -->
 			<div class="grid grid-cols-1 gap-8 md:grid-cols-12">
-				<!-- Account Overview (Bento Large) -->
+				<!-- Profile Info -->
 				<div
 					class="bg-surface-container-lowest soft-shadow space-y-10 rounded-xl border border-stone-100 p-8 md:col-span-8"
 				>
-					<div class="flex items-start justify-between">
-						<div>
-							<h3 class="font-headline text-on-surface text-2xl font-bold">Kitchen Profile</h3>
-							<p class="text-on-surface-variant mt-1 text-sm">
-								Artisan details and subscription status
-							</p>
-						</div>
-						<span class="material-symbols-outlined text-outline text-3xl">bakery_dining</span>
+					<div>
+						<h3 class="font-headline text-on-surface text-2xl font-bold">Profile Info</h3>
+						<p class="text-on-surface-variant mt-1 text-sm">
+							Personal details and subscription status
+						</p>
 					</div>
 
 					<div class="grid grid-cols-1 gap-x-12 gap-y-8 sm:grid-cols-2">
 						<div>
-							<label class="text-outline text-[11px] font-bold tracking-widest uppercase"
-								>Baker's Name</label
-							>
+							<label class="text-outline text-[11px] font-bold uppercase">Full Name</label>
 							<p class="text-on-surface text-lg font-semibold">Alexander James Thompson</p>
 						</div>
 						<div>
-							<label class="text-outline text-[11px] font-bold tracking-widest uppercase"
-								>Country</label
-							>
+							<label class="text-outline text-[11px] font-bold uppercase">Country</label>
 							<p class="text-on-surface text-lg font-semibold">United Kingdom</p>
 						</div>
 						<div>
-							<label class="text-outline text-[11px] font-bold tracking-widest uppercase"
-								>Joined Hearth</label
-							>
+							<label class="text-outline text-[11px] font-bold uppercase">Joined</label>
 							<p class="text-on-surface text-lg font-semibold">October 14, 2021</p>
 						</div>
 						<div>
-							<label class="text-outline text-[11px] font-bold tracking-widest uppercase"
-								>Last Bake</label
-							>
+							<label class="text-outline text-[11px] font-bold uppercase">Last Order</label>
 							<p class="text-on-surface text-lg font-semibold">Today, 09:42 AM</p>
 						</div>
 					</div>
 
-					<div
-						class="mt-12 flex items-center justify-between rounded-xl border border-stone-200 bg-[#fcf9f4] p-6"
-					>
-						<div class="flex items-center gap-4">
-							<div
-								class="bg-secondary-container flex h-14 w-14 items-center justify-center rounded-full text-secondary"
-							>
-								<span class="material-symbols-outlined text-2xl">redeem</span>
-							</div>
-							<div>
-								<p class="text-on-surface text-base font-bold">Monthly Treats Subscription</p>
-								<p class="text-on-surface-variant text-sm">The Daily Crumb • £29.99/mo</p>
+					<!-- Points -->
+					<div class="rounded-xl border border-stone-200 bg-[#fcf9f4] px-6 pt-2 pb-6">
+						<div class="mb-2 flex justify-center">
+							<div class="flex h-16 w-16 items-center justify-center rounded-full text-secondary">
+								<h2 class="text-2xl whitespace-nowrap text-black">Loyalty Points</h2>
 							</div>
 						</div>
-						<button
-							class="text-sm font-bold text-primary decoration-primary/30 underline-offset-4 hover:underline"
-							>Modify Plan</button
-						>
+
+						<div class="mt-1 flex items-center justify-between">
+							<div class="flex flex-col">
+								<p class="text-on-surface text-lg font-bold">Your Points</p>
+								<p class="text-sm text-stone-800">1,250 pts</p>
+							</div>
+
+							<button
+								class="text-sm font-bold text-primary underline-offset-4 hover:cursor-pointer hover:underline"
+							>
+								View your points
+							</button>
+						</div>
 					</div>
 				</div>
 
-				<!-- Active Devices (Bento Side) -->
+				<!-- Recommended -->
 				<div
 					class="soft-shadow flex flex-col space-y-6 rounded-xl border border-stone-100 bg-white p-8 md:col-span-4"
 				>
-					<h3 class="font-headline text-on-surface mb-4 text-xl font-bold">Suggested Items</h3>
+					<h3 class="font-headline text-on-surface mb-4 text-xl font-bold">Recommended for You</h3>
 
 					<div class="flex-1 space-y-4">
-						<div
-							class="hover:bg-surface-container-low flex items-center justify-between rounded-xl p-4 transition-all duration-300"
-						>
-							<div class="flex items-center gap-4"></div>
-						</div>
-						<div
-							class="hover:bg-surface-container-low flex items-center justify-between rounded-xl p-4 transition-all duration-300"
-						>
-							<div class="flex items-center gap-4"></div>
-						</div>
-						<div
-							class="hover:bg-surface-container-low flex items-center justify-between rounded-xl p-4 transition-all duration-300"
-						>
-							<div class="flex items-center gap-4"></div>
-						</div>
+						<div class="rounded-xl p-4">Croissant</div>
+						<div class="rounded-xl p-4">Sourdough Bread</div>
+						<div class="rounded-xl p-4">Chocolate Tart</div>
 					</div>
 
-					<button
-						class="border-outline-variant mt-6 w-full rounded-full border py-3.5 text-xs font-bold tracking-widest text-secondary uppercase transition-colors hover:bg-secondary/5"
-					>
-						All Products
+					<button class="mt-6 w-full rounded-full border py-3.5 text-xs font-bold uppercase">
+						View All Products
 					</button>
 				</div>
 
-				<!-- Security & Tools -->
+				<!-- Bottom Cards -->
 				<div class="grid grid-cols-1 gap-8 md:col-span-12 md:grid-cols-3">
-					<!-- Security Card -->
-					<div class="soft-shadow space-y-4 rounded-xl border border-stone-100 bg-white p-7">
-						<div
-							class="bg-secondary-container/50 mb-4 flex h-12 w-12 items-center justify-center rounded-full text-secondary"
-						>
-							<span class="material-symbols-outlined text-2xl">security</span>
+					<div class="soft-shadow space-y-4 rounded-xl border p-7">
+						<div class="flex h-12 w-12 items-center justify-center rounded-full">
+							<span>Security</span>
 						</div>
-						<h4 class="font-headline text-on-surface text-xl font-bold">Kitchen Security</h4>
-						<p class="text-on-surface-variant text-sm leading-relaxed">
-							Your kitchen is safe and warm. Score: 92/100. Update password soon.
-						</p>
-						<button
-							class="group flex items-center text-xs font-bold tracking-widest text-secondary uppercase"
-						>
-							Secure Now
-							<span
-								class="material-symbols-outlined ml-1.5 text-sm transition-transform group-hover:translate-x-1"
-								>chevron_right</span
-							>
-						</button>
+						<h4 class="text-xl font-bold">Account Security</h4>
+						<p class="text-sm">Your account is secure. Score: 92/100.</p>
+						<button class="text-xs font-bold uppercase">Update Now →</button>
 					</div>
 
-					<!-- Preferences Card -->
-					<div class="soft-shadow space-y-4 rounded-xl border border-stone-100 bg-white p-7">
-						<div
-							class="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[#f0ede8] text-[#703210]"
-						>
-							<span class="material-symbols-outlined text-2xl">auto_awesome</span>
+					<div class="soft-shadow space-y-4 rounded-xl border p-7">
+						<div class="flex h-12 w-12 items-center justify-center rounded-full">
+							<span>Preferences</span>
 						</div>
-						<h4 class="font-headline text-on-surface text-xl font-bold">Bakery Mood</h4>
-						<p class="text-on-surface-variant text-sm leading-relaxed">
-							Personalize your dashboard theme, notifications, and oven units.
-						</p>
-						<button
-							class="group flex items-center text-xs font-bold tracking-widest text-primary uppercase"
-						>
-							Set Mood
-							<span
-								class="material-symbols-outlined ml-1.5 text-sm transition-transform group-hover:translate-x-1"
-								>chevron_right</span
-							>
-						</button>
+						<h4 class="text-xl font-bold">Preferences</h4>
+						<p class="text-sm">Set your favorite baked goods and delivery options.</p>
+						<button class="text-xs font-bold uppercase">Manage →</button>
 					</div>
 
-					<!-- Data & Privacy Card -->
-					<div class="soft-shadow space-y-4 rounded-xl border border-stone-100 bg-white p-7">
-						<div
-							class="bg-primary-container mb-4 flex h-12 w-12 items-center justify-center rounded-full text-primary"
-						>
-							<span class="material-symbols-outlined text-2xl">cookie</span>
+					<div class="soft-shadow space-y-4 rounded-xl border p-7">
+						<div class="flex h-12 w-12 items-center justify-center rounded-full">
+							<span>Privacy</span>
 						</div>
-						<h4 class="font-headline text-on-surface text-xl font-bold">Recipe Privacy</h4>
-						<p class="text-on-surface-variant text-sm leading-relaxed">
-							Manage how we use your data to recommend new seasonal treats.
-						</p>
-						<button
-							class="group flex items-center text-xs font-bold tracking-widest text-primary uppercase"
-						>
-							Privacy Settings
-							<span
-								class="material-symbols-outlined ml-1.5 text-sm transition-transform group-hover:translate-x-1"
-								>chevron_right</span
-							>
-						</button>
+						<h4 class="text-xl font-bold">Privacy Settings</h4>
+						<p class="text-sm">Manage how we use your data.</p>
+						<button class="text-xs font-bold uppercase">Update Privacy →</button>
 					</div>
 				</div>
 			</div>
