@@ -1,6 +1,8 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { ShoppingCart, User, ChevronDown, Menu, X } from '@lucide/svelte';
+	import Cookies from 'js-cookie';
 
 	interface Props {
 		cartCount?: number;
@@ -17,6 +19,16 @@
 		const target = e.target as HTMLElement;
 		if (!target.closest('.category-dropdown')) {
 			categoryOpen = false;
+		}
+	}
+
+	function handleProfileClick() {
+		const loggedIn = !!Cookies.get('loggedIn');
+
+		if (loggedIn) {
+			goto(resolve('/profile'));
+		} else {
+			goto(resolve('/login'));
 		}
 	}
 </script>
@@ -78,13 +90,13 @@
 
 		<!-- Right icons -->
 		<div class="hidden items-center gap-4 md:flex">
-			<a
-				href={resolve('/profile')}
+			<button
+				onclick={handleProfileClick}
 				aria-label="Account"
-				class="text-foreground transition-colors hover:text-primary"
+				class="text-foreground transition-colors hover:cursor-pointer hover:text-primary"
 			>
 				<User size={20} />
-			</a>
+			</button>
 			<button
 				aria-label="Cart ({cartCount} items)"
 				class="relative text-foreground transition-colors hover:text-primary"
