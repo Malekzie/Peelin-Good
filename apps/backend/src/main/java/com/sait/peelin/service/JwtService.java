@@ -19,13 +19,13 @@ import java.util.stream.Collectors;
 @Service
 public class JwtService {
 
-    @Value("${app.jwt.secret")
+    @Value("${app.jwt.secret}")
     private String secretKey;
 
     @Value("${app.jwt.expiration}")
     private long jwtExpiration;
 
-    @Value("${app.jwt.issuer")
+    @Value("${app.jwt.issuer}")
     private String issuer;
 
     public String generateToken(UserDetails userDetails) {
@@ -84,7 +84,7 @@ public class JwtService {
             JWSVerifier verifier = new MACVerifier(secretKey.getBytes(StandardCharsets.UTF_8));
 
             boolean signatureValid = signedJWT.verify(verifier);
-            boolean notExpired = !isTokenExpired(String.valueOf(signedJWT));
+            boolean notExpired = !isTokenExpired(token);
             boolean usernameMatches = extractUsername(token).equals(userDetails.getUsername());
 
             return signatureValid && notExpired && usernameMatches;
@@ -96,7 +96,8 @@ public class JwtService {
     public boolean isTokenExpired(String token) {
         try {
             SignedJWT signedJWT = SignedJWT.parse(token);
-            return isTokenExpired(String.valueOf(signedJWT));
+            Date expiration = signedJWT.getJWTClaimsSet().getExpirationTime();
+            return expiration == null || expiration.before(new Date());
         } catch (ParseException e) {
             return true;
         }
