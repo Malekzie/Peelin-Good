@@ -75,7 +75,7 @@
 							/>
 						</div>
 						<button
-							class="absolute right-1 bottom-1 rounded-full border border-stone-100 bg-white p-2.5 text-primary shadow-md"
+							class="absolute right-1 bottom-1 transform rounded-full border border-stone-100 bg-white p-2.5 text-primary shadow-md transition-all duration-300 ease-in-out hover:cursor-pointer hover:bg-primary hover:text-white hover:shadow-lg"
 						>
 							<span>Edit</span>
 						</button>
