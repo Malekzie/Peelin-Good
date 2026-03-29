@@ -78,9 +78,13 @@
 
 		<!-- Right icons -->
 		<div class="hidden items-center gap-4 md:flex">
-			<button aria-label="Account" class="text-foreground transition-colors hover:text-primary">
+			<a
+				href={resolve('/profile')}
+				aria-label="Account"
+				class="text-foreground transition-colors hover:text-primary"
+			>
 				<User size={20} />
-			</button>
+			</a>
 			<button
 				aria-label="Cart ({cartCount} items)"
 				class="relative text-foreground transition-colors hover:text-primary"
