@@ -106,7 +106,7 @@
 	<div class="mx-auto my-auto w-full max-w-md">
 		<header class="mb-6 text-center">
 			<h2 class="font-headline mb-3 text-4xl font-bold text-primary">Create Account</h2>
-			<p class="text-on-surface-variant font-medium">Start your artisanal experience.</p>
+			<!-- <p class="text-on-surface-variant font-medium">Start your artisanal experience.</p> -->
 		</header>
 
 		<div

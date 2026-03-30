@@ -83,8 +83,7 @@
 			</h2>
 
 			<p class="text-sm text-neutral-600">
-				Hand-kneaded, slow-proved, and crafted with care. Sign in to continue your daily bake
-				ritual.
+				Hand-kneaded, slow-proved, and crafted with care. Sign in to see our handmade baked goods.
 			</p>
 		</div>
 	</section>
