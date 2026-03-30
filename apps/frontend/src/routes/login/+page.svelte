@@ -48,7 +48,7 @@
 
 <main class="flex min-h-screen">
 	<!-- Left Pane -->
-	<section class="relative hidden items-center justify-center px-16 lg:flex lg:w-1/2">
+	<!-- <section class="relative hidden items-center justify-center px-16 lg:flex lg:w-1/2">
 		<img
 			alt="Fresh Bread Background"
 			class="absolute inset-0 h-full w-full object-cover"
@@ -68,6 +68,24 @@
 					Hand-kneaded, slow-proved, and crafted with artisanal precision.
 				</p>
 			</div>
+		</div>
+	</section> -->
+
+	<section class="relative hidden items-center justify-center bg-[#f6efe7] px-16 lg:flex lg:w-1/2">
+		<div class="absolute inset-0 bg-[radial-gradient(circle_at_top,#f3e2cf,transparent_60%)]"></div>
+
+		<!-- Content -->
+		<div class="relative z-10 max-w-md space-y-6 text-neutral-800">
+			<h1 class="text-5xl font-bold tracking-tight">Peelin' Good</h1>
+
+			<h2 class="text-2xl leading-snug font-semibold">
+				Fresh from our <span class="text-primary">hearth</span> to your home.
+			</h2>
+
+			<p class="text-sm text-neutral-600">
+				Hand-kneaded, slow-proved, and crafted with care. Sign in to continue your daily bake
+				ritual.
+			</p>
 		</div>
 	</section>
 
