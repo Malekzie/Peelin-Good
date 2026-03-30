@@ -94,7 +94,6 @@
 		<div class="w-full max-w-md space-y-8">
 			<!-- Mobile Branding -->
 			<div class="flex items-center gap-3 lg:hidden">
-				<span class="material-symbols-outlined text-4xl text-primary">bakery_dining</span>
 				<span class="text-2xl font-bold text-primary">Peelin' Good</span>
 			</div>
 
