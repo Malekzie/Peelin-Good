@@ -156,6 +156,14 @@ Make sure you have the following installed on your machine:
 
 ## Getting Started
 
+### Seeded role passwords (local/demo)
+
+Use the following default passwords for seeded accounts by role:
+
+- Customer: `Cust123!`
+- Employee: `Emp123!`
+- Admin: `Admin123!`
+
 ### Clone the Repository
 
 ```sh

@@ -1,7 +1,14 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { ShoppingCart, User, ChevronDown, Menu, X } from '@lucide/svelte';
-	import { cartCount } from '$lib/stores/cart';
+	import Cookies from 'js-cookie';
+
+	interface Props {
+		cartCount?: number;
+	}
+
+	let { cartCount = 0 }: Props = $props();
 
 	let menuOpen = $state(false);
 	let categoryOpen = $state(false);
@@ -12,6 +19,17 @@
 		const target = e.target as HTMLElement;
 		if (!target.closest('.category-dropdown')) {
 			categoryOpen = false;
+		}
+	}
+
+	// handles where to direct user when clicking profile based on if they are logged in or not
+	function handleProfileClick() {
+		const loggedIn = !!Cookies.get('loggedIn');
+
+		if (loggedIn) {
+			goto(resolve('/profile'));
+		} else {
+			goto(resolve('/login'));
 		}
 	}
 </script>
@@ -73,23 +91,26 @@
 
 		<!-- Right icons -->
 		<div class="hidden items-center gap-4 md:flex">
-			<button aria-label="Account" class="text-foreground transition-colors hover:text-primary">
+			<button
+				onclick={handleProfileClick}
+				aria-label="Account"
+				class="text-foreground transition-colors hover:cursor-pointer hover:text-primary"
+			>
 				<User size={20} />
 			</button>
-			<a
-				href={resolve('/cart')}
-				aria-label="Cart ({$cartCount} items)"
+			<button
+				aria-label="Cart ({cartCount} items)"
 				class="relative text-foreground transition-colors hover:text-primary"
 			>
 				<ShoppingCart size={20} />
-				{#if $cartCount > 0}
+				{#if cartCount > 0}
 					<span
 						class="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground"
 					>
-						{$cartCount}
+						{cartCount}
 					</span>
 				{/if}
-			</a>
+			</button>
 		</div>
 
 		<!-- Mobile hamburger -->
@@ -120,23 +141,24 @@
 			<!-- <a href="/about" class="text-sm text-foreground hover:text-primary">About</a> -->
 			<!-- <a href="/order" class="text-sm text-foreground hover:text-primary">Order</a> -->
 			<div class="flex gap-4 pt-2">
-				<button aria-label="Account" class="text-foreground hover:text-primary"
-					><User size={20} /></button
+				<button
+					onclick={handleProfileClick}
+					aria-label="Account"
+					class="text-foreground hover:text-primary"><User size={20} /></button
 				>
-				<a
-					href={resolve('/cart')}
-					aria-label="Cart ({$cartCount} items)"
+				<button
+					aria-label="Cart ({cartCount} items)"
 					class="relative text-foreground hover:text-primary"
 				>
 					<ShoppingCart size={20} />
-					{#if $cartCount > 0}
+					{#if cartCount > 0}
 						<span
 							class="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground"
 						>
-							{$cartCount}
+							{cartCount}
 						</span>
 					{/if}
-				</a>
+				</button>
 			</div>
 		</div>
 	{/if}

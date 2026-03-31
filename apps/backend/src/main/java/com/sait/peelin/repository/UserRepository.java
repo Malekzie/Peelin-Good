@@ -2,10 +2,12 @@ package com.sait.peelin.repository;
 
 import com.sait.peelin.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 import java.util.UUID;
 
+@Repository("coreUserRepository")
 public interface UserRepository extends JpaRepository<User, UUID> {
     Optional<User> findByUsername(String username);
     Optional<User> findByUserEmail(String userEmail);

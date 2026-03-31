@@ -23,12 +23,13 @@ spring:
     access-key: ${DO_SPACES_KEY:}
     secret-key: ${DO_SPACES_SECRET:}
     base_url: ${DO_SPACES_BASE_URL:}
+    prefix: ${DO_SPACES_PREFIX:customers}
 
 management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health
   endpoint:
     health:
       probes:

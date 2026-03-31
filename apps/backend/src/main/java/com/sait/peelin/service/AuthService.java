@@ -1,6 +1,7 @@
 package com.sait.peelin.service;
 
 import com.sait.peelin.dto.v1.auth.AuthResponse;
+import com.sait.peelin.dto.v1.auth.ChangePasswordRequest;
 import com.sait.peelin.dto.v1.auth.LoginRequest;
 import com.sait.peelin.dto.v1.auth.RegisterRequest;
 import com.sait.peelin.model.Customer;
@@ -21,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.OffsetDateTime;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -32,16 +34,22 @@ public class AuthService {
     private final CustomerRepository customerRepository;
     private final RewardTierRepository rewardTierRepository;
     private final PasswordEncoder passwordEncoder;
+    private final CurrentUserService currentUserService;
 
     public AuthResponse login(LoginRequest request) {
+        String principal = Optional.ofNullable(request.getUsername())
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .orElse(request.getEmail().trim());
+
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
-                        request.getUsername(),
+                        principal,
                         request.getPassword()
                 )
         );
 
-        User user = userRepository.findByUsernameOrUserEmail(request.getUsername(), request.getEmail()).orElseThrow();
+        User user = userRepository.findByUsernameOrUserEmail(principal, request.getEmail()).orElseThrow();
 
         UserDetails userDetails = org.springframework.security.core.userdetails.User
                 .withUsername(user.getUsername())
@@ -51,7 +59,12 @@ public class AuthService {
 
         String token = jwtService.generateToken(userDetails);
 
-        return new AuthResponse(token, user.getUsername(), user.getUserRole().name());
+        AuthResponse res = new AuthResponse();
+        res.setToken(token);
+        res.setUsername(user.getUsername());
+        res.setRole(user.getUserRole().name());
+        res.setUserId(user.getUserId());
+        return res;
     }
 
     @Transactional
@@ -69,6 +82,7 @@ public class AuthService {
         user.setUserPasswordHash(passwordEncoder.encode(request.getPassword()));
         user.setUserRole(UserRole.customer);
         user.setUserCreatedAt(OffsetDateTime.now());
+        user.setPhotoApprovalPending(false);
         userRepository.save(user);
 
         RewardTier lowestTier = rewardTierRepository.findFirstByOrderByRewardTierMinPointsAsc()
@@ -82,7 +96,6 @@ public class AuthService {
         customer.setCustomerPhone(request.getPhone());
         customer.setCustomerEmail(request.getEmail());
         customer.setCustomerRewardBalance(0);
-        customer.setPhotoApprovalPending(false);
         customerRepository.save(customer);
 
         UserDetails userDetails = org.springframework.security.core.userdetails.User
@@ -93,6 +106,24 @@ public class AuthService {
 
         String token = jwtService.generateToken(userDetails);
 
-        return new AuthResponse(token, user.getUsername(), user.getUserRole().name());
+        AuthResponse res = new AuthResponse();
+        res.setToken(token);
+        res.setUsername(user.getUsername());
+        res.setRole(user.getUserRole().name());
+        res.setUserId(user.getUserId());
+        return res;
+    }
+
+    @Transactional
+    public void changePassword(ChangePasswordRequest request) {
+        User u = currentUserService.requireUser();
+        if (!passwordEncoder.matches(request.getCurrentPassword(), u.getUserPasswordHash())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Current password is incorrect");
+        }
+        if (passwordEncoder.matches(request.getNewPassword(), u.getUserPasswordHash())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "New password must differ from your current password");
+        }
+        u.setUserPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(u);
     }
 }

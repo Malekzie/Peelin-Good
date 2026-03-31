@@ -11,13 +11,9 @@ import java.util.UUID;
 @Table(name = "reward")
 public class Reward {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "reward_id", nullable = false)
-    private Integer id;
-
-    @NotNull
-    @Column(name = "uuid", nullable = false, unique = true, insertable = false, updatable = false)
-    private UUID uuid;
+    @GeneratedValue
+    @Column(name = "reward_id", nullable = false, updatable = false)
+    private UUID id;
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
@@ -38,20 +34,12 @@ public class Reward {
     @Column(name = "reward_transaction_date", nullable = false)
     private OffsetDateTime rewardTransactionDate;
 
-    public Integer getId() {
+    public UUID getId() {
         return id;
     }
 
-    public void setId(Integer id) {
+    public void setId(UUID id) {
         this.id = id;
-    }
-
-    public UUID getUuid() {
-        return uuid;
-    }
-
-    public void setUuid(UUID uuid) {
-        this.uuid = uuid;
     }
 
     public Customer getCustomer() {
