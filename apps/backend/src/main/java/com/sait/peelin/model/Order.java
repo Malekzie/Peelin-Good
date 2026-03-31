@@ -24,13 +24,9 @@ import java.util.UUID;
         columnNames = {"order_number"})})
 public class Order {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "order_id", nullable = false)
-    private Integer id;
-
-    @NotNull
-    @Column(name = "uuid", nullable = false, unique = true, insertable = false, updatable = false)
-    private UUID uuid;
+    @GeneratedValue
+    @Column(name = "order_id", nullable = false, updatable = false)
+    private UUID id;
 
     @Size(max = 20)
     @NotNull
@@ -99,20 +95,12 @@ public class Order {
     @Column(name = "order_status", nullable = false)
     private OrderStatus orderStatus;
 
-    public Integer getId() {
+    public UUID getId() {
         return id;
     }
 
-    public void setId(Integer id) {
+    public void setId(UUID id) {
         this.id = id;
-    }
-
-    public UUID getUuid() {
-        return uuid;
-    }
-
-    public void setUuid(UUID uuid) {
-        this.uuid = uuid;
     }
 
     public String getOrderNumber() {

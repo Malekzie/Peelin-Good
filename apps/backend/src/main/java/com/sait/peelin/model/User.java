@@ -45,6 +45,11 @@ public class User {
     @Column(name = "user_created_at", nullable = false)
     private OffsetDateTime userCreatedAt;
 
+    @NotNull
+    @ColumnDefault("true")
+    @Column(name = "is_active", nullable = false)
+    private Boolean active;
+
     public UUID getUserId() {
         return userId;
     }
@@ -91,5 +96,13 @@ public class User {
 
     public void setUserCreatedAt(OffsetDateTime userCreatedAt) {
         this.userCreatedAt = userCreatedAt;
+    }
+
+    public Boolean getActive() {
+        return active;
+    }
+
+    public void setActive(Boolean active) {
+        this.active = active;
     }
 }

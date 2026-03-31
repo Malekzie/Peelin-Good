@@ -11,13 +11,9 @@ import java.util.UUID;
 @Table(name = "employee")
 public class Employee {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "employee_id", nullable = false)
-    private Integer id;
-
-    @NotNull
-    @Column(name = "uuid", nullable = false, unique = true, insertable = false, updatable = false)
-    private UUID uuid;
+    @GeneratedValue
+    @Column(name = "employee_id", nullable = false, updatable = false)
+    private UUID id;
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
@@ -76,20 +72,12 @@ public class Employee {
     @Column(name = "photo_approval_pending", nullable = false)
     private Boolean photoApprovalPending;
 
-    public Integer getId() {
+    public UUID getId() {
         return id;
     }
 
-    public void setId(Integer id) {
+    public void setId(UUID id) {
         this.id = id;
-    }
-
-    public UUID getUuid() {
-        return uuid;
-    }
-
-    public void setUuid(UUID uuid) {
-        this.uuid = uuid;
     }
 
     public User getUser() {

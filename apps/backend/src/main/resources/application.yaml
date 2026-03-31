@@ -12,6 +12,8 @@ app:
     secret: ${JWT_SECRET:dev-secret-key-for-local-development-only-32b}
     expiration: ${JWT_EXPIRATION:864000000}
     issuer: ${JWT_ISSUER:peelin-good}
+  cors:
+    allowed-origins: ${APP_CORS_ORIGINS:http://localhost:3000,http://localhost:8080,http://10.0.2.2:8080}
 
 # OAuth2 skeleton — uncomment and supply credentials to enable
 # spring:
