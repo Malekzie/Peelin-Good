@@ -1,6 +1,8 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { ShoppingCart, User, ChevronDown, Menu, X } from '@lucide/svelte';
+	import Cookies from 'js-cookie';
 
 	interface Props {
 		cartCount?: number;
@@ -17,6 +19,17 @@
 		const target = e.target as HTMLElement;
 		if (!target.closest('.category-dropdown')) {
 			categoryOpen = false;
+		}
+	}
+
+	// handles where to direct user when clicking profile based on if they are logged in or not
+	function handleProfileClick() {
+		const loggedIn = !!Cookies.get('loggedIn');
+
+		if (loggedIn) {
+			goto(resolve('/profile'));
+		} else {
+			goto(resolve('/login'));
 		}
 	}
 </script>
@@ -78,7 +91,11 @@
 
 		<!-- Right icons -->
 		<div class="hidden items-center gap-4 md:flex">
-			<button aria-label="Account" class="text-foreground transition-colors hover:text-primary">
+			<button
+				onclick={handleProfileClick}
+				aria-label="Account"
+				class="text-foreground transition-colors hover:cursor-pointer hover:text-primary"
+			>
 				<User size={20} />
 			</button>
 			<button
@@ -124,8 +141,10 @@
 			<!-- <a href="/about" class="text-sm text-foreground hover:text-primary">About</a> -->
 			<!-- <a href="/order" class="text-sm text-foreground hover:text-primary">Order</a> -->
 			<div class="flex gap-4 pt-2">
-				<button aria-label="Account" class="text-foreground hover:text-primary"
-					><User size={20} /></button
+				<button
+					onclick={handleProfileClick}
+					aria-label="Account"
+					class="text-foreground hover:text-primary"><User size={20} /></button
 				>
 				<button
 					aria-label="Cart ({cartCount} items)"
