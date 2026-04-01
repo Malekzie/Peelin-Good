@@ -20,7 +20,12 @@ public class CurrentUserService {
         if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getPrincipal())) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication required");
         }
-        return userRepository.findByUsername(auth.getName())
+        String name = auth.getName();
+        if (name == null || name.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found");
+        }
+        String trimmed = name.trim();
+        return userRepository.findByUsernameIgnoreCaseOrUserEmailIgnoreCase(trimmed, trimmed)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
     }
 }

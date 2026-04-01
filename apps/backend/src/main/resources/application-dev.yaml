@@ -3,6 +3,11 @@ spring:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/peelin}
     username: ${SPRING_DATASOURCE_USERNAME:peelin}
     password: ${SPRING_DATASOURCE_PASSWORD:peelin}
+    # Small DO tiers have very few connections for non-superuser roles; keep pool tiny so Flyway + JPA can start.
+    hikari:
+      maximum-pool-size: 2
+      minimum-idle: 0
+      connection-timeout: 60000
   jpa:
     hibernate:
       ddl-auto: none
