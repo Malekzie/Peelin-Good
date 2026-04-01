@@ -32,6 +32,10 @@
 			goto(resolve('/login'));
 		}
 	}
+
+	function handleMenuClick() {
+		goto(resolve('/menu'));
+	}
 </script>
 
 <svelte:window onclick={handleClickOutside} />
@@ -40,7 +44,7 @@
 	<div class="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
 		<!-- Logo -->
 		<a href={resolve('/')} class="font-serif text-xl font-bold tracking-tight text-foreground">
-			Peelin' Good
+			<img src="/images/Peelin' Good.png" alt="Peelin' Good Logo" class="mr-1 inline h-10 w-15" />
 		</a>
 
 		<!-- Desktop Nav -->
@@ -50,33 +54,10 @@
 				<button
 					class="flex items-center gap-1 text-sm font-medium text-foreground transition-colors hover:text-primary"
 					aria-expanded={categoryOpen}
-					onclick={(e) => {
-						e.stopPropagation();
-						categoryOpen = !categoryOpen;
-					}}
+					onclick={handleMenuClick}
 				>
 					Menu
-					<ChevronDown
-						size={14}
-						class={categoryOpen ? 'rotate-180 transition-transform' : 'transition-transform'}
-					/>
 				</button>
-
-				{#if categoryOpen}
-					<div
-						class="absolute top-full left-0 mt-2 w-40 rounded-lg border border-border bg-background py-1 shadow-lg"
-					>
-						{#each categories as cat (cat)}
-							<a
-								href={resolve(`/menu/${cat.toLowerCase()}`)}
-								class="block px-4 py-2 text-sm text-foreground transition-colors hover:bg-muted hover:text-primary"
-								onclick={() => (categoryOpen = false)}
-							>
-								{cat}
-							</a>
-						{/each}
-					</div>
-				{/if}
 			</div>
 
 			<a
