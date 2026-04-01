@@ -16,7 +16,10 @@
 	</div>
 
 	<nav class="mt-4 flex-1 space-y-1">
-		<a class="flex items-center gap-3 rounded-full bg-[#703210] px-4 py-2.5 text-white" href="#">
+		<a
+			class="flex items-center gap-3 rounded-full bg-[#703210] px-4 py-2.5 text-white"
+			href="/profile"
+		>
 			<span>Profile</span>
 		</a>
 		<a

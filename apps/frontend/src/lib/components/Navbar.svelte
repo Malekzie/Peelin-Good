@@ -9,7 +9,7 @@
 	}
 
 	let { cartCount = 0 }: Props = $props();
-
+	const loggedIn = !!Cookies.get('loggedIn');
 	let menuOpen = $state(false);
 	let categoryOpen = $state(false);
 
@@ -24,8 +24,6 @@
 
 	// handles where to direct user when clicking profile based on if they are logged in or not
 	function handleProfileClick() {
-		const loggedIn = !!Cookies.get('loggedIn');
-
 		if (loggedIn) {
 			goto(resolve('/profile'));
 		} else {
@@ -49,8 +47,8 @@
 
 		<!-- Desktop Nav -->
 		<div class="hidden items-center gap-8 md:flex">
-			<!-- Menu dropdown -->
-			<div class="category-dropdown relative">
+			<!-- Menu -->
+			<div class="relative">
 				<button
 					class="flex items-center gap-1 text-sm font-medium text-foreground transition-colors hover:cursor-pointer hover:text-primary"
 					aria-expanded={categoryOpen}
@@ -64,6 +62,13 @@
 				href={resolve('/about')}
 				class="text-sm font-medium text-foreground transition-colors hover:text-primary">About</a
 			>
+			<!-- show order if user is logged in -->
+			{#if loggedIn}
+				<a
+					href={resolve('/order')}
+					class="text-sm font-medium text-foreground transition-colors hover:text-primary">Order</a
+				>
+			{/if}
 		</div>
 
 		<!-- Right icons -->
@@ -108,14 +113,13 @@
 	{#if menuOpen}
 		<div class="flex flex-col gap-4 border-t border-border bg-background px-6 py-4 md:hidden">
 			<p class="text-xs font-semibold tracking-widest text-muted-foreground uppercase">Menu</p>
-			{#each categories as cat (cat)}
-				<a
-					href={resolve(`/menu/${cat.toLowerCase()}`)}
-					class="text-sm text-foreground hover:text-primary">{cat}</a
-				>
-			{/each}
+
 			<hr class="border-border" />
 			<a href="/about" class="text-sm text-foreground hover:text-primary">About</a>
+			<!-- show order if user is logged in -->
+			{#if loggedIn}
+				<a href={resolve('/order')} class="text-sm text-foreground hover:text-primary">Order</a>
+			{/if}
 			<div class="flex gap-4 pt-2">
 				<button
 					onclick={handleProfileClick}

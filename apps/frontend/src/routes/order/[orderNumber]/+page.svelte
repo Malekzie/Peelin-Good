@@ -71,28 +71,29 @@
 <main class="mx-auto max-w-2xl px-6 py-16">
 	<div class="mb-8 flex items-center justify-between">
 		<h1 class="font-serif text-3xl font-bold text-foreground">Order Tracking</h1>
-		<button
-			class="text-sm text-primary hover:underline"
-			onclick={fetchOrder}
-		>
-			Refresh
-		</button>
+		<button class="text-sm text-primary hover:underline" onclick={fetchOrder}> Refresh </button>
 	</div>
 
 	{#if loading}
 		<p class="text-center text-muted-foreground">Loading order…</p>
 	{:else if error}
-		<div class="rounded-xl border border-destructive bg-destructive/10 p-6 text-center text-destructive">
+		<div
+			class="rounded-xl border border-destructive bg-destructive/10 p-6 text-center text-destructive"
+		>
 			<p>{error}</p>
 		</div>
 	{:else if order}
 		<div class="mb-6 rounded-xl border border-border bg-card p-6 shadow-sm">
-			<div class="flex items-center justify-between mb-4">
+			<div class="mb-4 flex items-center justify-between">
 				<div>
-					<p class="text-xs font-semibold tracking-widest text-muted-foreground uppercase">Order Number</p>
+					<p class="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
+						Order Number
+					</p>
 					<p class="font-semibold text-foreground">#{order.orderNumber}</p>
 				</div>
-				<span class="rounded-full bg-muted px-3 py-1 text-xs font-semibold text-foreground capitalize">
+				<span
+					class="rounded-full bg-muted px-3 py-1 text-xs font-semibold text-foreground capitalize"
+				>
 					{statusLabel(order.orderStatus)}
 				</span>
 			</div>
@@ -101,7 +102,7 @@
 				<div class="flex items-center gap-0 overflow-x-auto pb-2">
 					{#each STATUS_STEPS as step, i}
 						{@const active = i <= statusIndex(order.orderStatus)}
-						<div class="flex flex-col items-center flex-shrink-0">
+						<div class="flex flex-shrink-0 flex-col items-center">
 							<div
 								class="flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold transition-colors {active
 									? 'bg-primary text-primary-foreground'
@@ -109,13 +110,14 @@
 							>
 								{i + 1}
 							</div>
-							<p class="mt-1 text-[10px] text-center text-muted-foreground w-16 leading-tight">
+							<p class="mt-1 w-16 text-center text-[10px] leading-tight text-muted-foreground">
 								{statusLabel(step)}
 							</p>
 						</div>
 						{#if i < STATUS_STEPS.length - 1}
 							<div
-								class="h-0.5 flex-1 min-w-4 mb-5 transition-colors {i < statusIndex(order.orderStatus)
+								class="mb-5 h-0.5 min-w-4 flex-1 transition-colors {i <
+								statusIndex(order.orderStatus)
 									? 'bg-primary'
 									: 'bg-border'}"
 							></div>
@@ -123,23 +125,31 @@
 					{/each}
 				</div>
 			{:else}
-				<p class="text-sm font-semibold text-destructive capitalize">{statusLabel(order.orderStatus)}</p>
+				<p class="text-sm font-semibold text-destructive capitalize">
+					{statusLabel(order.orderStatus)}
+				</p>
 			{/if}
 		</div>
 
-		<div class="rounded-xl border border-border bg-card p-6 shadow-sm flex flex-col gap-3">
-			<h2 class="font-semibold text-foreground mb-2">Order Details</h2>
+		<div class="flex flex-col gap-3 rounded-xl border border-border bg-card p-6 shadow-sm">
+			<h2 class="mb-2 font-semibold text-foreground">Order Details</h2>
 			<div class="grid grid-cols-2 gap-3 text-sm">
 				<div>
-					<p class="text-xs font-semibold tracking-widest text-muted-foreground uppercase mb-1">Method</p>
+					<p class="mb-1 text-xs font-semibold tracking-widest text-muted-foreground uppercase">
+						Method
+					</p>
 					<p class="text-foreground capitalize">{order.orderMethod}</p>
 				</div>
 				<div>
-					<p class="text-xs font-semibold tracking-widest text-muted-foreground uppercase mb-1">Payment</p>
+					<p class="mb-1 text-xs font-semibold tracking-widest text-muted-foreground uppercase">
+						Payment
+					</p>
 					<p class="text-foreground capitalize">{order.paymentStatus}</p>
 				</div>
 				<div class="col-span-2">
-					<p class="text-xs font-semibold tracking-widest text-muted-foreground uppercase mb-1">Placed</p>
+					<p class="mb-1 text-xs font-semibold tracking-widest text-muted-foreground uppercase">
+						Placed
+					</p>
 					<p class="text-foreground">{new Date(order.orderPlacedDatetime).toLocaleString()}</p>
 				</div>
 			</div>
