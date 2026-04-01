@@ -82,8 +82,14 @@ public class CustomerService {
     public void approvePhoto(UUID id) {
         Customer c = customerRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Customer not found"));
         if (c.getUser() != null) {
-            c.getUser().setPhotoApprovalPending(false);
-            userRepository.save(c.getUser());
+            int updated = userRepository.updateProfilePhotoState(
+                    c.getUser().getUserId(),
+                    c.getUser().getProfilePhotoPath(),
+                    false
+            );
+            if (updated != 1) {
+                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to approve photo");
+            }
         }
         customerRepository.save(c);
     }
@@ -92,9 +98,10 @@ public class CustomerService {
     public void rejectPhoto(UUID id) {
         Customer c = customerRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Customer not found"));
         if (c.getUser() != null) {
-            c.getUser().setProfilePhotoPath(null);
-            c.getUser().setPhotoApprovalPending(false);
-            userRepository.save(c.getUser());
+            int updated = userRepository.updateProfilePhotoState(c.getUser().getUserId(), null, false);
+            if (updated != 1) {
+                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to reject photo");
+            }
         }
         customerRepository.save(c);
     }
@@ -117,10 +124,13 @@ public class CustomerService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No customer profile"));
 
         String uploadedUrl = profilePhotoStorageService.uploadCustomerProfilePhoto(u.getUserId(), photo);
+        int updated = userRepository.updateProfilePhotoState(u.getUserId(), uploadedUrl, true);
+        if (updated != 1) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to persist profile photo");
+        }
+        // Keep the current persistence-context object in sync for this request's DTO mapping.
         u.setProfilePhotoPath(uploadedUrl);
         u.setPhotoApprovalPending(true);
-
-        userRepository.save(u);
         customerRepository.save(c);
         return toDto(c);
     }

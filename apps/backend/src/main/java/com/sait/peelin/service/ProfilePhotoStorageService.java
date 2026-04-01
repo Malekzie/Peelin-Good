@@ -6,6 +6,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -18,6 +20,7 @@ import java.util.UUID;
 
 @Service
 public class ProfilePhotoStorageService {
+    private static final Logger log = LoggerFactory.getLogger(ProfilePhotoStorageService.class);
 
     private final String endpoint;
     private final String bucket;
@@ -72,7 +75,10 @@ public class ProfilePhotoStorageService {
 
             return baseUrl.replaceAll("/+$", "") + "/" + key;
         } catch (Exception e) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to upload profile photo");
+            log.error("Profile photo upload failed for user {} to bucket {} via endpoint {}",
+                    userId, bucket, endpoint, e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Failed to upload profile photo: " + e.getMessage());
         }
     }
 

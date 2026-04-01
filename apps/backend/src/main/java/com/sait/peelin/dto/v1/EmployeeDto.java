@@ -13,6 +13,7 @@ public record EmployeeDto(
         String phone,
         String workEmail,
         Integer addressId,
+        AddressDto address,
         String profilePhotoPath,
         boolean photoApprovalPending
 ) {}

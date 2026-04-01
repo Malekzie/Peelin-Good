@@ -2,6 +2,9 @@ package com.sait.peelin.repository;
 
 import com.sait.peelin.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
@@ -18,4 +21,17 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     boolean existsByUsername(String username);
     boolean existsByUserEmail(String userEmail);
+
+    @Modifying
+    @Query(value = """
+            UPDATE "user"
+            SET profile_photo_path = :photoPath,
+                photo_approval_pending = :pending
+            WHERE user_id = :userId
+            """, nativeQuery = true)
+    int updateProfilePhotoState(
+            @Param("userId") UUID userId,
+            @Param("photoPath") String photoPath,
+            @Param("pending") boolean pending
+    );
 }
