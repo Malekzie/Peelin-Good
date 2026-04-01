@@ -98,8 +98,17 @@ public class AuthService {
         customer.setUser(user);
         customer.setRewardTier(lowestTier);
         customer.setCustomerFirstName(request.getFirstName());
+        String mi = request.getMiddleInitial() != null ? request.getMiddleInitial().trim() : null;
+        if (mi != null && mi.isEmpty()) {
+            mi = null;
+        }
+        customer.setCustomerMiddleInitial(mi);
         customer.setCustomerLastName(request.getLastName());
         customer.setCustomerPhone(request.getPhone());
+        String businessPhone = request.getBusinessPhone();
+        if (businessPhone != null && !businessPhone.isBlank()) {
+            customer.setCustomerBusinessPhone(businessPhone.trim());
+        }
         customer.setCustomerEmail(request.getEmail());
         customer.setCustomerRewardBalance(0);
         customerRepository.save(customer);

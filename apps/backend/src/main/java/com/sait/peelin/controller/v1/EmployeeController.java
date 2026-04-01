@@ -4,6 +4,7 @@ import com.sait.peelin.dto.v1.EmployeeDto;
 import com.sait.peelin.dto.v1.EmployeePatchRequest;
 import com.sait.peelin.service.EmployeeProfileService;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -25,7 +26,7 @@ public class EmployeeController {
     }
 
     @PatchMapping("/me")
-    public EmployeeDto patchMe(@RequestBody EmployeePatchRequest req) {
+    public EmployeeDto patchMe(@Valid @RequestBody EmployeePatchRequest req) {
         return employeeProfileService.patchMe(req);
     }
 

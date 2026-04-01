@@ -59,7 +59,7 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"username\": \"new.customer\",\n  \"email\": \"new.customer@example.com\",\n  \"password\": \"Cust123!\",\n  \"firstName\": \"New\",\n  \"lastName\": \"Customer\",\n  \"phone\": \"4035551234\"\n}"
+              "raw": "{\n  \"username\": \"new.customer\",\n  \"email\": \"new.customer@example.com\",\n  \"password\": \"Cust123!\",\n  \"firstName\": \"New\",\n  \"middleInitial\": \"M\",\n  \"lastName\": \"Customer\",\n  \"phone\": \"4035551234\",\n  \"businessPhone\": \"4035559999\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/auth/register",

@@ -1,12 +1,17 @@
 package com.sait.peelin.dto.v1;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 @Data
 public class CustomerPatchRequest {
     private Integer rewardBalance;
     private String firstName;
+
+    @Size(max = 1)
+    @Pattern(regexp = "^$|^[A-Za-z]$", message = "Middle initial must be a single letter")
     private String middleInitial;
     private String lastName;
     private String phone;
