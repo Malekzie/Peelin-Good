@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;
@@ -37,13 +39,28 @@ public class User {
 
     @NotNull
     @Enumerated(EnumType.STRING)
-    @Column(name = "user_role", nullable = false)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "user_role", nullable = false, columnDefinition = "user_role")
     private UserRole userRole;
 
     @NotNull
     @ColumnDefault("now()")
     @Column(name = "user_created_at", nullable = false)
     private OffsetDateTime userCreatedAt;
+
+    @NotNull
+    @ColumnDefault("true")
+    @Column(name = "is_active", nullable = false)
+    private Boolean active;
+
+    @Size(max = 500)
+    @Column(name = "profile_photo_path", length = 500)
+    private String profilePhotoPath;
+
+    @NotNull
+    @ColumnDefault("false")
+    @Column(name = "photo_approval_pending", nullable = false)
+    private Boolean photoApprovalPending;
 
     public UUID getUserId() {
         return userId;
@@ -91,5 +108,29 @@ public class User {
 
     public void setUserCreatedAt(OffsetDateTime userCreatedAt) {
         this.userCreatedAt = userCreatedAt;
+    }
+
+    public Boolean getActive() {
+        return active;
+    }
+
+    public void setActive(Boolean active) {
+        this.active = active;
+    }
+
+    public String getProfilePhotoPath() {
+        return profilePhotoPath;
+    }
+
+    public void setProfilePhotoPath(String profilePhotoPath) {
+        this.profilePhotoPath = profilePhotoPath;
+    }
+
+    public Boolean getPhotoApprovalPending() {
+        return photoApprovalPending;
+    }
+
+    public void setPhotoApprovalPending(Boolean photoApprovalPending) {
+        this.photoApprovalPending = photoApprovalPending;
     }
 }

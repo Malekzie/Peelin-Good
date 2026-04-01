@@ -3,6 +3,8 @@ package com.sait.peelin.dto.v1.auth;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.UUID;
+
 public class AuthResponse {
 
     @Getter
@@ -17,11 +19,16 @@ public class AuthResponse {
     @Setter
     private String role;
 
+    @Getter
+    @Setter
+    private UUID userId;
+
     public AuthResponse() {}
 
-    public AuthResponse(String token, String username, String role) {
+    public AuthResponse(String token, String username, String role, UUID userId) {
         this.token = token;
         this.username = username;
         this.role = role;
+        this.userId = userId;
     }
 }
