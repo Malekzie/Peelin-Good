@@ -125,7 +125,7 @@
 							bind:value={fields.firstName}
 							on:blur={() => handleBlur('firstName')}
 							on:input={() => handleInput('firstName')}
-							class="bg-surface-container-highest w-full rounded-xl px-6 py-4 font-medium transition
+							class="bg-surface-container-highest mt-1 w-full rounded-xl px-6 py-3 font-medium ring-1 ring-border transition
 								{errors.firstName && touched.firstName ? 'ring-2 ring-red-400' : ''}"
 						/>
 						{#if errors.firstName && touched.firstName}
@@ -140,7 +140,7 @@
 							bind:value={fields.lastName}
 							on:blur={() => handleBlur('lastName')}
 							on:input={() => handleInput('lastName')}
-							class="bg-surface-container-highest w-full rounded-xl px-6 py-4 font-medium transition
+							class="bg-surface-container-highest mt-1 w-full rounded-xl px-6 py-3 font-medium ring-1 ring-border transition
 								{errors.lastName && touched.lastName ? 'ring-2 ring-red-400' : ''}"
 						/>
 						{#if errors.lastName && touched.lastName}
@@ -158,7 +158,7 @@
 						bind:value={fields.email}
 						on:blur={() => handleBlur('email')}
 						on:input={() => handleInput('email')}
-						class="bg-surface-container-highest w-full rounded-xl px-6 py-4 font-medium transition
+						class="bg-surface-container-highest mt-1 w-full rounded-xl px-6 py-3 font-medium ring-1 ring-border transition
 							{errors.email && touched.email ? 'ring-2 ring-red-400' : ''}"
 					/>
 					{#if errors.email && touched.email}
@@ -175,7 +175,7 @@
 						bind:value={fields.username}
 						on:blur={() => handleBlur('username')}
 						on:input={() => handleInput('username')}
-						class="bg-surface-container-highest w-full rounded-xl px-6 py-4 font-medium transition
+						class="bg-surface-container-highest mt-1 w-full rounded-xl px-6 py-3 font-medium ring-1 ring-border transition
 							{errors.username && touched.username ? 'ring-2 ring-red-400' : ''}"
 					/>
 					{#if errors.username && touched.username}
@@ -192,7 +192,7 @@
 						bind:value={fields.password}
 						on:blur={() => handleBlur('password')}
 						on:input={() => handleInput('password')}
-						class="bg-surface-container-highest w-full rounded-xl px-6 py-4 font-medium transition
+						class="bg-surface-container-highest mt-1 w-full rounded-xl px-6 py-3 font-medium ring-1 ring-border transition
 							{errors.password && touched.password ? 'ring-2 ring-red-400' : ''}"
 					/>
 					{#if errors.password && touched.password}
@@ -212,7 +212,7 @@
 							handleInput('phone');
 						}}
 						on:blur={() => handleBlur('phone')}
-						class="bg-surface-container-highest w-full rounded-xl px-6 py-4 font-medium transition
+						class="bg-surface-container-highest mt-1 w-full rounded-xl px-6 py-3 font-medium ring-1 ring-border transition
 							{errors.phone && touched.phone ? 'ring-2 ring-red-400' : ''}"
 					/>
 					{#if errors.phone && touched.phone}

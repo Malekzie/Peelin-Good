@@ -164,12 +164,12 @@
 	<!-- Main content -->
 	<div class="flex-1">
 		<!-- Search -->
-		<div class="m-6">
+		<div class="m-6 flex justify-center">
 			<input
 				type="text"
 				placeholder="Search breads, pastries, cakes..."
 				bind:value={searchQuery}
-				class="bg-surface-container w-full max-w-md rounded-full px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
+				class="bg-surface-container w-full max-w-2xl rounded-full px-4 py-2 text-sm ring-1 ring-border transition outline-none focus:ring-2 focus:ring-primary"
 			/>
 		</div>
 

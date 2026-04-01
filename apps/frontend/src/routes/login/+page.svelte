@@ -48,29 +48,6 @@
 
 <main class="flex min-h-screen">
 	<!-- Left Pane -->
-	<!-- <section class="relative hidden items-center justify-center px-16 lg:flex lg:w-1/2">
-		<img
-			alt="Fresh Bread Background"
-			class="absolute inset-0 h-full w-full object-cover"
-			src="/images/bread_background.png"
-		/>
-		<div class="absolute inset-0 bg-gradient-to-r from-black/40 via-black/5 to-transparent"></div>
-		<div class="absolute -bottom-20 -left-20 h-72 w-72 rounded-full bg-primary/20 blur-3xl"></div>
-		<div class="relative z-10 w-full max-w-xl space-y-8 self-start pt-30 text-white">
-			<div class="flex items-center gap-4">
-				<h1 class="text-7xl font-bold tracking-tight drop-shadow-lg">Peelin' Good</h1>
-			</div>
-			<div class="space-y-4">
-				<h2 class="text-4xl leading-tight font-extrabold">
-					Fresh from our <span class="text-primary">hearth</span> to your home.
-				</h2>
-				<p class="max-w-md text-base text-white/80">
-					Hand-kneaded, slow-proved, and crafted with artisanal precision.
-				</p>
-			</div>
-		</div>
-	</section> -->
-
 	<section class="relative hidden items-center justify-center bg-[#f6efe7] px-16 lg:flex lg:w-1/2">
 		<div class="absolute inset-0 bg-[radial-gradient(circle_at_top,#f3e2cf,transparent_60%)]"></div>
 
