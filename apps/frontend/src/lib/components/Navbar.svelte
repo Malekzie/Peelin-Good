@@ -2,14 +2,13 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { ShoppingCart, User, ChevronDown, Menu, X } from '@lucide/svelte';
-	import Cookies from 'js-cookie';
+	import { isLoggedIn } from '$lib/stores/authStore';
 
 	interface Props {
 		cartCount?: number;
 	}
 
 	let { cartCount = 0 }: Props = $props();
-	const loggedIn = !!Cookies.get('loggedIn');
 	let menuOpen = $state(false);
 	let categoryOpen = $state(false);
 
@@ -24,7 +23,7 @@
 
 	// handles where to direct user when clicking profile based on if they are logged in or not
 	function handleProfileClick() {
-		if (loggedIn) {
+		if ($isLoggedIn) {
 			goto(resolve('/profile'));
 		} else {
 			goto(resolve('/login'));
@@ -63,7 +62,7 @@
 				class="text-sm font-medium text-foreground transition-colors hover:text-primary">About</a
 			>
 			<!-- show order if user is logged in -->
-			{#if loggedIn}
+			{#if $isLoggedIn}
 				<a
 					href={resolve('/order')}
 					class="text-sm font-medium text-foreground transition-colors hover:text-primary">Order</a
@@ -117,7 +116,7 @@
 			<hr class="border-border" />
 			<a href="/about" class="text-sm text-foreground hover:text-primary">About</a>
 			<!-- show order if user is logged in -->
-			{#if loggedIn}
+			{#if $isLoggedIn}
 				<a href={resolve('/order')} class="text-sm text-foreground hover:text-primary">Order</a>
 			{/if}
 			<div class="flex gap-4 pt-2">
