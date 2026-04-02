@@ -34,7 +34,22 @@ public class ProductService {
         } else {
             products = productRepository.findAll();
         }
-        return products.stream().map(p -> CatalogMapper.product(p, productTagRepository)).toList();
+
+        if (products.isEmpty()) {
+            return List.of();
+        }
+
+        java.util.Map<Integer, List<Integer>> tagsByProduct = productTagRepository
+                .findByProduct_IdIn(products.stream().map(com.sait.peelin.model.Product::getId).toList())
+                .stream()
+                .collect(java.util.stream.Collectors.groupingBy(
+                        pt -> pt.getProduct().getId(),
+                        java.util.stream.Collectors.mapping(pt -> pt.getTag().getId(), java.util.stream.Collectors.toList())
+                ));
+
+        return products.stream()
+                .map(p -> CatalogMapper.product(p, tagsByProduct.getOrDefault(p.getId(), List.of())))
+                .toList();
     }
 
     public ProductDto get(Integer id) {

@@ -54,8 +54,8 @@ public class AuthService {
                 )
         );
 
-        User user = userRepository.findByUsernameOrUserEmail(principal, principal)
-                .orElseGet(() -> userRepository.findByUsernameOrUserEmail(principal, email).orElseThrow());
+        User user = userRepository.findByUsernameIgnoreCaseOrUserEmailIgnoreCase(principal, principal)
+                .orElseThrow();
 
         UserDetails userDetails = org.springframework.security.core.userdetails.User
                 .withUsername(user.getUsername())
@@ -88,6 +88,7 @@ public class AuthService {
         user.setUserPasswordHash(passwordEncoder.encode(request.getPassword()));
         user.setUserRole(UserRole.customer);
         user.setUserCreatedAt(OffsetDateTime.now());
+        user.setActive(true);
         user.setPhotoApprovalPending(false);
         userRepository.save(user);
 

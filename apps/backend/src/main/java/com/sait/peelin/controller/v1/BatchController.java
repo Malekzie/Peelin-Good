@@ -4,6 +4,7 @@ import com.sait.peelin.dto.v1.BatchDto;
 import com.sait.peelin.service.BatchQueryService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -16,6 +17,7 @@ public class BatchController {
 
     private final BatchQueryService batchQueryService;
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
     @GetMapping("/bakeries/{bakeryId}/batches")
     public List<BatchDto> byBakery(
             @PathVariable Integer bakeryId,
@@ -24,6 +26,7 @@ public class BatchController {
         return batchQueryService.byBakery(bakeryId, activeOnly);
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
     @GetMapping("/products/{productId}/batches")
     public List<BatchDto> byProduct(@PathVariable Integer productId) {
         return batchQueryService.byProduct(productId);
