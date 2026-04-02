@@ -65,6 +65,7 @@ public class BakeryService {
         b.setStatus(req.getStatus() != null ? req.getStatus() : BakeryStatus.open);
         b.setLatitude(req.getLatitude());
         b.setLongitude(req.getLongitude());
+        applyBakeryImageUrl(b, req.getBakeryImageUrl());
         return CatalogMapper.bakery(bakeryRepository.save(b));
     }
 
@@ -81,7 +82,16 @@ public class BakeryService {
         }
         b.setLatitude(req.getLatitude());
         b.setLongitude(req.getLongitude());
+        applyBakeryImageUrl(b, req.getBakeryImageUrl());
         return CatalogMapper.bakery(bakeryRepository.save(b));
+    }
+
+    private void applyBakeryImageUrl(Bakery b, String url) {
+        if (url == null) {
+            return;
+        }
+        String t = url.trim();
+        b.setBakeryImageUrl(t.isEmpty() ? null : t);
     }
 
     @Transactional
