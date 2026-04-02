@@ -42,7 +42,7 @@ class BakeryControllerTest {
 
     @Test
     void list_ShouldReturnOk() throws Exception {
-        BakeryDto dto = new BakeryDto(1, "Bakery 1", "123", "email", null, null, null, null);
+        BakeryDto dto = new BakeryDto(1, "Bakery 1", "123", "email", null, null, null, null, null);
         when(bakeryService.list(null)).thenReturn(List.of(dto));
 
         mockMvc.perform(get("/api/v1/bakeries"))
@@ -54,7 +54,7 @@ class BakeryControllerTest {
 
     @Test
     void get_ShouldReturnOk() throws Exception {
-        BakeryDto dto = new BakeryDto(1, "Bakery 1", "123", "email", null, null, null, null);
+        BakeryDto dto = new BakeryDto(1, "Bakery 1", "123", "email", null, null, null, null, null);
         when(bakeryService.get(1)).thenReturn(dto);
 
         mockMvc.perform(get("/api/v1/bakeries/1"))
