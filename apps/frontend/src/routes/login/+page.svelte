@@ -1,4 +1,6 @@
 <script>
+	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import { loginUser } from '$lib/services/auth.js';
 
 	let email = '';
@@ -12,7 +14,7 @@
 
 	function validateEmail(value) {
 		if (!value.trim()) return 'Email is required.';
-		if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return 'Enter a valid email address.';
+		if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value)) return 'Enter a valid email address.';
 		return '';
 	}
 
@@ -33,7 +35,7 @@
 
 		if (emailError || passwordError) return;
 
-		const { ok, data } = await loginUser(email, password);
+		const { ok } = await loginUser(email, password);
 
 		if (!ok) {
 			emailError = 'Invalid email or password.';
@@ -41,36 +43,12 @@
 			return;
 		}
 
-		// localStorage.setItem('token', data.token);
-		window.location.href = '/dashboard';
+		goto(resolve('/profile'));
 	}
 </script>
 
 <main class="flex min-h-screen">
 	<!-- Left Pane -->
-	<!-- <section class="relative hidden items-center justify-center px-16 lg:flex lg:w-1/2">
-		<img
-			alt="Fresh Bread Background"
-			class="absolute inset-0 h-full w-full object-cover"
-			src="/images/bread_background.png"
-		/>
-		<div class="absolute inset-0 bg-gradient-to-r from-black/40 via-black/5 to-transparent"></div>
-		<div class="absolute -bottom-20 -left-20 h-72 w-72 rounded-full bg-primary/20 blur-3xl"></div>
-		<div class="relative z-10 w-full max-w-xl space-y-8 self-start pt-30 text-white">
-			<div class="flex items-center gap-4">
-				<h1 class="text-7xl font-bold tracking-tight drop-shadow-lg">Peelin' Good</h1>
-			</div>
-			<div class="space-y-4">
-				<h2 class="text-4xl leading-tight font-extrabold">
-					Fresh from our <span class="text-primary">hearth</span> to your home.
-				</h2>
-				<p class="max-w-md text-base text-white/80">
-					Hand-kneaded, slow-proved, and crafted with artisanal precision.
-				</p>
-			</div>
-		</div>
-	</section> -->
-
 	<section class="relative hidden items-center justify-center bg-[#f6efe7] px-16 lg:flex lg:w-1/2">
 		<div class="absolute inset-0 bg-[radial-gradient(circle_at_top,#f3e2cf,transparent_60%)]"></div>
 
@@ -127,7 +105,7 @@
 
 			<!-- Form Card -->
 			<div class="bg-surface-container rounded-2xl border border-border p-6 shadow-sm">
-				<form class="space-y-6" on:submit={handleSignIn}>
+				<form class="space-y-6" onsubmit={handleSignIn}>
 					<!-- Email -->
 					<div class="space-y-2">
 						<label class="block text-xs font-semibold tracking-wide text-primary uppercase">
@@ -139,7 +117,7 @@
 							type="email"
 							placeholder="you@example.com"
 							bind:value={email}
-							on:input={() => {
+							oninput={() => {
 								if (emailTouched) emailError = validateEmail(email);
 							}}
 						/>
@@ -154,7 +132,10 @@
 							<label class="block text-xs font-semibold tracking-wide text-primary uppercase">
 								Password
 							</label>
-							<a class="text-xs text-primary hover:underline" href="#">Forgot?</a>
+							<a
+								class="text-xs text-primary hover:underline"
+								href={resolve('/login/recover-password')}>Forgot?</a
+							>
 						</div>
 						<input
 							class="input w-full rounded-md border border-border p-3 transition focus:border-primary focus:ring-2 focus:ring-primary/40 focus:outline-none
@@ -162,7 +143,7 @@
 							type="password"
 							placeholder="••••••••"
 							bind:value={password}
-							on:input={() => {
+							oninput={() => {
 								if (passwordTouched) passwordError = validatePassword(password);
 							}}
 						/>
@@ -190,7 +171,9 @@
 					<!-- Signup -->
 					<p class="text-center text-sm">
 						No account?
-						<a href="/register" class="font-semibold text-primary hover:underline">Sign up</a>
+						<a href={resolve('/register')} class="font-semibold text-primary hover:underline"
+							>Sign up</a
+						>
 					</p>
 				</form>
 			</div>

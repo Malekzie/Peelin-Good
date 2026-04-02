@@ -47,12 +47,14 @@
 	{#if loading}
 		<p class="text-center text-muted-foreground">Loading your order…</p>
 	{:else if error}
-		<div class="rounded-xl border border-destructive bg-destructive/10 p-6 text-center text-destructive">
+		<div
+			class="rounded-xl border border-destructive bg-destructive/10 p-6 text-center text-destructive"
+		>
 			<p>{error}</p>
 			<a href={resolve('/')} class="mt-4 inline-block text-primary hover:underline">Return home</a>
 		</div>
 	{:else if order}
-		<div class="flex flex-col items-center gap-2 text-center mb-10">
+		<div class="mb-10 flex flex-col items-center gap-2 text-center">
 			<span class="text-5xl">🎉</span>
 			<h1 class="font-serif text-4xl font-bold text-foreground">Order Confirmed!</h1>
 			<p class="text-muted-foreground">
@@ -60,22 +62,32 @@
 			</p>
 		</div>
 
-		<div class="rounded-xl border border-border bg-card p-6 shadow-sm flex flex-col gap-4">
+		<div class="flex flex-col gap-4 rounded-xl border border-border bg-card p-6 shadow-sm">
 			<div class="grid grid-cols-2 gap-4 text-sm">
 				<div>
-					<p class="text-xs font-semibold tracking-widest text-muted-foreground uppercase mb-1">Status</p>
-					<p class="font-medium text-foreground capitalize">{order.orderStatus.replace('_', ' ')}</p>
+					<p class="mb-1 text-xs font-semibold tracking-widest text-muted-foreground uppercase">
+						Status
+					</p>
+					<p class="font-medium text-foreground capitalize">
+						{order.orderStatus.replace('_', ' ')}
+					</p>
 				</div>
 				<div>
-					<p class="text-xs font-semibold tracking-widest text-muted-foreground uppercase mb-1">Method</p>
+					<p class="mb-1 text-xs font-semibold tracking-widest text-muted-foreground uppercase">
+						Method
+					</p>
 					<p class="font-medium text-foreground capitalize">{order.orderMethod}</p>
 				</div>
 				<div>
-					<p class="text-xs font-semibold tracking-widest text-muted-foreground uppercase mb-1">Payment</p>
+					<p class="mb-1 text-xs font-semibold tracking-widest text-muted-foreground uppercase">
+						Payment
+					</p>
 					<p class="font-medium text-foreground capitalize">{order.paymentStatus}</p>
 				</div>
 				<div>
-					<p class="text-xs font-semibold tracking-widest text-muted-foreground uppercase mb-1">Placed</p>
+					<p class="mb-1 text-xs font-semibold tracking-widest text-muted-foreground uppercase">
+						Placed
+					</p>
 					<p class="font-medium text-foreground">
 						{new Date(order.orderPlacedDatetime).toLocaleString()}
 					</p>

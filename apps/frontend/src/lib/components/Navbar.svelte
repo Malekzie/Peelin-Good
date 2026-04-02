@@ -1,19 +1,16 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
-	import { ShoppingCart, User, ChevronDown, Menu, X } from '@lucide/svelte';
-	import Cookies from 'js-cookie';
+	import { ShoppingCart, User, Menu, X } from '@lucide/svelte';
+	import { isLoggedIn } from '$lib/stores/authStore';
 
 	interface Props {
 		cartCount?: number;
 	}
 
 	let { cartCount = 0 }: Props = $props();
-
 	let menuOpen = $state(false);
 	let categoryOpen = $state(false);
-
-	const categories = ['Breads', 'Pastries', 'Cakes', 'Seasonal'];
 
 	function handleClickOutside(e: MouseEvent) {
 		const target = e.target as HTMLElement;
@@ -24,13 +21,15 @@
 
 	// handles where to direct user when clicking profile based on if they are logged in or not
 	function handleProfileClick() {
-		const loggedIn = !!Cookies.get('loggedIn');
-
-		if (loggedIn) {
+		if ($isLoggedIn) {
 			goto(resolve('/profile'));
 		} else {
 			goto(resolve('/login'));
 		}
+	}
+
+	function handleMenuClick() {
+		goto(resolve('/menu'));
 	}
 </script>
 
@@ -40,53 +39,33 @@
 	<div class="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
 		<!-- Logo -->
 		<a href={resolve('/')} class="font-serif text-xl font-bold tracking-tight text-foreground">
-			Peelin' Good
+			<img src="/images/Peelin' Good.png" alt="Peelin' Good Logo" class="mr-1 inline h-10 w-15" />
 		</a>
 
 		<!-- Desktop Nav -->
 		<div class="hidden items-center gap-8 md:flex">
-			<!-- Menu dropdown -->
-			<div class="category-dropdown relative">
+			<!-- Menu -->
+			<div class="relative">
 				<button
-					class="flex items-center gap-1 text-sm font-medium text-foreground transition-colors hover:text-primary"
+					class="flex items-center gap-1 text-sm font-medium text-foreground transition-colors hover:cursor-pointer hover:text-primary"
 					aria-expanded={categoryOpen}
-					onclick={(e) => {
-						e.stopPropagation();
-						categoryOpen = !categoryOpen;
-					}}
+					onclick={handleMenuClick}
 				>
 					Menu
-					<ChevronDown
-						size={14}
-						class={categoryOpen ? 'rotate-180 transition-transform' : 'transition-transform'}
-					/>
 				</button>
-
-				{#if categoryOpen}
-					<div
-						class="absolute top-full left-0 mt-2 w-40 rounded-lg border border-border bg-background py-1 shadow-lg"
-					>
-						{#each categories as cat (cat)}
-							<a
-								href={resolve(`/menu/${cat.toLowerCase()}`)}
-								class="block px-4 py-2 text-sm text-foreground transition-colors hover:bg-muted hover:text-primary"
-								onclick={() => (categoryOpen = false)}
-							>
-								{cat}
-							</a>
-						{/each}
-					</div>
-				{/if}
 			</div>
 
 			<a
 				href={resolve('/about')}
 				class="text-sm font-medium text-foreground transition-colors hover:text-primary">About</a
 			>
-			<a
-				href={resolve('/order')}
-				class="text-sm font-medium text-foreground transition-colors hover:text-primary">Order</a
-			>
+			<!-- show order if user is logged in -->
+			{#if $isLoggedIn}
+				<a
+					href={resolve('/order')}
+					class="text-sm font-medium text-foreground transition-colors hover:text-primary">Order</a
+				>
+			{/if}
 		</div>
 
 		<!-- Right icons -->
@@ -131,15 +110,13 @@
 	{#if menuOpen}
 		<div class="flex flex-col gap-4 border-t border-border bg-background px-6 py-4 md:hidden">
 			<p class="text-xs font-semibold tracking-widest text-muted-foreground uppercase">Menu</p>
-			{#each categories as cat (cat)}
-				<a
-					href={resolve(`/menu/${cat.toLowerCase()}`)}
-					class="text-sm text-foreground hover:text-primary">{cat}</a
-				>
-			{/each}
+
 			<hr class="border-border" />
-			<!-- <a href="/about" class="text-sm text-foreground hover:text-primary">About</a> -->
-			<!-- <a href="/order" class="text-sm text-foreground hover:text-primary">Order</a> -->
+			<a href={resolve('/about')} class="text-sm text-foreground hover:text-primary">About</a>
+			<!-- show order if user is logged in -->
+			{#if $isLoggedIn}
+				<a href={resolve('/order')} class="text-sm text-foreground hover:text-primary">Order</a>
+			{/if}
 			<div class="flex gap-4 pt-2">
 				<button
 					onclick={handleProfileClick}

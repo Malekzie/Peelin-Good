@@ -1,27 +1,49 @@
-const BASE_URL = 'http://localhost:8080/api/auth';
+import { setAuth } from '$lib/stores/authStore.js';
 
-// function to register a new user and return a response
-export async function registerUser(fields) {
-	const response = await fetch(`${BASE_URL}/register`, {
-		method: 'POST',
-		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify(fields)
-	});
+const API_BASE = 'http://localhost:8080/api/v1/auth';
 
-	const data = await response.json();
+// Log in with email and password, returns {ok: boolean, message?: string}
+export async function loginUser(email, password) {
+	try {
+		const res = await fetch(`${API_BASE}/login`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ email, password })
+		});
 
-	return { ok: response.ok, status: response.status, data };
+		if (!res.ok) {
+			// Spring returns 401 for bad credentials
+			return { ok: false, message: 'Invalid email or password.' };
+		}
+
+		const data = await res.json();
+
+		// saves to store + localStorage
+		setAuth(data);
+		return { ok: true };
+	} catch {
+		return { ok: false, message: 'Could not reach the server. Try again later.' };
+	}
 }
 
-// function to log in a user and return a response
-export async function loginUser(email, password) {
-	const response = await fetch(`${BASE_URL}/login`, {
-		method: 'POST',
-		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify({ email, password })
-	});
+// registers a new user
+export async function registerUser(payload) {
+	try {
+		const res = await fetch(`${API_BASE}/register`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify(payload)
+		});
 
-	const data = await response.json();
+		if (!res.ok) {
+			const err = await res.json().catch(() => ({}));
+			return { ok: false, message: err.message ?? 'Registration failed.' };
+		}
 
-	return { ok: response.ok, status: response.status, data };
+		const data = await res.json();
+		setAuth(data);
+		return { ok: true };
+	} catch {
+		return { ok: false, message: 'Could not reach the server. Try again later.' };
+	}
 }

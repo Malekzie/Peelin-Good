@@ -90,6 +90,7 @@ public class AuthService {
         user.setUserCreatedAt(OffsetDateTime.now());
         user.setActive(true);
         user.setPhotoApprovalPending(false);
+        user.setActive(true);
         userRepository.save(user);
 
         RewardTier lowestTier = rewardTierRepository.findFirstByOrderByRewardTierMinPointsAsc()

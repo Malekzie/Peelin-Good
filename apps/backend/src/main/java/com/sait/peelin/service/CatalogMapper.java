@@ -62,6 +62,7 @@ public final class CatalogMapper {
                 b.getStatus(),
                 b.getLatitude(),
                 b.getLongitude(),
+                b.getBakeryImageUrl(),
                 address(b.getAddress())
         );
     }

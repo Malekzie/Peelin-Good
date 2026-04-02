@@ -5,7 +5,7 @@
 </script>
 
 <main class="mx-auto max-w-4xl px-6 py-16">
-	<h1 class="font-serif text-4xl font-bold text-foreground mb-10">Your Cart</h1>
+	<h1 class="mb-10 font-serif text-4xl font-bold text-foreground">Your Cart</h1>
 
 	{#if $cart.items.length === 0}
 		<div class="flex flex-col items-center gap-6 py-20 text-center">
@@ -21,14 +21,12 @@
 	{:else}
 		<div class="flex flex-col gap-4">
 			{#each $cart.items as item (item.productId)}
-				<div
-					class="flex items-center gap-4 rounded-xl border border-border bg-card p-4 shadow-sm"
-				>
+				<div class="flex items-center gap-4 rounded-xl border border-border bg-card p-4 shadow-sm">
 					{#if item.productImageUrl}
 						<img
 							src={item.productImageUrl}
 							alt={item.productName}
-							class="h-20 w-20 rounded-lg object-cover flex-shrink-0"
+							class="h-20 w-20 flex-shrink-0 rounded-lg object-cover"
 						/>
 					{:else}
 						<div
@@ -38,8 +36,8 @@
 						</div>
 					{/if}
 
-					<div class="flex-1 min-w-0">
-						<p class="font-semibold text-foreground truncate">{item.productName}</p>
+					<div class="min-w-0 flex-1">
+						<p class="truncate font-semibold text-foreground">{item.productName}</p>
 						<p class="text-sm text-muted-foreground">${item.unitPrice.toFixed(2)} each</p>
 					</div>
 
