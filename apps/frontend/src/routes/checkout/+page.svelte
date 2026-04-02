@@ -81,16 +81,21 @@
 </script>
 
 <main class="mx-auto max-w-2xl px-6 py-16">
-	<h1 class="font-serif text-4xl font-bold text-foreground mb-10">Checkout</h1>
+	<h1 class="mb-10 font-serif text-4xl font-bold text-foreground">Checkout</h1>
 
 	{#if $cart.items.length === 0}
 		<div class="rounded-xl border border-border bg-card p-8 text-center text-muted-foreground">
 			<p>Your cart is empty.</p>
-			<a href={resolve('/')} class="mt-4 inline-block text-primary hover:underline">Go back to the menu</a>
+			<a href={resolve('/')} class="mt-4 inline-block text-primary hover:underline"
+				>Go back to the menu</a
+			>
 		</div>
 	{:else}
 		<form
-			onsubmit={(e) => { e.preventDefault(); submit(); }}
+			onsubmit={(e) => {
+				e.preventDefault();
+				submit();
+			}}
 			class="flex flex-col gap-8"
 		>
 			<!-- Contact -->
@@ -98,23 +103,27 @@
 				<h2 class="mb-4 text-lg font-semibold text-foreground">Contact</h2>
 				<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
 					<div class="flex flex-col gap-1">
-						<label for="guestName" class="text-sm font-medium text-foreground">Name <span class="text-destructive">*</span></label>
+						<label for="guestName" class="text-sm font-medium text-foreground"
+							>Name <span class="text-destructive">*</span></label
+						>
 						<input
 							id="guestName"
 							type="text"
 							bind:value={guestName}
 							required
-							class="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+							class="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:ring-2 focus:ring-ring focus:outline-none"
 						/>
 					</div>
 					<div class="flex flex-col gap-1">
-						<label for="guestEmail" class="text-sm font-medium text-foreground">Email <span class="text-destructive">*</span></label>
+						<label for="guestEmail" class="text-sm font-medium text-foreground"
+							>Email <span class="text-destructive">*</span></label
+						>
 						<input
 							id="guestEmail"
 							type="email"
 							bind:value={guestEmail}
 							required
-							class="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+							class="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:ring-2 focus:ring-ring focus:outline-none"
 						/>
 					</div>
 					<div class="flex flex-col gap-1 sm:col-span-2">
@@ -123,7 +132,7 @@
 							id="guestPhone"
 							type="tel"
 							bind:value={guestPhone}
-							class="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+							class="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:ring-2 focus:ring-ring focus:outline-none"
 						/>
 					</div>
 				</div>
@@ -146,24 +155,61 @@
 				{#if orderMethod === 'delivery'}
 					<div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
 						<div class="flex flex-col gap-1 sm:col-span-2">
-							<label for="line1" class="text-sm font-medium text-foreground">Address Line 1 <span class="text-destructive">*</span></label>
-							<input id="line1" type="text" bind:value={line1} required class="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
+							<label for="line1" class="text-sm font-medium text-foreground"
+								>Address Line 1 <span class="text-destructive">*</span></label
+							>
+							<input
+								id="line1"
+								type="text"
+								bind:value={line1}
+								required
+								class="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:ring-2 focus:ring-ring focus:outline-none"
+							/>
 						</div>
 						<div class="flex flex-col gap-1 sm:col-span-2">
 							<label for="line2" class="text-sm font-medium text-foreground">Address Line 2</label>
-							<input id="line2" type="text" bind:value={line2} class="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
+							<input
+								id="line2"
+								type="text"
+								bind:value={line2}
+								class="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:ring-2 focus:ring-ring focus:outline-none"
+							/>
 						</div>
 						<div class="flex flex-col gap-1">
-							<label for="city" class="text-sm font-medium text-foreground">City <span class="text-destructive">*</span></label>
-							<input id="city" type="text" bind:value={city} required class="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
+							<label for="city" class="text-sm font-medium text-foreground"
+								>City <span class="text-destructive">*</span></label
+							>
+							<input
+								id="city"
+								type="text"
+								bind:value={city}
+								required
+								class="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:ring-2 focus:ring-ring focus:outline-none"
+							/>
 						</div>
 						<div class="flex flex-col gap-1">
-							<label for="province" class="text-sm font-medium text-foreground">Province <span class="text-destructive">*</span></label>
-							<input id="province" type="text" bind:value={province} required class="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
+							<label for="province" class="text-sm font-medium text-foreground"
+								>Province <span class="text-destructive">*</span></label
+							>
+							<input
+								id="province"
+								type="text"
+								bind:value={province}
+								required
+								class="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:ring-2 focus:ring-ring focus:outline-none"
+							/>
 						</div>
 						<div class="flex flex-col gap-1">
-							<label for="postalCode" class="text-sm font-medium text-foreground">Postal Code <span class="text-destructive">*</span></label>
-							<input id="postalCode" type="text" bind:value={postalCode} required class="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
+							<label for="postalCode" class="text-sm font-medium text-foreground"
+								>Postal Code <span class="text-destructive">*</span></label
+							>
+							<input
+								id="postalCode"
+								type="text"
+								bind:value={postalCode}
+								required
+								class="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:ring-2 focus:ring-ring focus:outline-none"
+							/>
 						</div>
 					</div>
 				{/if}
@@ -174,7 +220,12 @@
 				<h2 class="mb-4 text-lg font-semibold text-foreground">Payment</h2>
 				<div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
 					{#each [['cash', 'Cash'], ['credit_card', 'Credit Card'], ['debit_card', 'Debit Card'], ['online', 'Online']] as [val, label]}
-						<label class="flex cursor-pointer items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm transition-colors hover:bg-muted {paymentMethod === val ? 'border-primary bg-muted' : ''}">
+						<label
+							class="flex cursor-pointer items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm transition-colors hover:bg-muted {paymentMethod ===
+							val
+								? 'border-primary bg-muted'
+								: ''}"
+						>
 							<input type="radio" bind:group={paymentMethod} value={val} class="accent-primary" />
 							{label}
 						</label>
@@ -189,7 +240,7 @@
 					bind:value={orderComment}
 					rows={3}
 					placeholder="Allergies, special requests…"
-					class="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+					class="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:ring-2 focus:ring-ring focus:outline-none"
 				></textarea>
 			</section>
 
@@ -197,7 +248,7 @@
 			<section class="rounded-xl border border-border bg-card p-6 shadow-sm">
 				<h2 class="mb-4 text-lg font-semibold text-foreground">Summary</h2>
 				{#each $cart.items as item (item.productId)}
-					<div class="flex justify-between text-sm text-muted-foreground py-1">
+					<div class="flex justify-between py-1 text-sm text-muted-foreground">
 						<span>{item.productName} × {item.quantity}</span>
 						<span>${item.lineTotal.toFixed(2)}</span>
 					</div>
@@ -209,14 +260,16 @@
 						<span>−${$cart.discount.toFixed(2)}</span>
 					</div>
 				{/if}
-				<div class="flex justify-between font-bold text-foreground mt-1">
+				<div class="mt-1 flex justify-between font-bold text-foreground">
 					<span>Total</span>
 					<span>${$cart.total.toFixed(2)}</span>
 				</div>
 			</section>
 
 			{#if error}
-				<p class="rounded-lg border border-destructive bg-destructive/10 px-4 py-3 text-sm text-destructive">
+				<p
+					class="rounded-lg border border-destructive bg-destructive/10 px-4 py-3 text-sm text-destructive"
+				>
 					{error}
 				</p>
 			{/if}
