@@ -43,4 +43,23 @@ public class RegisterRequest {
     /** Optional; stored on customer when provided. */
     @Size(max = 20)
     private String businessPhone;
+
+    @NotBlank
+    @Size(max = 120)
+    private String addressLine1;
+
+    @Size(max = 120)
+    private String addressLine2;
+
+    @NotBlank
+    @Size(max = 120)
+    private String city;
+
+    @NotBlank
+    @Size(max = 80)
+    private String province;
+
+    @NotBlank
+    @Size(max = 10)
+    private String postalCode;
 }

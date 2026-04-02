@@ -25,7 +25,7 @@ public class BakeryUpsertRequest {
     private BakeryStatus status;
     private BigDecimal latitude;
     private BigDecimal longitude;
-    /** Optional; full URL to location image in Spaces (e.g. …/locations/…). */
+    /** Optional full URL to image in Spaces (e.g. CDN …/locations/…). */
     @Size(max = 2048)
     private String bakeryImageUrl;
     @NotNull

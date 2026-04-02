@@ -47,4 +47,9 @@ public class OrderController {
     public OrderDto markDelivered(@PathVariable UUID id, @RequestBody(required = false) OrderDeliveredPatchRequest req) {
         return orderService.markDelivered(id, req != null ? req : new OrderDeliveredPatchRequest());
     }
+
+    @PatchMapping("/{id}/accept-delivery")
+    public OrderDto acceptDelivery(@PathVariable UUID id) {
+        return orderService.acceptDelivery(id);
+    }
 }

@@ -30,8 +30,8 @@ public class Payment {
 
     @NotNull
     @Enumerated(EnumType.STRING)
-    @JdbcTypeCode(SqlTypes.VARCHAR)
-    @Column(name = "payment_method", nullable = false)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "payment_method", nullable = false, columnDefinition = "payment_method")
     private PaymentMethod paymentMethod;
 
     @Size(max = 100)
@@ -41,8 +41,8 @@ public class Payment {
     @NotNull
     @ColumnDefault("'pending'")
     @Enumerated(EnumType.STRING)
-    @JdbcTypeCode(SqlTypes.VARCHAR)
-    @Column(name = "payment_status", nullable = false)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "payment_status", nullable = false, columnDefinition = "payment_status")
     private PaymentStatus paymentStatus;
 
     @Column(name = "payment_paid_at")

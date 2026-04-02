@@ -6,6 +6,8 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
+import java.util.UUID;
+
 @Data
 public class ReviewCreateRequest {
     @NotNull
@@ -14,4 +16,5 @@ public class ReviewCreateRequest {
     private Short rating;
     @Size(max = 2000)
     private String comment;
+    private UUID orderId;
 }
