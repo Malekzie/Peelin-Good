@@ -1,10 +1,7 @@
 spring:
   data:
     redis:
-      url: ${UPSTASH_REDIS_REST_URL}
-      password: ${UPSTASH_REDIS_REST_TOKEN}
-      ssl:
-        enabled: true
+      url: ${UPSTASH_REDIS_URL}
   application:
     name: Peelin' Good
   config:

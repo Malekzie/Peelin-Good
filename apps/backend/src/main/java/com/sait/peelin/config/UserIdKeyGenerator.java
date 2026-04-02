@@ -16,6 +16,11 @@ public class UserIdKeyGenerator implements KeyGenerator {
         if (authentication == null || !authentication.isAuthenticated() || "anonymousUser".equals(authentication.getName())) {
             return "anonymous";
         }
-        return authentication.getName();
+        String userId = authentication.getName();
+        String roles = authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .sorted()
+                .collect(Collectors.joining(","));
+        return userId + ":role=" + roles;
     }
 }

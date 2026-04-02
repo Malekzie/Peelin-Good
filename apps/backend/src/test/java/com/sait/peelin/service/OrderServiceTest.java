@@ -80,6 +80,7 @@ class OrderServiceTest {
             Order o = invocation.getArgument(0);
             o.setId(UUID.randomUUID());
             when(orderRepository.findById(o.getId())).thenReturn(Optional.of(o));
+            when(orderItemRepository.findByOrder_Id(o.getId())).thenReturn(List.of());
             return o;
         });
 
@@ -139,6 +140,7 @@ class OrderServiceTest {
             Order o = invocation.getArgument(0);
             o.setId(UUID.randomUUID());
             when(orderRepository.findById(o.getId())).thenReturn(Optional.of(o));
+            when(orderItemRepository.findByOrder_Id(o.getId())).thenReturn(List.of());
             return o;
         });
 
