@@ -1,0 +1,57 @@
+package com.sait.peelin.controller.v1;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sait.peelin.dto.v1.CustomerDto;
+import com.sait.peelin.service.CustomerService;
+import com.sait.peelin.service.JwtService;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
+import org.springframework.boot.autoconfigure.security.servlet.SecurityFilterAutoConfiguration;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+
+import java.util.UUID;
+
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+@WebMvcTest(controllers = CustomerSelfController.class, excludeAutoConfiguration = {SecurityAutoConfiguration.class, SecurityFilterAutoConfiguration.class})
+@AutoConfigureMockMvc(addFilters = false)
+class CustomerSelfControllerTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockitoBean
+    private CustomerService customerService;
+
+    @MockitoBean
+    private JwtService jwtService;
+
+    @MockitoBean
+    private UserDetailsService userDetailsService;
+
+    @MockitoBean
+    private CorsConfigurationSource corsConfigurationSource;
+
+    @Test
+    void me_ShouldReturnOk() throws Exception {
+        CustomerDto dto = new CustomerDto(
+                UUID.randomUUID(), UUID.randomUUID(), "testuser", 1, "First", 
+                "M", "Last", "phone", "business", "email", 
+                0, null, null, null, false);
+        when(customerService.me()).thenReturn(dto);
+
+        mockMvc.perform(get("/api/v1/customers/me"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.firstName").value("First"))
+                .andExpect(jsonPath("$.lastName").value("Last"));
+    }
+}
