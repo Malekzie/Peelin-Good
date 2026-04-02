@@ -1,11 +1,13 @@
 spring:
+  data:
+    redis:
+      url: ${UPSTASH_REDIS_URL}
   application:
     name: Peelin' Good
   config:
     import: optional:file:.env.local[.properties]
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:dev}
-
   jpa:
     open-in-view: false
 

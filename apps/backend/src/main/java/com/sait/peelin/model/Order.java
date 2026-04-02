@@ -71,8 +71,8 @@ public class Order {
 
     @NotNull
     @Enumerated(EnumType.STRING)
-    @JdbcTypeCode(SqlTypes.VARCHAR)
-    @Column(name = "order_method", nullable = false)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "order_method", nullable = false, columnDefinition = "order_method")
     private OrderMethod orderMethod;
 
     @Size(max = 500)
@@ -89,10 +89,10 @@ public class Order {
     private BigDecimal orderDiscount;
 
     @NotNull
-    @ColumnDefault("'placed'")
+    @ColumnDefault("'pending_payment'")
     @Enumerated(EnumType.STRING)
-    @JdbcTypeCode(SqlTypes.VARCHAR)
-    @Column(name = "order_status", nullable = false)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "order_status", nullable = false, columnDefinition = "order_status")
     private OrderStatus orderStatus;
 
     public UUID getId() {

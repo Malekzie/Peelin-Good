@@ -5,6 +5,8 @@ import com.sait.peelin.exception.ResourceNotFoundException;
 import com.sait.peelin.model.*;
 import com.sait.peelin.repository.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,6 +35,7 @@ public class OrderService {
     private final CurrentUserService currentUserService;
 
     @Transactional(readOnly = true)
+    @Cacheable(value = "orders", keyGenerator = "userIdKeyGenerator")
     public List<OrderDto> listForCurrentUser() {
         User u = currentUserService.requireUser();
         return switch (u.getUserRole()) {
@@ -49,6 +52,7 @@ public class OrderService {
     }
 
     @Transactional(readOnly = true)
+    @Cacheable(value = "orders", key = "'order:' + #orderId + ':' + T(org.springframework.security.core.context.SecurityContextHolder).getContext().getAuthentication().getName()")
     public OrderDto get(UUID orderId) {
         Order o = orderRepository.findById(orderId).orElseThrow(() -> new ResourceNotFoundException("Order not found"));
         assertCanView(o);
@@ -56,6 +60,7 @@ public class OrderService {
     }
 
     @Transactional
+    @CacheEvict(value = "orders", allEntries = true)
     public OrderDto checkout(CheckoutRequest req) {
         User user = currentUserService.requireUser();
         Customer customer;
@@ -172,6 +177,7 @@ public class OrderService {
     }
 
     @Transactional
+    @CacheEvict(value = "orders", allEntries = true)
     public OrderDto updateStatus(UUID orderId, OrderStatusPatchRequest req) {
         User u = currentUserService.requireUser();
         if (u.getUserRole() != UserRole.admin && u.getUserRole() != UserRole.employee) {
@@ -189,6 +195,7 @@ public class OrderService {
     }
 
     @Transactional
+    @CacheEvict(value = "orders", allEntries = true)
     public OrderDto markDelivered(UUID orderId, OrderDeliveredPatchRequest req) {
         User u = currentUserService.requireUser();
         if (u.getUserRole() != UserRole.admin && u.getUserRole() != UserRole.employee) {

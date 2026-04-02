@@ -50,8 +50,8 @@ public class Review {
     @NotNull
     @ColumnDefault("'pending'")
     @Enumerated(EnumType.STRING)
-    @JdbcTypeCode(SqlTypes.VARCHAR)
-    @Column(name = "review_status", nullable = false)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "review_status", nullable = false, columnDefinition = "review_status")
     private ReviewStatus reviewStatus;
 
     @Column(name = "review_approval_date")

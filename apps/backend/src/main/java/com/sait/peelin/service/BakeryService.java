@@ -6,12 +6,13 @@ import com.sait.peelin.dto.v1.BakeryUpsertRequest;
 import com.sait.peelin.exception.ResourceNotFoundException;
 import com.sait.peelin.model.Address;
 import com.sait.peelin.model.Bakery;
-import com.sait.peelin.model.BakeryHour;
 import com.sait.peelin.model.BakeryStatus;
 import com.sait.peelin.repository.AddressRepository;
 import com.sait.peelin.repository.BakeryHourRepository;
 import com.sait.peelin.repository.BakeryRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -31,6 +32,7 @@ public class BakeryService {
      * Without this, the list/get endpoints fail with {@code LazyInitializationException} after {@code findAll()}.
      */
     @Transactional(readOnly = true)
+    @Cacheable(value = "bakeries", key = "'all:' + #search")
     public List<BakeryDto> list(String search) {
         List<Bakery> list = StringUtils.hasText(search)
                 ? bakeryRepository.findByBakeryNameContainingIgnoreCase(search.trim())
@@ -39,11 +41,14 @@ public class BakeryService {
     }
 
     @Transactional(readOnly = true)
+    @Cacheable(value = "bakeries", key = "#id")
     public BakeryDto get(Integer id) {
         Bakery b = bakeryRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Bakery not found"));
         return CatalogMapper.bakery(b);
     }
 
+    @Transactional(readOnly = true)
+    @Cacheable(value = "bakeries", key = "'hours:' + #bakeryId")
     public List<BakeryHourDto> hours(Integer bakeryId) {
         ensureBakery(bakeryId);
         return bakeryHourRepository.findByBakery_IdOrderByDayOfWeekAsc(bakeryId).stream()
@@ -52,6 +57,7 @@ public class BakeryService {
     }
 
     @Transactional
+    @CacheEvict(value = "bakeries", allEntries = true)
     public BakeryDto create(BakeryUpsertRequest req) {
         Address addr = new Address();
         CatalogMapper.copyAddress(req.getAddress(), addr);
@@ -70,6 +76,7 @@ public class BakeryService {
     }
 
     @Transactional
+    @CacheEvict(value = "bakeries", allEntries = true)
     public BakeryDto update(Integer id, BakeryUpsertRequest req) {
         Bakery b = bakeryRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Bakery not found"));
         CatalogMapper.copyAddress(req.getAddress(), b.getAddress());
@@ -95,6 +102,7 @@ public class BakeryService {
     }
 
     @Transactional
+    @CacheEvict(value = "bakeries", allEntries = true)
     public void delete(Integer id) {
         if (!bakeryRepository.existsById(id)) {
             throw new ResourceNotFoundException("Bakery not found");

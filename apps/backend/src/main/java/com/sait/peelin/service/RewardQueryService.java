@@ -8,6 +8,7 @@ import com.sait.peelin.model.UserRole;
 import com.sait.peelin.repository.CustomerRepository;
 import com.sait.peelin.repository.RewardRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,15 +38,19 @@ public class RewardQueryService {
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN);
             }
         }
+        return getCachedRewardsForCustomer(customerId);
+    }
+
+    @Cacheable(value = "rewards", key = "#customerId")
+    public List<RewardDto> getCachedRewardsForCustomer(UUID customerId) {
         return rewardRepository.findByCustomer_IdOrderByRewardTransactionDateDesc(customerId).stream()
                 .map(this::toDto)
                 .toList();
     }
-
-    @Transactional(readOnly = true)
     public List<RewardDto> listAll() {
         return rewardRepository.findAll().stream().map(this::toDto).toList();
     }
+
 
     private RewardDto toDto(Reward r) {
         return new RewardDto(
