@@ -1,5 +1,13 @@
 <script>
 	import { page } from '$app/stores';
+	import { goto } from '$app/navigation';
+	import { clearAuth } from '$lib/stores/authStore';
+	import { resolve } from '$app/paths';
+
+	function handleLogout() {
+		clearAuth();
+		goto(resolve('/'));
+	}
 </script>
 
 <aside
@@ -42,16 +50,15 @@
 		<a
 			// TODO add support link for customer service chat
 			href="#"
-			class="flex items-center space-x-3 rounded-full px-4 py-2 text-stone-500 hover:bg-[#8e4e14]/10"
+			class="flex w-full items-center space-x-3 rounded-full px-4 py-2 text-stone-500 hover:bg-[#8e4e14]/10"
 		>
 			<span>Support</span>
 		</a>
-		<a
-			// TODO add logout functionality
-			href="#"
-			class="flex items-center space-x-3 rounded-full px-4 py-2 text-stone-500 hover:bg-[#8e4e14]/10"
+		<button
+			onclick={handleLogout}
+			class="flex w-full items-center space-x-3 rounded-full px-4 py-2 text-stone-500 hover:cursor-pointer hover:bg-[#8e4e14]/10"
 		>
 			<span>Logout</span>
-		</a>
+		</button>
 	</div>
 </aside>
