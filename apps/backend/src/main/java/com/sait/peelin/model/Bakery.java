@@ -50,6 +50,10 @@ public class Bakery {
     @Column(name = "longitude", precision = 9, scale = 6)
     private BigDecimal longitude;
 
+    @Size(max = 2048)
+    @Column(name = "bakery_image_url", length = 2048)
+    private String bakeryImageUrl;
+
     public Integer getId() {
         return id;
     }
@@ -112,6 +116,14 @@ public class Bakery {
 
     public void setLongitude(BigDecimal longitude) {
         this.longitude = longitude;
+    }
+
+    public String getBakeryImageUrl() {
+        return bakeryImageUrl;
+    }
+
+    public void setBakeryImageUrl(String bakeryImageUrl) {
+        this.bakeryImageUrl = bakeryImageUrl;
     }
 
 }

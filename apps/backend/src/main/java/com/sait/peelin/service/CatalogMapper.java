@@ -40,6 +40,10 @@ public final class CatalogMapper {
         List<Integer> tagIds = productTagRepository.findByProduct_Id(p.getId()).stream()
                 .map(pt -> pt.getTag().getId())
                 .collect(Collectors.toList());
+        return product(p, tagIds);
+    }
+
+    public static ProductDto product(Product p, List<Integer> tagIds) {
         return new ProductDto(
                 p.getId(),
                 p.getProductName(),
@@ -80,6 +84,7 @@ public final class CatalogMapper {
                 b.getStatus(),
                 b.getLatitude(),
                 b.getLongitude(),
+                b.getBakeryImageUrl(),
                 address(b.getAddress())
         );
     }

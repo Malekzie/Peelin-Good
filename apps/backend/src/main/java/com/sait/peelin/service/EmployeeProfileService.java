@@ -45,7 +45,10 @@ public class EmployeeProfileService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No employee profile"));
 
         if (req.firstName() != null) e.setEmployeeFirstName(req.firstName());
-        if (req.middleInitial() != null) e.setEmployeeMiddleInitial(req.middleInitial());
+        if (req.middleInitial() != null) {
+            String v = req.middleInitial().trim();
+            e.setEmployeeMiddleInitial(v.isEmpty() ? null : v);
+        }
         if (req.lastName() != null) e.setEmployeeLastName(req.lastName());
         if (req.phone() != null) e.setEmployeePhone(req.phone());
         if (req.businessPhone() != null) e.setEmployeeBusinessPhone(req.businessPhone());
@@ -83,11 +86,13 @@ public class EmployeeProfileService {
                 e.getId(),
                 e.getUser().getUserId(),
                 e.getBakery().getId(),
+                e.getUser() != null ? e.getUser().getUsername() : null,
                 e.getEmployeeFirstName(),
                 e.getEmployeeMiddleInitial(),
                 e.getEmployeeLastName(),
                 e.getEmployeePosition(),
                 e.getEmployeePhone(),
+                e.getEmployeeBusinessPhone(),
                 e.getEmployeeWorkEmail(),
                 e.getAddress().getId(),
                 CatalogMapper.address(e.getAddress()),

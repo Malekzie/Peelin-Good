@@ -41,11 +41,17 @@ public class ProductService {
             products = productRepository.findAll();
         }
 
-        // Fetch all product tags for the result set in one query to avoid N+1
-        List<Integer> productIds = products.stream().map(Product::getId).collect(Collectors.toList());
-        Map<Integer, List<ProductTag>> tagsByProduct = productTagRepository.findByProduct_IdIn(productIds)
+        if (products.isEmpty()) {
+            return List.of();
+        }
+
+        java.util.Map<Integer, List<Integer>> tagsByProduct = productTagRepository
+                .findByProduct_IdIn(products.stream().map(com.sait.peelin.model.Product::getId).toList())
                 .stream()
-                .collect(Collectors.groupingBy(pt -> pt.getProduct().getId()));
+                .collect(java.util.stream.Collectors.groupingBy(
+                        pt -> pt.getProduct().getId(),
+                        java.util.stream.Collectors.mapping(pt -> pt.getTag().getId(), java.util.stream.Collectors.toList())
+                ));
 
         return products.stream()
                 .map(p -> CatalogMapper.product(p, tagsByProduct.getOrDefault(p.getId(), List.of())))

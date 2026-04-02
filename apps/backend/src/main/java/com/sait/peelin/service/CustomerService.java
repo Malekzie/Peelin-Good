@@ -143,7 +143,10 @@ public class CustomerService {
     private void applyPatch(Customer c, CustomerPatchRequest req) {
         if (req.getRewardBalance() != null) c.setCustomerRewardBalance(req.getRewardBalance());
         if (req.getFirstName() != null) c.setCustomerFirstName(req.getFirstName());
-        if (req.getMiddleInitial() != null) c.setCustomerMiddleInitial(req.getMiddleInitial());
+        if (req.getMiddleInitial() != null) {
+            String v = req.getMiddleInitial().trim();
+            c.setCustomerMiddleInitial(v.isEmpty() ? null : v);
+        }
         if (req.getLastName() != null) c.setCustomerLastName(req.getLastName());
         if (req.getPhone() != null) c.setCustomerPhone(req.getPhone());
         if (req.getBusinessPhone() != null) c.setCustomerBusinessPhone(req.getBusinessPhone());
@@ -188,11 +191,13 @@ public class CustomerService {
         return new CustomerDto(
                 c.getId(),
                 dtoUser != null ? dtoUser.getUserId() : null,
+                dtoUser != null ? dtoUser.getUsername() : null,
                 c.getRewardTier().getId(),
                 c.getCustomerFirstName(),
                 c.getCustomerMiddleInitial(),
                 c.getCustomerLastName(),
                 c.getCustomerPhone(),
+                c.getCustomerBusinessPhone(),
                 c.getCustomerEmail(),
                 c.getCustomerRewardBalance(),
                 addr != null ? addr.getId() : null,

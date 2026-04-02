@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -35,11 +36,13 @@ public class OrderController {
         return orderService.checkout(req);
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
     @PatchMapping("/{id}/status")
     public OrderDto patchStatus(@PathVariable UUID id, @Valid @RequestBody OrderStatusPatchRequest req) {
         return orderService.updateStatus(id, req);
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
     @PatchMapping("/{id}/delivered")
     public OrderDto markDelivered(@PathVariable UUID id, @RequestBody(required = false) OrderDeliveredPatchRequest req) {
         return orderService.markDelivered(id, req != null ? req : new OrderDeliveredPatchRequest());

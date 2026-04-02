@@ -5,11 +5,13 @@ import java.util.UUID;
 public record CustomerDto(
         UUID id,
         UUID userId,
+        String username,
         Integer rewardTierId,
         String firstName,
         String middleInitial,
         String lastName,
         String phone,
+        String businessPhone,
         String email,
         int rewardBalance,
         Integer addressId,

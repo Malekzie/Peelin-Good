@@ -12,5 +12,6 @@ public record BakeryDto(
         BakeryStatus status,
         BigDecimal latitude,
         BigDecimal longitude,
+        String bakeryImageUrl,
         AddressDto address
 ) {}

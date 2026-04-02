@@ -10,7 +10,7 @@ import java.util.List;
 public interface ProductTagRepository extends JpaRepository<ProductTag, ProductTagId> {
     List<ProductTag> findByProduct_Id(Integer productId);
 
-    List<ProductTag> findByProduct_IdIn(Collection<Integer> productIds);
+    List<ProductTag> findByProduct_IdIn(java.util.Collection<Integer> productIds);
 
     void deleteByProduct_Id(Integer productId);
 }
