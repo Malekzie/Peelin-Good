@@ -31,14 +31,37 @@ public class ProductReviewController {
         return reviewService.averageForProduct(productId);
     }
 
+    @GetMapping("/bakeries/{bakeryId}/reviews")
+    public List<ReviewDto> listForBakery(@PathVariable Integer bakeryId) {
+        return reviewService.forBakery(bakeryId);
+    }
+
+    @GetMapping("/bakeries/{bakeryId}/reviews/average")
+    public Double averageForBakery(@PathVariable Integer bakeryId) {
+        return reviewService.averageForBakery(bakeryId);
+    }
+
     @PostMapping("/products/{productId}/reviews")
     public ReviewDto create(@PathVariable Integer productId, @Valid @RequestBody ReviewCreateRequest req) {
         return reviewService.create(productId, req);
+    }
+
+    @PostMapping("/orders/{orderId}/reviews")
+    public ReviewDto createForOrder(@PathVariable UUID orderId,
+                                      @Valid @RequestBody ReviewCreateRequest req) {
+        req.setOrderId(orderId);
+        return reviewService.createForOrder(req);
     }
 
     @PatchMapping("/reviews/{reviewId}/status")
     @PreAuthorize("hasAnyRole('ADMIN','EMPLOYEE')")
     public ReviewDto patchStatus(@PathVariable UUID reviewId, @Valid @RequestBody ReviewStatusPatchRequest req) {
         return reviewService.patchStatus(reviewId, req);
+    }
+
+    @GetMapping("/reviews/pending")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPLOYEE')")
+    public List<ReviewDto> pending() {
+        return reviewService.pending();
     }
 }

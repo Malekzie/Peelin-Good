@@ -39,9 +39,9 @@ public class Bakery {
 
     @NotNull
     @Enumerated(EnumType.STRING)
-    @JdbcTypeCode(SqlTypes.VARCHAR)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @ColumnDefault("'open'")
-    @Column(name = "status", nullable = false)
+    @Column(name = "status", nullable = false, columnDefinition = "bakery_status")
     private BakeryStatus status;
 
     @Column(name = "latitude", precision = 9, scale = 6)

@@ -4,10 +4,12 @@ import com.sait.peelin.dto.v1.auth.AuthResponse;
 import com.sait.peelin.dto.v1.auth.ChangePasswordRequest;
 import com.sait.peelin.dto.v1.auth.LoginRequest;
 import com.sait.peelin.dto.v1.auth.RegisterRequest;
+import com.sait.peelin.model.Address;
 import com.sait.peelin.model.Customer;
 import com.sait.peelin.model.RewardTier;
 import com.sait.peelin.model.User;
 import com.sait.peelin.model.UserRole;
+import com.sait.peelin.repository.AddressRepository;
 import com.sait.peelin.repository.CustomerRepository;
 import com.sait.peelin.repository.RewardTierRepository;
 import com.sait.peelin.repository.UserRepository;
@@ -31,6 +33,7 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
     private final UserRepository userRepository;
+    private final AddressRepository addressRepository;
     private final CustomerRepository customerRepository;
     private final RewardTierRepository rewardTierRepository;
     private final PasswordEncoder passwordEncoder;
@@ -98,6 +101,15 @@ public class AuthService {
         Customer customer = new Customer();
         customer.setUser(user);
         customer.setRewardTier(lowestTier);
+        Address address = new Address();
+        address.setAddressLine1(request.getAddressLine1().trim());
+        String line2 = request.getAddressLine2();
+        address.setAddressLine2(line2 == null || line2.isBlank() ? null : line2.trim());
+        address.setAddressCity(request.getCity().trim());
+        address.setAddressProvince(request.getProvince().trim());
+        address.setAddressPostalCode(request.getPostalCode().trim());
+        addressRepository.save(address);
+        customer.setAddress(address);
         customer.setCustomerFirstName(request.getFirstName());
         String mi = request.getMiddleInitial() != null ? request.getMiddleInitial().trim() : null;
         if (mi != null && mi.isEmpty()) {

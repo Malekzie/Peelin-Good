@@ -5,6 +5,8 @@ import com.sait.peelin.exception.ResourceNotFoundException;
 import com.sait.peelin.model.*;
 import com.sait.peelin.repository.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,6 +35,7 @@ public class OrderService {
     private final CurrentUserService currentUserService;
 
     @Transactional(readOnly = true)
+    @Cacheable(value = "orders", keyGenerator = "userIdKeyGenerator")
     public List<OrderDto> listForCurrentUser() {
         User u = currentUserService.requireUser();
         return switch (u.getUserRole()) {
@@ -49,6 +52,7 @@ public class OrderService {
     }
 
     @Transactional(readOnly = true)
+    @Cacheable(value = "orders", key = "'order:' + #orderId + ':' + T(org.springframework.security.core.context.SecurityContextHolder).getContext().getAuthentication().getName()")
     public OrderDto get(UUID orderId) {
         Order o = orderRepository.findById(orderId).orElseThrow(() -> new ResourceNotFoundException("Order not found"));
         assertCanView(o);
@@ -56,6 +60,7 @@ public class OrderService {
     }
 
     @Transactional
+    @CacheEvict(value = "orders", allEntries = true)
     public OrderDto checkout(CheckoutRequest req) {
         User user = currentUserService.requireUser();
         Customer customer;
@@ -126,7 +131,7 @@ public class OrderService {
         order.setOrderPlacedDatetime(OffsetDateTime.now());
         order.setOrderTotal(total);
         order.setOrderDiscount(discount);
-        order.setOrderStatus(OrderStatus.completed);
+        order.setOrderStatus(OrderStatus.placed);
         order = orderRepository.save(order);
 
         for (CheckoutRequest.CheckoutLineRequest line : req.getItems()) {
@@ -157,7 +162,13 @@ public class OrderService {
         pay.setPaymentTransactionId("TXN-" + UUID.randomUUID().toString().substring(0, 12).toUpperCase());
         paymentRepository.save(pay);
 
-        int points = total.setScale(0, RoundingMode.DOWN).intValue();
+        // Loyalty points earned are intentionally scaled so that reward tier thresholds
+        // (100k+ points) can be reached after a realistic number of orders.
+        // Current UI expectation: ~$29 orders should yield ~29,000 points.
+        int points = total
+                .multiply(BigDecimal.valueOf(1000))
+                .setScale(0, RoundingMode.DOWN)
+                .intValue();
         Reward reward = new Reward();
         reward.setCustomer(customer);
         reward.setOrder(order);
@@ -172,6 +183,7 @@ public class OrderService {
     }
 
     @Transactional
+    @CacheEvict(value = "orders", allEntries = true)
     public OrderDto updateStatus(UUID orderId, OrderStatusPatchRequest req) {
         User u = currentUserService.requireUser();
         if (u.getUserRole() != UserRole.admin && u.getUserRole() != UserRole.employee) {
@@ -189,6 +201,7 @@ public class OrderService {
     }
 
     @Transactional
+    @CacheEvict(value = "orders", allEntries = true)
     public OrderDto markDelivered(UUID orderId, OrderDeliveredPatchRequest req) {
         User u = currentUserService.requireUser();
         if (u.getUserRole() != UserRole.admin && u.getUserRole() != UserRole.employee) {
@@ -205,6 +218,26 @@ public class OrderService {
         if (o.getOrderStatus() != OrderStatus.cancelled) {
             o.setOrderStatus(OrderStatus.completed);
         }
+        return toDto(orderRepository.save(o));
+    }
+
+    @Transactional
+    @CacheEvict(value = "orders", allEntries = true)
+    public OrderDto acceptDelivery(UUID orderId) {
+        User u = currentUserService.requireUser();
+        if (u.getUserRole() != UserRole.customer) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+        Order o = orderRepository.findById(orderId).orElseThrow(() -> new ResourceNotFoundException("Order not found"));
+        if (o.getCustomer() == null || o.getCustomer().getUser() == null
+                || !o.getCustomer().getUser().getUserId().equals(u.getUserId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+        if (o.getOrderStatus() != OrderStatus.delivered && o.getOrderStatus() != OrderStatus.picked_up) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Only delivered or picked_up orders can be accepted");
+        }
+        o.setOrderStatus(OrderStatus.completed);
         return toDto(orderRepository.save(o));
     }
 

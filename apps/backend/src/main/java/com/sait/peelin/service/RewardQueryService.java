@@ -8,6 +8,7 @@ import com.sait.peelin.model.UserRole;
 import com.sait.peelin.repository.CustomerRepository;
 import com.sait.peelin.repository.RewardRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +26,7 @@ public class RewardQueryService {
     private final CurrentUserService currentUserService;
 
     @Transactional(readOnly = true)
+    @Cacheable(value = "rewards", key = "#customerId.toString() + ':' + T(org.springframework.security.core.context.SecurityContextHolder).getContext().getAuthentication().getName()")
     public List<RewardDto> listForCustomer(UUID customerId) {
         if (!customerRepository.existsById(customerId)) {
             throw new ResourceNotFoundException("Customer not found");
@@ -43,6 +45,7 @@ public class RewardQueryService {
     }
 
     @Transactional(readOnly = true)
+    @Cacheable(value = "rewards", key = "'all'")
     public List<RewardDto> listAll() {
         return rewardRepository.findAll().stream().map(this::toDto).toList();
     }

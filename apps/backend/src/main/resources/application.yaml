@@ -1,11 +1,16 @@
 spring:
+  data:
+    redis:
+      url: ${UPSTASH_REDIS_REST_URL}
+      password: ${UPSTASH_REDIS_REST_TOKEN}
+      ssl:
+        enabled: true
   application:
     name: Peelin' Good
   config:
     import: optional:file:.env.local[.properties]
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:dev}
-
   jpa:
     open-in-view: false
 

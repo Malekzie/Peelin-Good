@@ -17,7 +17,7 @@ public class BatchController {
 
     private final BatchQueryService batchQueryService;
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
+    /** Public read: storefront "available here" at a bakery (no staff role required). */
     @GetMapping("/bakeries/{bakeryId}/batches")
     public List<BatchDto> byBakery(
             @PathVariable Integer bakeryId,

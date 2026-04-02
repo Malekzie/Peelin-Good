@@ -30,4 +30,16 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
 
     @Query("SELECT COUNT(o) FROM Order o WHERE o.orderStatus IN (:s1, :s2)")
     long countByOrderStatusIn(@Param("s1") OrderStatus s1, @Param("s2") OrderStatus s2);
+
+    @Query("""
+            SELECT o FROM Order o
+            JOIN OrderItem oi ON oi.order.id = o.id
+            WHERE o.customer.id = :customerId
+              AND oi.product.id = :productId
+              AND o.orderStatus = :status
+            ORDER BY o.orderPlacedDatetime DESC
+            """)
+    List<Order> findByCustomerProductAndStatusOrderByPlacedDesc(@Param("customerId") UUID customerId,
+                                                                 @Param("productId") Integer productId,
+                                                                 @Param("status") OrderStatus status);
 }
