@@ -24,8 +24,6 @@ public class CacheConfig {
                 .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(new GenericJackson2JsonRedisSerializer()));
 
         Map<String, RedisCacheConfiguration> cacheConfigurations = new HashMap<>();
-        cacheConfigurations.put("products", defaultConfig.entryTtl(Duration.ofMinutes(10)));
-        cacheConfigurations.put("bakeries", defaultConfig.entryTtl(Duration.ofMinutes(10)));
         cacheConfigurations.put("tags", defaultConfig.entryTtl(Duration.ofMinutes(30)));
         cacheConfigurations.put("product-specials", defaultConfig.entryTtl(Duration.ofHours(1)));
         cacheConfigurations.put("orders", defaultConfig.entryTtl(Duration.ofMinutes(2)));

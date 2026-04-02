@@ -19,6 +19,7 @@ public class RewardQueryController {
     private final RewardQueryService rewardQueryService;
 
     @GetMapping("/customers/{customerId}/rewards")
+    @PreAuthorize("isAuthenticated()")
     public List<RewardDto> forCustomer(@PathVariable UUID customerId) {
         return rewardQueryService.listForCustomer(customerId);
     }

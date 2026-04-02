@@ -52,7 +52,7 @@ public class OrderService {
     }
 
     @Transactional(readOnly = true)
-    @Cacheable(value = "orders", key = "'order:' + #orderId")
+    @Cacheable(value = "orders", key = "'order:' + #orderId + ':' + T(org.springframework.security.core.context.SecurityContextHolder).getContext().getAuthentication().getName()")
     public OrderDto get(UUID orderId) {
         Order o = orderRepository.findById(orderId).orElseThrow(() -> new ResourceNotFoundException("Order not found"));
         assertCanView(o);

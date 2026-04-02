@@ -26,7 +26,7 @@ public class RewardQueryService {
     private final CurrentUserService currentUserService;
 
     @Transactional(readOnly = true)
-    @Cacheable(value = "rewards", key = "#customerId")
+    @Cacheable(value = "rewards", key = "#customerId.toString() + ':' + T(org.springframework.security.core.context.SecurityContextHolder).getContext().getAuthentication().getName()")
     public List<RewardDto> listForCustomer(UUID customerId) {
         if (!customerRepository.existsById(customerId)) {
             throw new ResourceNotFoundException("Customer not found");
