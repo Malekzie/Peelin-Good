@@ -26,6 +26,11 @@ public class BakeryService {
     private final BakeryHourRepository bakeryHourRepository;
     private final AddressRepository addressRepository;
 
+    /**
+     * Must run in a transaction while mapping: {@link Bakery#getAddress()} is lazy-loaded.
+     * Without this, the list/get endpoints fail with {@code LazyInitializationException} after {@code findAll()}.
+     */
+    @Transactional(readOnly = true)
     public List<BakeryDto> list(String search) {
         List<Bakery> list = StringUtils.hasText(search)
                 ? bakeryRepository.findByBakeryNameContainingIgnoreCase(search.trim())
@@ -33,6 +38,7 @@ public class BakeryService {
         return list.stream().map(CatalogMapper::bakery).toList();
     }
 
+    @Transactional(readOnly = true)
     public BakeryDto get(Integer id) {
         Bakery b = bakeryRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Bakery not found"));
         return CatalogMapper.bakery(b);
@@ -59,6 +65,7 @@ public class BakeryService {
         b.setStatus(req.getStatus() != null ? req.getStatus() : BakeryStatus.open);
         b.setLatitude(req.getLatitude());
         b.setLongitude(req.getLongitude());
+        applyBakeryImageUrl(b, req.getBakeryImageUrl());
         return CatalogMapper.bakery(bakeryRepository.save(b));
     }
 
@@ -75,7 +82,16 @@ public class BakeryService {
         }
         b.setLatitude(req.getLatitude());
         b.setLongitude(req.getLongitude());
+        applyBakeryImageUrl(b, req.getBakeryImageUrl());
         return CatalogMapper.bakery(bakeryRepository.save(b));
+    }
+
+    private void applyBakeryImageUrl(Bakery b, String url) {
+        if (url == null) {
+            return;
+        }
+        String t = url.trim();
+        b.setBakeryImageUrl(t.isEmpty() ? null : t);
     }
 
     @Transactional

@@ -1,4 +1,6 @@
 <script>
+	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import { loginUser } from '$lib/services/auth.js';
 
 	let email = '';
@@ -12,7 +14,7 @@
 
 	function validateEmail(value) {
 		if (!value.trim()) return 'Email is required.';
-		if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return 'Enter a valid email address.';
+		if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value)) return 'Enter a valid email address.';
 		return '';
 	}
 
@@ -41,8 +43,7 @@
 			return;
 		}
 
-		// localStorage.setItem('token', data.token);
-		window.location.href = '/dashboard';
+		goto(resolve('/profile'));
 	}
 </script>
 
@@ -104,7 +105,7 @@
 
 			<!-- Form Card -->
 			<div class="bg-surface-container rounded-2xl border border-border p-6 shadow-sm">
-				<form class="space-y-6" on:submit={handleSignIn}>
+				<form class="space-y-6" onsubmit={handleSignIn}>
 					<!-- Email -->
 					<div class="space-y-2">
 						<label class="block text-xs font-semibold tracking-wide text-primary uppercase">
@@ -116,7 +117,7 @@
 							type="email"
 							placeholder="you@example.com"
 							bind:value={email}
-							on:input={() => {
+							oninput={() => {
 								if (emailTouched) emailError = validateEmail(email);
 							}}
 						/>
@@ -141,7 +142,7 @@
 							type="password"
 							placeholder="••••••••"
 							bind:value={password}
-							on:input={() => {
+							oninput={() => {
 								if (passwordTouched) passwordError = validatePassword(password);
 							}}
 						/>

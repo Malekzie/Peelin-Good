@@ -1,5 +1,7 @@
 <script>
 	import ProfileSidebar from '$lib/components/ProfileSidebar.svelte';
+	import ProfileDetails from '$lib/components/ProfileDetails.svelte';
+	import ProfileRecomendations from '$lib/components/ProfileRecomendations.svelte';
 </script>
 
 <div class="bg-surface-container-low flex min-h-screen">
@@ -27,7 +29,7 @@
 						<button
 							class="absolute right-1 bottom-1 transform rounded-full border border-stone-100 bg-white p-2.5 text-primary shadow-md transition-all duration-300 ease-in-out hover:cursor-pointer hover:bg-primary hover:text-white hover:shadow-lg"
 						>
-							<span>Edit</span>
+							Edit
 						</button>
 					</div>
 
@@ -53,106 +55,10 @@
 			<!-- Grid -->
 			<div class="grid grid-cols-1 gap-8 md:grid-cols-12">
 				<!-- Profile Info -->
-				<div
-					class="bg-surface-container-lowest soft-shadow space-y-10 rounded-xl border border-stone-100 p-8 md:col-span-8"
-				>
-					<div>
-						<h3 class="font-headline text-on-surface text-2xl font-bold">Profile Info</h3>
-						<p class="text-on-surface-variant mt-1 text-sm">
-							Personal details and subscription status
-						</p>
-					</div>
-
-					<div class="grid grid-cols-1 gap-x-12 gap-y-8 sm:grid-cols-2">
-						<div>
-							<label class="text-outline text-[11px] font-bold uppercase">Full Name</label>
-							<p class="text-on-surface text-lg font-semibold">John Chungus</p>
-						</div>
-						<div>
-							<label class="text-outline text-[11px] font-bold uppercase">Country</label>
-							<p class="text-on-surface text-lg font-semibold">Canada</p>
-						</div>
-						<div>
-							<label class="text-outline text-[11px] font-bold uppercase">Joined</label>
-							<p class="text-on-surface text-lg font-semibold">October 14, 2021</p>
-						</div>
-						<div>
-							<label class="text-outline text-[11px] font-bold uppercase">Last Order</label>
-							<p class="text-on-surface text-lg font-semibold">Today, 09:42 AM</p>
-						</div>
-					</div>
-
-					<!-- Points -->
-					<div class="rounded-xl border border-stone-200 bg-[#fcf9f4] px-6 pt-2 pb-6">
-						<div class="mb-2 flex justify-center">
-							<div class="flex h-16 w-16 items-center justify-center rounded-full text-secondary">
-								<h2 class="text-2xl whitespace-nowrap text-black">Loyalty Points</h2>
-							</div>
-						</div>
-
-						<div class="mt-1 flex items-center justify-between">
-							<div class="flex flex-col">
-								<p class="text-on-surface text-lg font-bold">Your Points</p>
-								<p class="text-sm text-stone-800">1,250 pts</p>
-							</div>
-
-							<button
-								class="text-sm font-bold text-primary underline-offset-4 hover:cursor-pointer hover:underline"
-							>
-								View your points
-							</button>
-						</div>
-					</div>
-				</div>
+				<ProfileDetails />
 
 				<!-- Recommended -->
-				<div
-					class="soft-shadow flex flex-col space-y-6 rounded-xl border border-stone-100 bg-white p-8 md:col-span-4"
-				>
-					<h3 class="font-headline text-on-surface mb-4 text-xl font-bold">Recommended for You</h3>
-
-					<div class="flex-1 space-y-4">
-						<div class="rounded-xl p-4">Croissant</div>
-						<div class="rounded-xl p-4">Sourdough Bread</div>
-						<div class="rounded-xl p-4">Chocolate Tart</div>
-					</div>
-
-					<button
-						class="mt-6 w-full rounded-full border py-3.5 text-xs font-bold uppercase hover:cursor-pointer hover:bg-primary/10"
-					>
-						View All Products
-					</button>
-				</div>
-
-				<!-- Bottom Cards -->
-				<div class="grid grid-cols-1 gap-8 md:col-span-12 md:grid-cols-3">
-					<div class="soft-shadow space-y-4 rounded-xl border p-7">
-						<div class="flex h-12 w-12 items-center justify-center rounded-full">
-							<span>Security</span>
-						</div>
-						<h4 class="text-xl font-bold">Account Security</h4>
-						<p class="text-sm">Your account is secure. Score: 92/100.</p>
-						<button class="text-xs font-bold uppercase">Update Now →</button>
-					</div>
-
-					<div class="soft-shadow space-y-4 rounded-xl border p-7">
-						<div class="flex h-12 w-12 items-center justify-center rounded-full">
-							<span>Preferences</span>
-						</div>
-						<h4 class="text-xl font-bold">Preferences</h4>
-						<p class="text-sm">Set your favorite baked goods and delivery options.</p>
-						<button class="text-xs font-bold uppercase">Manage →</button>
-					</div>
-
-					<div class="soft-shadow space-y-4 rounded-xl border p-7">
-						<div class="flex h-12 w-12 items-center justify-center rounded-full">
-							<span>Privacy</span>
-						</div>
-						<h4 class="text-xl font-bold">Privacy Settings</h4>
-						<p class="text-sm">Manage how we use your data.</p>
-						<button class="text-xs font-bold uppercase">Update Privacy →</button>
-					</div>
-				</div>
+				<ProfileRecomendations />
 			</div>
 		</div>
 	</main>
