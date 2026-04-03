@@ -3,6 +3,7 @@ package com.sait.peelin.security;
 import com.sait.peelin.service.JwtService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -29,9 +30,29 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             FilterChain filterChain
     ) throws ServletException, IOException {
 
-        final String authHeader = request.getHeader("Authorization");
+        String jwt = null;
 
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+        // HttpOnly Cookies
+        if (request.getCookies() != null) {
+            for (Cookie cookie : request.getCookies()) {
+                if ("token".equals(cookie.getName())) {
+                    jwt = cookie.getValue();
+                    break;
+                }
+            }
+        }
+
+        // Auth Headers
+        // fallback to headers if no cookies found (for desktop and android)
+        if (jwt == null) {
+            final String authHeader = request.getHeader("Authorization");
+            if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                jwt = authHeader.substring(7);
+            }
+        }
+
+        // if no token found
+        if (jwt == null) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -41,17 +62,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        final String jwt = authHeader.substring(7);
-        final String username = jwtService.extractUsername(jwt);
+        try {
+            final String username = jwtService.extractUsername(jwt);
 
-        if (username != null) {
-            UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+            if (username != null) {
+                UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
-            if (jwtService.isTokenValid(jwt, userDetails)) {
-                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                        userDetails, null, userDetails.getAuthorities());
-                SecurityContextHolder.getContext().setAuthentication(authToken);
+                if (jwtService.isTokenValid(jwt, userDetails)) {
+                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                            userDetails, null, userDetails.getAuthorities());
+                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                }
             }
+        } catch (Exception e) {
+            logger.warn("JWT validation failed: " + e.getMessage());
         }
 
         filterChain.doFilter(request, response);

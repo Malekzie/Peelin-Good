@@ -1,20 +1,8 @@
 import { get } from 'svelte/store';
-import { token } from '$lib/stores/authStore.js';
 
 let cache = null;
 
-const API_BASE = 'http://localhost:8080/api/v1/products';
-
-function authHeaders() {
-	const t = get(token);
-	const headers = {
-		'Content-Type': 'application/json'
-	};
-
-	if (t) headers['Authorization'] = `Bearer ${t}`;
-
-	return headers;
-}
+const API_BASE = '/api/v1/products';
 
 export async function getProducts() {
 	// return cached products if available
@@ -22,7 +10,7 @@ export async function getProducts() {
 
 	// fetch products from backend
 	const res = await fetch(API_BASE, {
-		headers: authHeaders()
+		credentials: 'include'
 	});
 
 	if (!res.ok) throw new Error('Failed to fetch products: ' + res.status);

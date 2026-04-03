@@ -1,6 +1,6 @@
-import { setAuth } from '$lib/stores/authStore.js';
+import { clearAuth, setAuth } from '$lib/stores/authStore.js';
 
-const API_BASE = 'http://localhost:8080/api/v1/auth';
+const API_BASE = '/api/v1/auth';
 
 // Log in with email and password, returns {ok: boolean, message?: string}
 export async function loginUser(email, password) {
@@ -46,4 +46,16 @@ export async function registerUser(payload) {
 	} catch {
 		return { ok: false, message: 'Could not reach the server. Try again later.' };
 	}
+}
+
+// logout the user
+export async function logoutUser() {
+	try {
+		await fetch(`${API_BASE}/logout`, {
+			method: 'POST',
+			credentials: 'include'
+		});
+	} catch {}
+
+	clearAuth();
 }
