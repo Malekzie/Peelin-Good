@@ -1,11 +1,11 @@
 <script>
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
-	import { clearAuth } from '$lib/stores/authStore';
 	import { resolve } from '$app/paths';
+	import { logoutUser } from '$lib/services/auth';
 
-	function handleLogout() {
-		clearAuth();
+	async function handleLogout() {
+		await logoutUser();
 		goto(resolve('/'));
 	}
 </script>

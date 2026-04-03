@@ -1,25 +1,37 @@
 import { get } from 'svelte/store';
-import { token } from '$lib/stores/authStore.js';
+import { token, user } from '$lib/stores/authStore.js';
 
-const API_BASE = 'http://localhost:8080/api/v1/customers/me';
+const API = 'http://localhost:8080/api/v1';
 
-// TODO change this to use HttpCookies from backend instead of storing token in localStorage for better security
 function authHeaders() {
 	const t = get(token);
-	const headers = {
-		'Content-Type': 'application/json'
-	};
-
+	const headers = { 'Content-Type': 'application/json' };
 	if (t) headers['Authorization'] = `Bearer ${t}`;
-
 	return headers;
 }
 
 export async function getProfile() {
-	const res = await fetch(API_BASE, {
-		headers: authHeaders()
-	});
+	const currentUser = get(user);
+	const role = (currentUser?.role ?? '').toLowerCase();
 
+	const url =
+		role === 'employee' || role === 'admin'
+			? `${API}/employee/me`
+			: `${API}/customers/me`;
+
+	const res = await fetch(url, { headers: authHeaders() });
 	if (!res.ok) throw new Error('Failed to fetch profile: ' + res.status);
-	return await res.json();
+
+	const data = await res.json();
+
+	if (role === 'employee' || role === 'admin') {
+		return {
+			...data,
+			email: data.workEmail ?? null,
+			loyaltyTier: null,
+			rewardBalance: null
+		};
+	}
+
+	return data;
 }

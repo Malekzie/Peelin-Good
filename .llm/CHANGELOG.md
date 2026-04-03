@@ -6,6 +6,21 @@ This file is maintained by AI agents. Every agent that makes changes to this cod
 
 ---
 
+## [2026-04-02] — Swagger doc annotations, build fixes, and security audit
+
+**Session context:** PR #44 (branch `robbie`) — fixing CI build failures and improving API documentation.
+
+### Fixed
+- `apps/backend/src/main/java/com/sait/peelin/config/UserIdKeyGenerator.java` — Missing `import org.springframework.security.core.GrantedAuthority` and `import java.util.stream.Collectors` caused compilation failure in CI.
+- `apps/backend/src/test/java/com/sait/peelin/controller/v1/BakeryControllerTest.java` — Both `BakeryDto` constructor calls used 8 args; record gained a 9th field (`address`). Added `null` for `address` in both instantiations.
+- `.github/workflows/backend-build.yml` — PR preview deploy step was failing with "secret env value must not be encrypted before app is created" because `.do/app.yaml` contains `EV[...]` encrypted secrets tied to the production app, which DigitalOcean cannot decrypt for a new ephemeral app. Removed the DO deploy + comment steps from the `pr-preview` job; job now builds and smoke-tests the Docker image only.
+
+### Added
+- `apps/backend/src/main/java/com/sait/peelin/controller/v1/*.java` — Added `@Operation`, `@ApiResponse`/`@ApiResponses`, `@SecurityRequirement`, `@Parameter`, and `@Tag(description)` annotations to all 21 controllers. Every endpoint now has a summary, description, documented response codes, and correct lock-icon visibility in Swagger UI.
+- `docs/security-findings.md` — Security audit of all controllers and backing services. Two actionable findings (pending reviews exposed publicly; `markRead` missing ownership check) plus one informational note on employee thread access scope.
+
+---
+
 ## [2026-03-28] — Auth foundation implementation (spec: docs/superpowers/specs/2026-03-28-auth-foundation-design.md)
 
 **Session context:** Implementing the auth foundation feature from the approved spec. Branch: `feature/auth-foundation`.

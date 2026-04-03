@@ -4,11 +4,14 @@ import com.sait.peelin.dto.v1.auth.AuthResponse;
 import com.sait.peelin.dto.v1.auth.LoginRequest;
 import com.sait.peelin.dto.v1.auth.RegisterRequest;
 import com.sait.peelin.service.AuthService;
+import com.sait.peelin.service.TokenDenylistService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -23,6 +26,7 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AuthService authService;
+    private final TokenDenylistService tokenDenylistService;
 
     @Operation(summary = "Log in", description = "Authenticate with email and password. Returns a JWT token to use in the Authorization header.")
     @ApiResponses({
@@ -43,6 +47,21 @@ public class AuthController {
     @ResponseStatus(HttpStatus.CREATED)
     public AuthResponse register(@Valid @RequestBody RegisterRequest registerRequest) {
         return authService.register(registerRequest);
+    }
+
+    @Operation(summary = "Log out", description = "Invalidates the current JWT token. The token is added to a denylist and will be rejected on subsequent requests.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Logged out successfully"),
+            @ApiResponse(responseCode = "401", description = "Missing or invalid token", content = @Content)
+    })
+    @SecurityRequirement(name = "bearerAuth")
+    @PostMapping("/logout")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void logout(HttpServletRequest request) {
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            tokenDenylistService.deny(authHeader.substring(7));
+        }
     }
 
     @Operation(summary = "OAuth2 callback (not yet implemented)", description = "Placeholder for future Google/Microsoft OAuth2 login flow.")

@@ -1,4 +1,6 @@
-import { setAuth } from '$lib/stores/authStore.js';
+import { setAuth, clearAuth, token } from '$lib/stores/authStore.js';
+import { get } from 'svelte/store';
+import * as Sentry from '@sentry/sveltekit';
 
 const API_BASE = 'http://localhost:8080/api/v1/auth';
 
@@ -13,6 +15,12 @@ export async function loginUser(email, password) {
 
 		if (!res.ok) {
 			// Spring returns 401 for bad credentials
+			Sentry.withScope((scope) => {
+				scope.setTag('action', 'LOGIN_FAILED');
+				scope.setTag('reason', 'invalid_credentials');
+				scope.setTag('status_code', String(res.status));
+				Sentry.captureMessage('Login failed: invalid credentials', 'warning');
+			});
 			return { ok: false, message: 'Invalid email or password.' };
 		}
 
@@ -22,8 +30,29 @@ export async function loginUser(email, password) {
 		setAuth(data);
 		return { ok: true };
 	} catch {
+		Sentry.withScope((scope) => {
+			scope.setTag('action', 'LOGIN_FAILED');
+			scope.setTag('reason', 'network_error');
+			Sentry.captureMessage('Login failed: network error', 'error');
+		});
 		return { ok: false, message: 'Could not reach the server. Try again later.' };
 	}
+}
+
+// logs out the current user, invalidating the token on the server
+export async function logoutUser() {
+	const t = get(token);
+	if (t) {
+		try {
+			await fetch(`${API_BASE}/logout`, {
+				method: 'POST',
+				headers: { Authorization: `Bearer ${t}` }
+			});
+		} catch {
+			// best-effort — clear local auth regardless
+		}
+	}
+	clearAuth();
 }
 
 // registers a new user
@@ -37,6 +66,12 @@ export async function registerUser(payload) {
 
 		if (!res.ok) {
 			const err = await res.json().catch(() => ({}));
+			Sentry.withScope((scope) => {
+				scope.setTag('action', 'REGISTER_FAILED');
+				scope.setTag('reason', res.status === 409 ? 'duplicate_account' : 'api_error');
+				scope.setTag('status_code', String(res.status));
+				Sentry.captureMessage(`Registration failed: HTTP ${res.status}`, res.status >= 500 ? 'error' : 'warning');
+			});
 			return { ok: false, message: err.message ?? 'Registration failed.' };
 		}
 
@@ -44,6 +79,11 @@ export async function registerUser(payload) {
 		setAuth(data);
 		return { ok: true };
 	} catch {
+		Sentry.withScope((scope) => {
+			scope.setTag('action', 'REGISTER_FAILED');
+			scope.setTag('reason', 'network_error');
+			Sentry.captureMessage('Registration failed: network error', 'error');
+		});
 		return { ok: false, message: 'Could not reach the server. Try again later.' };
 	}
 }

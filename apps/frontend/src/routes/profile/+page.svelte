@@ -4,6 +4,9 @@
 	import ProfileRecomendations from '$lib/components/ProfileRecomendations.svelte';
 	import { onMount } from 'svelte';
 	import { getProfile } from '$lib/services/profile';
+	import { logoutUser } from '$lib/services/auth';
+	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
 
 	let profile = null;
 	let loading = true;
@@ -23,7 +26,28 @@
 {#if loading}
 	<p>Loading...</p>
 {:else if error}
-	<p>Error: {error}</p>
+	<div class="flex min-h-screen items-center justify-center bg-[#FAF7F2] px-6">
+		<div class="w-full max-w-md rounded-2xl border border-border bg-white p-10 text-center shadow-sm">
+			<h1 class="mb-2 font-serif text-2xl font-bold text-foreground">Profile unavailable</h1>
+			<p class="mb-8 text-sm text-muted-foreground">
+				We couldn't load your profile. This section may not be available for your account type.
+			</p>
+			<div class="flex flex-col gap-3">
+				<a
+					href={resolve('/')}
+					class="w-full rounded-lg bg-primary py-3 text-sm font-semibold text-primary-foreground transition-colors hover:opacity-90"
+				>
+					Go to homepage
+				</a>
+				<button
+					onclick={async () => { await logoutUser(); goto(resolve('/')); }}
+					class="w-full rounded-lg border border-border py-3 text-sm font-semibold text-foreground transition-colors hover:bg-muted"
+				>
+					Log out
+				</button>
+			</div>
+		</div>
+	</div>
 {:else}
 	<div class="bg-surface-container-low flex min-h-screen">
 		<!-- Sidebar -->

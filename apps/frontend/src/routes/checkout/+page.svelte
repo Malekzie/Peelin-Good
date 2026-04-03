@@ -2,6 +2,7 @@
 	import { resolve } from '$app/paths';
 	import { goto } from '$app/navigation';
 	import { cart } from '$lib/stores/cart';
+	import * as Sentry from '@sentry/sveltekit';
 
 	const API = 'http://localhost:8080';
 
@@ -74,6 +75,11 @@
 			cart.clear();
 			goto(resolve(`/order/confirmation/${order.orderNumber}`));
 		} catch (err: unknown) {
+			Sentry.withScope((scope) => {
+				scope.setTag('action', 'CHECKOUT_FAILED');
+				scope.setTag('reason', 'api_error');
+				Sentry.captureException(err instanceof Error ? err : new Error(String(err)));
+			});
 			error = err instanceof Error ? err.message : 'Unexpected error. Please try again.';
 		} finally {
 			submitting = false;

@@ -12,6 +12,8 @@ import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 
@@ -90,6 +92,23 @@ public class JwtService {
         } catch (ParseException | JOSEException e) {
             return false;
         }
+    }
+
+    public Instant extractExpiration(String token) {
+        try {
+            SignedJWT signedJWT = SignedJWT.parse(token);
+            Date expiration = signedJWT.getJWTClaimsSet().getExpirationTime();
+            return expiration != null ? expiration.toInstant() : null;
+        } catch (ParseException e) {
+            return null;
+        }
+    }
+
+    public Duration getTimeUntilExpiry(String token) {
+        Instant expiry = extractExpiration(token);
+        if (expiry == null) return Duration.ZERO;
+        Duration remaining = Duration.between(Instant.now(), expiry);
+        return remaining.isNegative() ? Duration.ZERO : remaining;
     }
 
     public boolean isTokenExpired(String token) {
