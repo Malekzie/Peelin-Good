@@ -3,6 +3,21 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { logoutUser } from '$lib/services/auth';
+	import { user } from '$lib/stores/authStore';
+	import { Button } from '$lib/components/ui/button';
+	import { Separator } from '$lib/components/ui/separator';
+	import { Avatar, AvatarFallback } from '$lib/components/ui/avatar';
+	import { User, ShoppingBag, SlidersHorizontal, HelpCircle, LogOut, ShoppingCart } from '@lucide/svelte';
+
+	const navLinks = [
+		{ label: 'Profile', href: '/profile', icon: User },
+		{ label: 'Orders', href: '/orders', icon: ShoppingBag },
+		{ label: 'Preferences', href: '/profile/preferences', icon: SlidersHorizontal }
+	];
+
+	const initials = $derived(
+		[$user?.username?.[0]].filter(Boolean).join('').toUpperCase() || '?'
+	);
 
 	async function handleLogout() {
 		await logoutUser();
@@ -10,56 +25,58 @@
 	}
 </script>
 
-<aside
-	class="hidden w-80 flex-col gap-4 border-r bg-[#fcf9f4] p-6 pt-24 text-sm font-medium md:flex dark:bg-stone-950"
->
-	<div class="px-2">
-		<div class="flex items-center space-x-4">
-			<div
-				class="flex h-11 w-11 items-center justify-center rounded-full bg-primary text-white shadow-md"
-			>
-				<span>Bakery</span>
-			</div>
-			<div>
-				<h2 class="text-lg font-bold text-[#703210]">My Profile</h2>
-				<p class="text-xs text-stone-500">Manage your bakery account</p>
+<aside class="hidden w-72 flex-col border-r border-border bg-card md:flex">
+	<div class="flex flex-col gap-6 p-6 pt-8">
+		<!-- User identity -->
+		<div class="flex items-center gap-3">
+			<Avatar class="h-10 w-10">
+				<AvatarFallback class="bg-primary text-primary-foreground text-sm font-semibold">
+					{initials}
+				</AvatarFallback>
+			</Avatar>
+			<div class="min-w-0">
+				<p class="truncate text-sm font-semibold text-foreground">{$user?.username ?? 'Account'}</p>
+				<p class="text-xs text-muted-foreground capitalize">{$user?.role?.toLowerCase() ?? ''}</p>
 			</div>
 		</div>
+
+		<Separator />
+
+		<!-- Nav -->
+		<nav class="flex flex-col gap-1">
+			{#each navLinks as link (link.href)}
+				{@const active = $page.url.pathname === link.href}
+				<a
+					href={resolve(link.href)}
+					class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors
+						{active
+						? 'bg-primary text-primary-foreground'
+						: 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
+				>
+					<link.icon class="h-4 w-4 shrink-0" />
+					{link.label}
+				</a>
+			{/each}
+		</nav>
 	</div>
 
-	<nav class="mt-4 flex-1 space-y-1">
-		{#each [{ label: 'Profile', href: '/profile' }, { label: 'Orders', href: '/orders' }, { label: 'Preferences', href: '/profile/preferences' }] as link (link.href)}
-			<a
-				href={resolve(link.href)}
-				class="flex items-center gap-3 rounded-full px-4 py-2.5 transition-colors
-          {$page.url.pathname === link.href
-					? 'bg-[#703210] text-white'
-					: 'text-stone-600 hover:bg-[#8e4e14]/10'}"
-			>
-				<span>{link.label}</span>
-			</a>
-		{/each}
-	</nav>
-
-	<div class="mt-auto space-y-2 border-t pt-4">
-		<button
-			class="w-full rounded-full bg-primary py-2.5 text-sm font-semibold text-white hover:cursor-pointer hover:bg-primary/90"
-		>
+	<!-- Bottom actions -->
+	<div class="mt-auto flex flex-col gap-2 border-t border-border p-6">
+		<Button href={resolve('/')} class="w-full gap-2">
+			<ShoppingCart class="h-4 w-4" />
 			New Order
-		</button>
-		<a
-			// TODO add support link for customer service chat
-			href={resolve('/profile')}
-			// TODO update to support page when implemented
-			class="flex w-full items-center space-x-3 rounded-full px-4 py-2 text-stone-500 hover:bg-[#8e4e14]/10"
-		>
-			<span>Support</span>
-		</a>
-		<button
+		</Button>
+		<Button variant="ghost" class="w-full justify-start gap-2 text-muted-foreground">
+			<HelpCircle class="h-4 w-4" />
+			Support
+		</Button>
+		<Button
+			variant="ghost"
 			onclick={handleLogout}
-			class="flex w-full items-center space-x-3 rounded-full px-4 py-2 text-stone-500 hover:cursor-pointer hover:bg-[#8e4e14]/10"
+			class="w-full justify-start gap-2 text-muted-foreground hover:text-destructive"
 		>
-			<span>Logout</span>
-		</button>
+			<LogOut class="h-4 w-4" />
+			Log out
+		</Button>
 	</div>
 </aside>
