@@ -94,6 +94,11 @@ public class AuthController {
             tokenDenylistService.deny(authHeader.substring(7));
         }
 
+        var session = request.getSession(false);
+        if (session != null) {
+            session.invalidate();
+        }
+
         ResponseCookie cookie = ResponseCookie.from("token", "")
                 .httpOnly(true)
                 .secure(cookieSecure)
@@ -102,6 +107,12 @@ public class AuthController {
                 .sameSite("Lax")
                 .build();
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+
+        ResponseCookie sessionCookie = ResponseCookie.from("JSESSIONID", "")
+                .path("/")
+                .maxAge(0)
+                .build();
+        response.addHeader(HttpHeaders.SET_COOKIE, sessionCookie.toString());
 
         return ResponseEntity.noContent().build();
     }
