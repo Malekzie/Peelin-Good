@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -33,11 +34,6 @@ public class AuthController {
     private final AuthService authService;
     private final TokenDenylistService tokenDenylistService;
 
-    @Operation(summary = "Log in", description = "Authenticate with email and password. Returns a JWT token to use in the Authorization header.")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Login successful, token returned"),
-            @ApiResponse(responseCode = "401", description = "Invalid credentials", content = @Content)
-    })
     @Value("${app.jwt.expiration:864000000}")
     private long jwtExpiration;
 
@@ -79,20 +75,6 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.CREATED).body(authResponse);
     }
 
-    @PostMapping("/logout")
-    public ResponseEntity<Void> logout(HttpServletResponse response) {
-        ResponseCookie cookie = ResponseCookie.from("token", "")
-                .httpOnly(true)
-                .secure(cookieSecure)
-                .path("/")
-                .maxAge(0)
-                .sameSite("Lax")
-                .build();
-
-        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
-        return ResponseEntity.noContent().build();
-    }
-
     @Operation(summary = "Log out", description = "Invalidates the current JWT token. The token is added to a denylist and will be rejected on subsequent requests.")
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "Logged out successfully"),
@@ -100,12 +82,22 @@ public class AuthController {
     })
     @SecurityRequirement(name = "bearerAuth")
     @PostMapping("/logout")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void logout(HttpServletRequest request) {
+    public ResponseEntity<Void> logout(HttpServletRequest request, HttpServletResponse response) {
         String authHeader = request.getHeader("Authorization");
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             tokenDenylistService.deny(authHeader.substring(7));
         }
+
+        ResponseCookie cookie = ResponseCookie.from("token", "")
+                .httpOnly(true)
+                .secure(cookieSecure)
+                .path("/")
+                .maxAge(0)
+                .sameSite("Lax")
+                .build();
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+
+        return ResponseEntity.noContent().build();
     }
 
     @Operation(summary = "OAuth2 callback (not yet implemented)", description = "Placeholder for future Google/Microsoft OAuth2 login flow.")

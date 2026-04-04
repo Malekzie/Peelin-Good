@@ -93,14 +93,6 @@ public class BakeryService {
         return CatalogMapper.bakery(bakeryRepository.save(b));
     }
 
-    private void applyBakeryImageUrl(Bakery b, String url) {
-        if (url == null) {
-            return;
-        }
-        String t = url.trim();
-        b.setBakeryImageUrl(t.isEmpty() ? null : t);
-    }
-
     @Transactional
     @CacheEvict(value = "bakeries", allEntries = true)
     public void delete(Integer id) {
