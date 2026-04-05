@@ -32,6 +32,10 @@
 			? [profile.firstName?.[0], profile.lastName?.[0]].filter(Boolean).join('').toUpperCase()
 			: ''
 	);
+
+	function onEditProfile() {
+		goto(resolve('/profile/edit'));
+	}
 </script>
 
 {#if loading}
@@ -115,7 +119,7 @@
 						</div>
 					</div>
 
-					<Button variant="outline">Edit Profile</Button>
+					<Button onclick={onEditProfile} variant="outline">Edit Profile</Button>
 				</div>
 
 				<Separator />
