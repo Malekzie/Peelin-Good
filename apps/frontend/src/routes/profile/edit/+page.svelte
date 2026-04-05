@@ -13,6 +13,9 @@
 	import { logoutUser } from '$lib/services/auth';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
+	import { page } from '$app/stores';
+
+	const reason = $derived($page.url.searchParams.get('reason'));
 
 	let profile = $state(null);
 	let loading = $state(true);
@@ -138,7 +141,7 @@
 				await logoutUser();
 				goto(resolve('/login'));
 			} else {
-				setTimeout(() => goto(resolve('/profile')));
+				setTimeout(() => goto(resolve(reason === 'checkout' ? '/checkout' : '/profile')), 1200);
 			}
 		} catch (e) {
 			errors.general = 'Failed to save changes. Please try again.';
@@ -167,6 +170,14 @@
 		{:else if error}
 			<p class="text-center text-sm text-destructive">Failed to load profile.</p>
 		{:else}
+			{#if reason === 'checkout'}
+				<div
+					class="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
+				>
+					Please complete your profile before placing an order.
+				</div>
+			{/if}
+
 			<form onsubmit={handleSave} class="space-y-6">
 				<!-- Personal Info -->
 				<Card>

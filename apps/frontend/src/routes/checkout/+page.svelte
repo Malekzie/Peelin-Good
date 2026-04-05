@@ -9,6 +9,7 @@
 
 	const API = 'http://localhost:8080';
 
+	let profile = $state<Record<string, any> | null>(null);
 	let guestName = $state('');
 	let guestEmail = $state('');
 	let guestPhone = $state('');
@@ -26,6 +27,26 @@
 	let error = $state('');
 
 	const BAKERY_ID = 1;
+
+	onMount(async () => {
+		try {
+			profile = await getProfile();
+
+			if (!profile || !isProfileComplete(profile)) {
+				goto(resolve('/profile/edit?reason=checkout'));
+				return;
+			}
+
+			guestName = `${profile.firstName} ${profile.lastName}`.trim();
+			guestEmail = profile.email ?? '';
+			guestPhone = profile.phone ?? '';
+			line1 = profile.address?.line1 ?? '';
+			line2 = profile.address?.line2 ?? '';
+			city = profile.address?.city ?? '';
+			province = profile.address?.province ?? '';
+			postalCode = profile.address?.postalCode ?? '';
+		} catch {}
+	});
 
 	async function submit() {
 		error = '';
