@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -44,5 +45,16 @@ public class CustomerSelfController {
     @PatchMapping
     public CustomerDto patch(@Valid @RequestBody CustomerPatchRequest req) {
         return customerService.patchMe(req);
+    }
+
+    @Operation(summary = "Delete my account", description = "Permanently deletes the authenticated customer's account.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Account deleted"),
+            @ApiResponse(responseCode = "401", description = "Not authenticated", content = @Content)
+    })
+    @DeleteMapping
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteMe() {
+        customerService.deleteMe();
     }
 }

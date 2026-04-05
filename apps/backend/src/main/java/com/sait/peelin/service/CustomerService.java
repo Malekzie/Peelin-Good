@@ -210,4 +210,14 @@ public class CustomerService {
                 dtoUser != null && Boolean.TRUE.equals(dtoUser.getPhotoApprovalPending())
         );
     }
+
+    @Transactional
+    public void deleteMe() {
+        User u = currentUserService.requireUser();
+        Customer c = customerRepository.findByUser_UserId(u.getUserId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No customer profile"));
+
+        customerRepository.delete(c);
+        userRepository.delete(u);
+    }
 }

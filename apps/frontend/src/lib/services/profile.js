@@ -38,3 +38,12 @@ export async function updateProfile(profileData) {
 	if (!res.ok) throw new Error('Failed to update profile: ' + res.status);
 	return res.json();
 }
+
+export async function deleteAccount() {
+	const res = await fetch(`${API}/customers/me`, {
+		method: 'DELETE',
+		credentials: 'include'
+	});
+
+	if (!res.ok) throw new Error('Failed to delete account: ' + res.status);
+}
