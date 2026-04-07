@@ -34,8 +34,7 @@ public class Customer {
     private RewardTier rewardTier;
 
     @Size(max = 50)
-    @NotNull
-    @Column(name = "customer_first_name", nullable = false, length = 50)
+    @Column(name = "customer_first_name", length = 50)
     private String customerFirstName;
 
     @Size(max = 2)
@@ -43,8 +42,7 @@ public class Customer {
     private String customerMiddleInitial;
 
     @Size(max = 50)
-    @NotNull
-    @Column(name = "customer_last_name", nullable = false, length = 50)
+    @Column(name = "customer_last_name", length = 50)
     private String customerLastName;
 
     @Size(max = 20)

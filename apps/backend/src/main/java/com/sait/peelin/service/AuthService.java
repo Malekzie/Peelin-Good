@@ -10,8 +10,10 @@ import com.sait.peelin.model.User;
 import com.sait.peelin.model.UserRole;
 import com.sait.peelin.repository.CustomerRepository;
 import com.sait.peelin.repository.UserRepository;
+import com.sait.peelin.support.GuestContactFiller;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.util.StringUtils;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -77,13 +79,23 @@ public class AuthService {
         if (userRepository.existsByUsername(request.getUsername())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Username already taken");
         }
-        if (userRepository.existsByUserEmail(request.getEmail())) {
+        String emailNorm = request.getEmail().trim().toLowerCase();
+        if (userRepository.existsByUserEmail(emailNorm)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already registered");
+        }
+
+        boolean priorGuestCheckout = !customerRepository.findGuestCustomersByEmailNormalized(emailNorm).isEmpty();
+        if (!priorGuestCheckout && StringUtils.hasText(request.getPhone())) {
+            String digits = GuestContactFiller.normalizeDigits(request.getPhone());
+            if (digits.length() >= 10
+                    && !customerRepository.findGuestCustomerIdsByPhoneDigits(digits).isEmpty()) {
+                priorGuestCheckout = true;
+            }
         }
 
         User user = new User();
         user.setUsername(request.getUsername());
-        user.setUserEmail(request.getEmail());
+        user.setUserEmail(emailNorm);
         user.setUserPasswordHash(passwordEncoder.encode(request.getPassword()));
         user.setUserRole(UserRole.customer);
         user.setUserCreatedAt(OffsetDateTime.now());
@@ -99,7 +111,13 @@ public class AuthService {
                 .build();
 
         String token = jwtService.generateToken(userDetails);
-        return buildAuthResponse(user, token);
+        AuthResponse res = buildAuthResponse(user, token);
+        res.setPriorGuestCheckout(priorGuestCheckout);
+        if (priorGuestCheckout) {
+            res.setGuestProfileCompletionMessage(
+                    "You have previously checked out as a guest. Please complete the remaining information to finish your registration.");
+        }
+        return res;
     }
 
     /**

@@ -89,7 +89,7 @@ class OrderServiceTest {
     @Test
     void checkout_SuccessfulCustomerOrder() throws Exception {
         // Arrange
-        when(currentUserService.currentUserOrNull()).thenReturn(user);
+        doReturn(user).when(currentUserService).currentUserOrNull();
         when(customerRepository.findByUser_UserId(user.getUserId())).thenReturn(Optional.of(customer));
         when(bakeryRepository.findById(1)).thenReturn(Optional.of(bakery));
         when(productRepository.findById(101)).thenReturn(Optional.of(product));
@@ -148,10 +148,9 @@ class OrderServiceTest {
     @Test
     void checkout_FailsIfDeliveryMissingAddress() {
         // Arrange
-        when(currentUserService.currentUserOrNull()).thenReturn(user);
+        doReturn(user).when(currentUserService).currentUserOrNull();
         customer.setAddress(null);
         when(customerRepository.findByUser_UserId(user.getUserId())).thenReturn(Optional.of(customer));
-        when(bakeryRepository.findById(1)).thenReturn(Optional.of(bakery));
 
         CheckoutRequest req = new CheckoutRequest();
         req.setBakeryId(1);
@@ -169,7 +168,7 @@ class OrderServiceTest {
         admin.setUserId(UUID.randomUUID());
         admin.setUserRole(UserRole.admin);
 
-        when(currentUserService.currentUserOrNull()).thenReturn(admin);
+        doReturn(admin).when(currentUserService).currentUserOrNull();
         when(customerRepository.findById(customer.getId())).thenReturn(Optional.of(customer));
         when(bakeryRepository.findById(1)).thenReturn(Optional.of(bakery));
         when(productRepository.findById(101)).thenReturn(Optional.of(product));
@@ -228,7 +227,7 @@ class OrderServiceTest {
         guestAddress.setAddressProvince("Ontario");
         guestCustomer.setAddress(guestAddress);
 
-        when(currentUserService.currentUserOrNull()).thenReturn(null);
+        doReturn(null).when(currentUserService).currentUserOrNull();
         when(customerService.resolveOrCreateGuestCustomer(guest)).thenReturn(guestCustomer);
         when(bakeryRepository.findById(1)).thenReturn(Optional.of(bakery));
         when(productRepository.findById(101)).thenReturn(Optional.of(product));

@@ -3,6 +3,7 @@ package com.sait.peelin.service;
 import com.sait.peelin.dto.v1.auth.RegisterRequest;
 import com.sait.peelin.model.User;
 import com.sait.peelin.model.UserRole;
+import com.sait.peelin.repository.CustomerRepository;
 import com.sait.peelin.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -13,11 +14,17 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class AuthServiceTest {
+
+    @Mock
+    private CustomerRepository customerRepository;
 
     @Mock
     private UserRepository userRepository;
@@ -46,6 +53,8 @@ class AuthServiceTest {
         request.setPassword("password");
         when(userRepository.existsByUsername("testuser")).thenReturn(false);
         when(userRepository.existsByUserEmail("test@example.com")).thenReturn(false);
+        when(customerRepository.findGuestCustomersByEmailNormalized("test@example.com")).thenReturn(List.of());
+        when(customerRepository.findGuestCustomerIdsByPhoneDigits(anyString())).thenReturn(List.of());
         when(passwordEncoder.encode("password")).thenReturn("encoded_password");
 
         // Act
