@@ -59,13 +59,10 @@
 				href={resolve('/about')}
 				class="text-sm font-medium text-foreground transition-colors hover:text-primary">About</a
 			>
-			<!-- show order if user is logged in -->
-			{#if $isLoggedIn}
-				<a
-					href={resolve('/order')}
-					class="text-sm font-medium text-foreground transition-colors hover:text-primary">Order</a
-				>
-			{/if}
+			<a
+				href={resolve('/order')}
+				class="text-sm font-medium text-foreground transition-colors hover:text-primary">Order</a
+			>
 		</div>
 
 		<!-- Right icons -->

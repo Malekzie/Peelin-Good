@@ -33,7 +33,7 @@
 	tabindex="0"
 	onclick={() => onselect(product)}
 	onkeydown={(e) => e.key === 'Enter' && onselect(product)}
-	class="group flex cursor-pointer flex-col overflow-hidden border-border bg-white transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md"
+	class="group flex cursor-pointer flex-col overflow-hidden border-border bg-white pt-0 pb-0.5 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md"
 >
 	<!-- Image -->
 	<div class="relative h-48 shrink-0 overflow-hidden bg-[#F5EFE6]">
@@ -53,7 +53,7 @@
 	<!-- Content -->
 	<CardContent class="flex flex-1 flex-col gap-3 p-4">
 		<div class="flex-1">
-			<h2 class="text-sm font-bold leading-snug text-[#2C1A0E]">{product.name}</h2>
+			<h2 class="text-sm leading-snug font-bold text-[#2C1A0E]">{product.name}</h2>
 			{#if product.description}
 				<p class="mt-1 line-clamp-2 text-xs text-muted-foreground">{product.description}</p>
 			{/if}
@@ -67,7 +67,10 @@
 		<div class="flex items-center gap-2" onclick={stepperClick}>
 			<div class="flex items-center rounded-full border border-border bg-background">
 				<button
-					onclick={(e) => { e.stopPropagation(); if (quantity > 1) quantity -= 1; }}
+					onclick={(e) => {
+						e.stopPropagation();
+						if (quantity > 1) quantity -= 1;
+					}}
 					class="flex h-7 w-7 items-center justify-center rounded-full transition-colors hover:bg-muted"
 					aria-label="Decrease"
 				>
@@ -75,7 +78,10 @@
 				</button>
 				<span class="w-6 text-center text-xs font-semibold">{quantity}</span>
 				<button
-					onclick={(e) => { e.stopPropagation(); quantity += 1; }}
+					onclick={(e) => {
+						e.stopPropagation();
+						quantity += 1;
+					}}
 					class="flex h-7 w-7 items-center justify-center rounded-full transition-colors hover:bg-muted"
 					aria-label="Increase"
 				>

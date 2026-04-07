@@ -53,4 +53,15 @@ public class CustomerSelfController {
     public CustomerDto patch(@Valid @RequestBody CustomerPatchRequest req) {
         return customerService.patchMe(req);
     }
+
+    @Operation(summary = "Delete my account", description = "Permanently deletes the authenticated customer's account.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Account deleted"),
+            @ApiResponse(responseCode = "401", description = "Not authenticated", content = @Content)
+    })
+    @DeleteMapping
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteMe() {
+        customerService.deleteMe();
+    }
 }

@@ -1,9 +1,9 @@
 package com.sait.peelin.controller.v1;
 
-import com.sait.peelin.dto.v1.auth.AuthResponse;
-import com.sait.peelin.dto.v1.auth.LoginRequest;
-import com.sait.peelin.dto.v1.auth.RegisterRequest;
+import com.sait.peelin.dto.v1.auth.*;
 import com.sait.peelin.service.AuthService;
+import com.sait.peelin.service.JwtService;
+import com.sait.peelin.service.PasswordResetService;
 import com.sait.peelin.service.TokenDenylistService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -22,6 +22,7 @@ import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.time.Duration;
 
 
@@ -33,6 +34,11 @@ public class AuthController {
 
     private final AuthService authService;
     private final TokenDenylistService tokenDenylistService;
+    private final PasswordResetService passwordResetService;
+    private final JwtService jwtService;
+
+    @Value("${app.frontend.url:http://localhost:5173}")
+    private String frontendUrl;
 
     @Value("${app.jwt.expiration:864000000}")
     private long jwtExpiration;
@@ -88,6 +94,11 @@ public class AuthController {
             tokenDenylistService.deny(authHeader.substring(7));
         }
 
+        var session = request.getSession(false);
+        if (session != null) {
+            session.invalidate();
+        }
+
         ResponseCookie cookie = ResponseCookie.from("token", "")
                 .httpOnly(true)
                 .secure(cookieSecure)
@@ -96,6 +107,12 @@ public class AuthController {
                 .sameSite("Lax")
                 .build();
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+
+        ResponseCookie sessionCookie = ResponseCookie.from("JSESSIONID", "")
+                .path("/")
+                .maxAge(0)
+                .build();
+        response.addHeader(HttpHeaders.SET_COOKIE, sessionCookie.toString());
 
         return ResponseEntity.noContent().build();
     }
@@ -107,5 +124,36 @@ public class AuthController {
         // TODO: implement OAuth2 login (Google/Microsoft)
         return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED)
                 .body("OAuth2 login is scaffolded but not yet implemented");
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<Void> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        passwordResetService.requestPasswordReset(request.getEmail());
+
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<Void> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        passwordResetService.resetPassword(request.getToken(), request.getNewPassword());
+
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/oauth2/success")
+    public void oauth2Success(
+            HttpServletRequest request,
+            HttpServletResponse response) throws IOException {
+        String token = (String) request.getSession().getAttribute("oauth2_pending_token");
+        if (token == null) {
+            response.sendRedirect(frontendUrl + "/login?error=oauth_failed");
+            return;
+        }
+        request.getSession().removeAttribute("oauth2_pending_token");
+        setTokenCookie(response, token);
+        AuthResponse auth = authService.getUserInfoFromToken(token);
+        response.sendRedirect(frontendUrl + "/auth/callback?username=" + auth.getUsername()
+                + "&role=" + auth.getRole()
+                + "&userId=" + auth.getUserId());
     }
 }

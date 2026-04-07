@@ -14,6 +14,7 @@ public class CustomerPatchRequest {
     @Pattern(regexp = "^$|^[A-Za-z]$", message = "Middle initial must be a single letter")
     private String middleInitial;
     private String lastName;
+    private String username;
     private String phone;
     private String businessPhone;
     private String email;

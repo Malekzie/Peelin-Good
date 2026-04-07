@@ -273,6 +273,10 @@ public class CustomerService {
             c.getUser().setPhotoApprovalPending(req.getPhotoApprovalPending());
             userRepository.save(c.getUser());
         }
+        if (req.getUsername() != null && c.getUser() != null) {
+            c.getUser().setUsername(req.getUsername());
+            userRepository.save(c.getUser());
+        }
     }
 
     private void upsertCustomerAddress(Customer c, AddressUpsertRequest req) {
@@ -477,5 +481,15 @@ public class CustomerService {
                 dtoUser != null ? dtoUser.getProfilePhotoPath() : null,
                 dtoUser != null && Boolean.TRUE.equals(dtoUser.getPhotoApprovalPending())
         );
+    }
+
+    @Transactional
+    public void deleteMe() {
+        User u = currentUserService.requireUser();
+        Customer c = customerRepository.findByUser_UserId(u.getUserId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No customer profile"));
+
+        customerRepository.delete(c);
+        userRepository.delete(u);
     }
 }

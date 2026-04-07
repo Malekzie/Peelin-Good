@@ -22,7 +22,7 @@
 
 	<div class="overflow-hidden rounded-xl shadow-lg">
 		<img
-			src="https://peelin-good-storage.tor1.cdn.digitaloceanspaces.com/bakery/About_Us_Bread.jpg"
+			src="https://peelin-good-storage.tor1.cdn.digitaloceanspaces.com/products/multigrain-sandwich-bread.jpg"
 			alt="Bakery"
 			class="h-full w-full object-cover"
 		/>

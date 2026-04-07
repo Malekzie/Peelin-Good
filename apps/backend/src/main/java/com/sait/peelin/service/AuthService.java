@@ -180,6 +180,17 @@ public class AuthService {
         userRepository.save(u);
     }
 
+    public AuthResponse getUserInfoFromToken(String token) {
+        String username = jwtService.extractUsername(token);
+        User user = userRepository.findByUsername(username).orElseThrow();
+
+        AuthResponse res = new AuthResponse();
+        res.setUsername(user.getUsername());
+        res.setRole(user.getUserRole().name());
+        res.setUserId(user.getUserId());
+        return res;
+    }
+
     private AuthResponse buildAuthResponse(User user, String token) {
         AuthResponse res = new AuthResponse();
         res.setToken(token);

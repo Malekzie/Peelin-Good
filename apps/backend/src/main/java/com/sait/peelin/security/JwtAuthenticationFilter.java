@@ -59,10 +59,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        if (SecurityContextHolder.getContext().getAuthentication() != null) {
-            filterChain.doFilter(request, response);
-            return;
-        }
+//        if (SecurityContextHolder.getContext().getAuthentication() != null) {
+//            filterChain.doFilter(request, response);
+//            return;
+//        }
 
 
         if (tokenDenylistService.isDenied(jwt)) {
@@ -75,6 +75,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             if (username != null) {
                 UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+
+                // TEMP
+                System.out.println("Processing JWT for: " + username);
+                System.out.println("Authorities: " + userDetails.getAuthorities());
 
                 if (jwtService.isTokenValid(jwt, userDetails)) {
                     UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(

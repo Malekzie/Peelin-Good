@@ -82,12 +82,13 @@
 
 			<!-- OAuth -->
 			<div class="grid gap-3 sm:grid-cols-2">
-				<button
+				<a
+					href="/oauth2/authorization/google"
 					class="flex items-center justify-center gap-3 rounded-full border border-border bg-white px-4 py-3 text-sm font-semibold text-gray-700 shadow-sm transition hover:cursor-pointer hover:bg-gray-50 hover:shadow-md active:scale-[0.98]"
 				>
 					<img src="/images/google_logo.svg" alt="Google" class="h-5 w-5" />
 					Google
-				</button>
+				</a>
 				<button
 					class="flex items-center justify-center gap-3 rounded-full border border-border bg-white px-4 py-3 text-sm font-semibold text-gray-700 shadow-sm transition hover:cursor-pointer hover:bg-gray-50 hover:shadow-md active:scale-[0.98]"
 				>
@@ -132,10 +133,6 @@
 							<label class="block text-xs font-semibold tracking-wide text-primary uppercase">
 								Password
 							</label>
-							<a
-								class="text-xs text-primary hover:underline"
-								href={resolve('/login/recover-password')}>Forgot?</a
-							>
 						</div>
 						<input
 							class="input w-full rounded-md border border-border p-3 transition focus:border-primary focus:ring-2 focus:ring-primary/40 focus:outline-none
@@ -158,6 +155,10 @@
 							<input type="checkbox" />
 							Keep me signed in
 						</label>
+						<a
+							class="text-xs text-primary hover:underline"
+							href={resolve('/login/recover-password')}>Forgot?</a
+						>
 					</div>
 
 					<!-- Submit -->

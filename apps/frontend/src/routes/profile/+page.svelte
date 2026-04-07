@@ -7,6 +7,7 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Separator } from '$lib/components/ui/separator';
 	import { Skeleton } from '$lib/components/ui/skeleton';
+	import { isProfileComplete } from '$lib/utils/profile';
 	import { onMount } from 'svelte';
 	import { getProfile } from '$lib/services/profile';
 	import { logoutUser } from '$lib/services/auth';
@@ -32,6 +33,10 @@
 			? [profile.firstName?.[0], profile.lastName?.[0]].filter(Boolean).join('').toUpperCase()
 			: ''
 	);
+
+	function onEditProfile() {
+		goto(resolve('/profile/edit'));
+	}
 </script>
 
 {#if loading}
@@ -80,6 +85,17 @@
 		<ProfileSidebar />
 
 		<main class="flex-1 overflow-y-auto p-8 lg:p-10">
+			{#if profile && !isProfileComplete(profile)}
+				<div
+					class="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
+				>
+					Your profile is incomplete. Add your address and phone number to place orders.
+					<a href={resolve('/profile/edit')} class="ml-2 font-semibold underline"
+						>Complete profile</a
+					>
+				</div>
+			{/if}
+
 			<div class="mx-auto max-w-5xl space-y-8">
 				<!-- Profile header -->
 				<div class="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
@@ -115,7 +131,7 @@
 						</div>
 					</div>
 
-					<Button variant="outline">Edit Profile</Button>
+					<Button onclick={onEditProfile} variant="outline">Edit Profile</Button>
 				</div>
 
 				<Separator />

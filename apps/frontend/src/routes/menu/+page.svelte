@@ -72,10 +72,9 @@
 </script>
 
 <div class="min-h-screen bg-[#FAF7F2]">
-
 	<!-- Page header -->
-	<header class="border-b border-border/60 bg-[#FAF7F2] px-6 pb-10 pt-14 text-center">
-		<p class="mb-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#C4714A]">
+	<header class="border-b border-border/60 bg-[#FAF7F2] px-6 pt-14 pb-10 text-center">
+		<p class="mb-3 text-[11px] font-semibold tracking-[0.2em] text-[#C4714A] uppercase">
 			Peelin' Good Bakery
 		</p>
 		<h1 class="text-5xl font-black tracking-tight text-[#2C1A0E] sm:text-6xl">Our Menu</h1>
@@ -84,18 +83,18 @@
 		<!-- Search -->
 		<div class="relative mx-auto mt-8 max-w-md">
 			<Search
-				class="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+				class="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-muted-foreground"
 			/>
 			<Input
 				type="text"
 				placeholder="Search breads, pastries, cakes..."
 				bind:value={searchQuery}
-				class="rounded-full bg-white pl-10 pr-10 shadow-sm focus-visible:ring-[#C4714A]"
+				class="rounded-full bg-white pr-10 pl-10 shadow-sm focus-visible:ring-[#C4714A]"
 			/>
 			{#if searchQuery}
 				<button
 					onclick={() => (searchQuery = '')}
-					class="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+					class="absolute top-1/2 right-3.5 -translate-y-1/2 text-muted-foreground hover:text-foreground"
 					aria-label="Clear search"
 				>
 					<X class="h-4 w-4" />
@@ -106,11 +105,10 @@
 
 	<!-- Body -->
 	<div class="mx-auto flex max-w-7xl gap-0">
-
 		<!-- Sidebar -->
 		<aside class="hidden w-52 shrink-0 md:block">
 			<div class="sticky top-6 px-4 py-8">
-				<p class="mb-3 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+				<p class="mb-3 text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
 					Categories
 				</p>
 				<div class="flex flex-col gap-0.5">
@@ -142,16 +140,20 @@
 
 		<!-- Main -->
 		<main class="flex-1 px-6 py-8">
-
 			{#if activeTagName || searchQuery}
 				<div class="mb-5 flex items-center gap-2 text-sm text-muted-foreground">
 					<span>
 						{filtered.length} result{filtered.length !== 1 ? 's' : ''}
-						{#if activeTagName} in <span class="font-medium text-foreground">{activeTagName}</span>{/if}
-						{#if searchQuery} for <span class="font-medium text-foreground">"{searchQuery}"</span>{/if}
+						{#if activeTagName}
+							in <span class="font-medium text-foreground">{activeTagName}</span>{/if}
+						{#if searchQuery}
+							for <span class="font-medium text-foreground">"{searchQuery}"</span>{/if}
 					</span>
 					<button
-						onclick={() => { activeTagId = null; searchQuery = ''; }}
+						onclick={() => {
+							activeTagId = null;
+							searchQuery = '';
+						}}
 						class="ml-1 flex items-center gap-1 rounded-full border border-border px-2 py-0.5 text-xs hover:bg-muted"
 					>
 						<X class="h-3 w-3" /> Clear
@@ -174,29 +176,29 @@
 						</div>
 					{/each}
 				</div>
-
 			{:else if filtered.length === 0}
 				<div class="flex flex-col items-center justify-center py-24 text-center">
-					<div class="flex h-16 w-16 items-center justify-center rounded-full bg-[#C4714A]/10"><Search class="h-7 w-7 text-[#C4714A]" /></div>
+					<div class="flex h-16 w-16 items-center justify-center rounded-full bg-[#C4714A]/10">
+						<Search class="h-7 w-7 text-[#C4714A]" />
+					</div>
 					<h2 class="mt-4 text-lg font-semibold text-foreground">Nothing found</h2>
 					<p class="mt-1 text-sm text-muted-foreground">
 						Try a different search or browse all categories.
 					</p>
 					<button
-						onclick={() => { activeTagId = null; searchQuery = ''; }}
+						onclick={() => {
+							activeTagId = null;
+							searchQuery = '';
+						}}
 						class="mt-5 rounded-full bg-[#C4714A] px-5 py-2 text-sm font-semibold text-white hover:bg-[#C4714A]/90"
 					>
 						Show all items
 					</button>
 				</div>
-
 			{:else}
 				<div class="grid grid-cols-2 gap-5 lg:grid-cols-3">
 					{#each filtered as product, i (product.id)}
-						<div
-							class="product-card"
-							style="animation-delay: {Math.min(i * 50, 350)}ms"
-						>
+						<div class="product-card" style="animation-delay: {Math.min(i * 50, 350)}ms">
 							<ProductCard {product} onselect={openSheet} />
 						</div>
 					{/each}
@@ -244,11 +246,15 @@
 
 				<!-- Quantity -->
 				<div class="flex flex-col gap-2">
-					<p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Quantity</p>
+					<p class="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+						Quantity
+					</p>
 					<div class="flex items-center gap-3">
 						<div class="flex items-center rounded-full border border-border bg-background">
 							<button
-								onclick={() => { if (sheetQty > 1) sheetQty -= 1; }}
+								onclick={() => {
+									if (sheetQty > 1) sheetQty -= 1;
+								}}
 								class="flex h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-muted"
 								aria-label="Decrease"
 							>
@@ -256,7 +262,7 @@
 							</button>
 							<span class="w-8 text-center text-sm font-semibold">{sheetQty}</span>
 							<button
-								onclick={() => sheetQty += 1}
+								onclick={() => (sheetQty += 1)}
 								class="flex h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-muted"
 								aria-label="Increase"
 							>
