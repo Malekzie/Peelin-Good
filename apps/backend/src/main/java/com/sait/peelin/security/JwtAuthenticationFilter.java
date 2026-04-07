@@ -32,40 +32,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             FilterChain filterChain
     ) throws ServletException, IOException {
 
-        String jwt = null;
+        String jwt = extractToken(request);
 
-        // HttpOnly Cookies
-        if (request.getCookies() != null) {
-            for (Cookie cookie : request.getCookies()) {
-                if ("token".equals(cookie.getName())) {
-                    jwt = cookie.getValue();
-                    break;
-                }
-            }
-        }
-
-        // Auth Headers
-        // fallback to headers if no cookies found (for desktop and android)
-        if (jwt == null) {
-            final String authHeader = request.getHeader("Authorization");
-            if (authHeader != null && authHeader.startsWith("Bearer ")) {
-                jwt = authHeader.substring(7);
-            }
-        }
-
-        // if no token found
-        if (jwt == null) {
-            filterChain.doFilter(request, response);
-            return;
-        }
-
-//        if (SecurityContextHolder.getContext().getAuthentication() != null) {
-//            filterChain.doFilter(request, response);
-//            return;
-//        }
-
-
-        if (tokenDenylistService.isDenied(jwt)) {
+        if (jwt == null || tokenDenylistService.isDenied(jwt)) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -75,10 +44,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             if (username != null) {
                 UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-
-                // TEMP
-                System.out.println("Processing JWT for: " + username);
-                System.out.println("Authorities: " + userDetails.getAuthorities());
 
                 if (jwtService.isTokenValid(jwt, userDetails)) {
                     UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
@@ -91,5 +56,25 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    /**
+     * Extracts the JWT from the request.
+     * Checks the HttpOnly cookie first (web app), then falls back to
+     * the Authorization header (mobile/desktop apps).
+     */
+    private String extractToken(HttpServletRequest request) {
+        if (request.getCookies() != null) {
+            for (Cookie cookie : request.getCookies()) {
+                if ("token".equals(cookie.getName())) {
+                    return cookie.getValue();
+                }
+            }
+        }
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            return authHeader.substring(7);
+        }
+        return null;
     }
 }

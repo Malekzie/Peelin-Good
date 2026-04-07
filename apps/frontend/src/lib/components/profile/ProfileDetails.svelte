@@ -1,5 +1,11 @@
 <script>
-	import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '$lib/components/ui/card';
+	import {
+		Card,
+		CardContent,
+		CardHeader,
+		CardTitle,
+		CardDescription
+	} from '$lib/components/ui/card';
 	import { Separator } from '$lib/components/ui/separator';
 	import { Button } from '$lib/components/ui/button';
 	import { Star } from '@lucide/svelte';
@@ -7,14 +13,23 @@
 	let { profile } = $props();
 
 	const fields = $derived([
-		{ label: 'Full Name', value: [profile.firstName, profile.middleInitial ? profile.middleInitial + '.' : null, profile.lastName].filter(Boolean).join(' ') },
+		{
+			label: 'Full Name',
+			value: [
+				profile.firstName,
+				profile.middleInitial ? profile.middleInitial + '.' : null,
+				profile.lastName
+			]
+				.filter(Boolean)
+				.join(' ')
+		},
 		{ label: 'Username', value: profile.username },
 		{ label: 'Email', value: profile.email },
 		{ label: 'Phone', value: profile.phone ?? '—' }
 	]);
 </script>
 
-<div class="md:col-span-8 flex flex-col gap-6">
+<div class="flex flex-col gap-6 md:col-span-8">
 	<!-- Personal Info -->
 	<Card>
 		<CardHeader>
@@ -25,7 +40,7 @@
 			<dl class="grid grid-cols-1 gap-x-8 gap-y-5 sm:grid-cols-2">
 				{#each fields as field (field.label)}
 					<div class="flex flex-col gap-1">
-						<dt class="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+						<dt class="text-[11px] font-semibold tracking-widest text-muted-foreground uppercase">
 							{field.label}
 						</dt>
 						<dd class="text-sm font-medium text-foreground">{field.value}</dd>

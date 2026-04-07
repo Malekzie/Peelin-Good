@@ -7,7 +7,14 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Separator } from '$lib/components/ui/separator';
 	import { Avatar, AvatarFallback } from '$lib/components/ui/avatar';
-	import { User, ShoppingBag, SlidersHorizontal, HelpCircle, LogOut, ShoppingCart } from '@lucide/svelte';
+	import {
+		User,
+		ShoppingBag,
+		SlidersHorizontal,
+		HelpCircle,
+		LogOut,
+		ShoppingCart
+	} from '@lucide/svelte';
 
 	const navLinks = [
 		{ label: 'Profile', href: '/profile', icon: User },
@@ -15,9 +22,7 @@
 		{ label: 'Preferences', href: '/profile/preferences', icon: SlidersHorizontal }
 	];
 
-	const initials = $derived(
-		[$user?.username?.[0]].filter(Boolean).join('').toUpperCase() || '?'
-	);
+	const initials = $derived([$user?.username?.[0]].filter(Boolean).join('').toUpperCase() || '?');
 
 	async function handleLogout() {
 		await logoutUser();
@@ -30,7 +35,7 @@
 		<!-- User identity -->
 		<div class="flex items-center gap-3">
 			<Avatar class="h-10 w-10">
-				<AvatarFallback class="bg-primary text-primary-foreground text-sm font-semibold">
+				<AvatarFallback class="bg-primary text-sm font-semibold text-primary-foreground">
 					{initials}
 				</AvatarFallback>
 			</Avatar>

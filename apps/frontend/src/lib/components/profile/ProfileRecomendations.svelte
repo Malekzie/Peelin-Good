@@ -18,7 +18,9 @@
 		</CardHeader>
 		<CardContent class="flex flex-col gap-1">
 			{#each items as item, i (item.name)}
-				<div class="flex items-center justify-between rounded-lg px-3 py-3 hover:bg-muted transition-colors">
+				<div
+					class="flex items-center justify-between rounded-lg px-3 py-3 transition-colors hover:bg-muted"
+				>
 					<div>
 						<p class="text-sm font-medium text-foreground">{item.name}</p>
 						<p class="text-xs text-muted-foreground">{item.desc}</p>
