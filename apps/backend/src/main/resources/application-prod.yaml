@@ -17,7 +17,7 @@ spring:
     locations: classpath:db/migration
     default-schema: public
     schemas: public
-    out-of-order: true
+    ignore-migration-patterns: "*:ignored"
   spaces:
     endpoint: ${DO_SPACES_ENDPOINT:}
     bucket: ${DO_SPACES_BUCKET:}
