@@ -32,6 +32,10 @@ public class CacheConfig {
         cacheConfigurations.put("rewards",          defaultConfig.entryTtl(Duration.ofMinutes(5)));
         cacheConfigurations.put("analytics",        defaultConfig.entryTtl(Duration.ofMinutes(30)));
         cacheConfigurations.put("dashboard",        defaultConfig.entryTtl(Duration.ofMinutes(5)));
+        cacheConfigurations.put("customers",        defaultConfig.entryTtl(Duration.ofMinutes(5)));
+        cacheConfigurations.put("employees",        defaultConfig.entryTtl(Duration.ofMinutes(5)));
+        cacheConfigurations.put("reward-tiers",     defaultConfig.entryTtl(Duration.ofMinutes(30)));
+        cacheConfigurations.put("reviews",          defaultConfig.entryTtl(Duration.ofMinutes(5)));
 
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(defaultConfig)

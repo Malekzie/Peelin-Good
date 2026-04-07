@@ -12,6 +12,7 @@ import com.sait.peelin.repository.BakeryRepository;
 import com.sait.peelin.repository.EmployeeRepository;
 import com.sait.peelin.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,6 +31,7 @@ public class EmployeeAdminService {
     private final EmployeeProfileService employeeProfileService;
 
     @Transactional
+    @CacheEvict(value = "employees", allEntries = true)
     public EmployeeDto create(EmployeeUpsertRequest req) {
         if (employeeRepository.findByUser_UserId(req.userId()).isPresent()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "User already has an employee profile");
@@ -59,6 +61,7 @@ public class EmployeeAdminService {
     }
 
     @Transactional
+    @CacheEvict(value = "employees", allEntries = true)
     public EmployeeDto update(UUID id, EmployeeUpsertRequest req) {
         Employee e = employeeRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Employee not found"));
@@ -90,6 +93,7 @@ public class EmployeeAdminService {
     }
 
     @Transactional
+    @CacheEvict(value = "employees", allEntries = true)
     public void delete(UUID id) {
         if (!employeeRepository.existsById(id)) {
             throw new ResourceNotFoundException("Employee not found");

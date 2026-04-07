@@ -12,6 +12,8 @@ import com.sait.peelin.repository.OrderItemRepository;
 import com.sait.peelin.repository.ProductRepository;
 import com.sait.peelin.repository.ReviewRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,8 +36,9 @@ public class ReviewService {
     private final CurrentUserService currentUserService;
 
     @Transactional(readOnly = true)
+    @Cacheable(value = "reviews", key = "'product:' + #productId")
     public List<ReviewDto> forProduct(Integer productId) {
-        return reviewRepository.findByProduct_Id(productId).stream().map(this::toDto).toList();
+        return reviewRepository.findByProduct_IdAndReviewStatus(productId, ReviewStatus.approved).stream().map(this::toDto).toList();
     }
 
     @Transactional(readOnly = true)
@@ -44,6 +47,7 @@ public class ReviewService {
     }
 
     @Transactional(readOnly = true)
+    @Cacheable(value = "reviews", key = "'product-avg:' + #productId")
     public Double averageForProduct(Integer productId) {
         return reviewRepository.averageRatingForProduct(productId).orElse(null);
     }
@@ -154,6 +158,7 @@ public class ReviewService {
     }
 
     @Transactional
+    @CacheEvict(value = "reviews", allEntries = true)
     public ReviewDto patchStatus(UUID reviewId, ReviewStatusPatchRequest req) {
         User u = currentUserService.requireUser();
         if (u.getUserRole() != UserRole.admin && u.getUserRole() != UserRole.employee) {

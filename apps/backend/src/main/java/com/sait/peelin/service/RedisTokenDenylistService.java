@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service;
 import java.time.Duration;
 
 @Service
-@Profile("!dev")
+@Profile("!test & !local-no-redis")
 @RequiredArgsConstructor
 public class RedisTokenDenylistService implements TokenDenylistService {
 

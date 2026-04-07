@@ -13,6 +13,8 @@ import com.sait.peelin.repository.CustomerRepository;
 import com.sait.peelin.repository.RewardTierRepository;
 import com.sait.peelin.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -55,6 +57,7 @@ public class CustomerService {
     }
 
     @Transactional(readOnly = true)
+    @Cacheable(value = "customers", keyGenerator = "userIdKeyGenerator")
     public CustomerDto me() {
         User u = currentUserService.requireUser();
         Customer c = customerRepository.findByUser_UserId(u.getUserId())
@@ -63,6 +66,7 @@ public class CustomerService {
     }
 
     @Transactional
+    @CacheEvict(value = "customers", keyGenerator = "userIdKeyGenerator")
     public CustomerDto patchMe(CustomerPatchRequest req) {
         User u = currentUserService.requireUser();
         Customer c = customerRepository.findByUser_UserId(u.getUserId())
@@ -72,6 +76,7 @@ public class CustomerService {
     }
 
     @Transactional
+    @CacheEvict(value = "customers", allEntries = true)
     public CustomerDto patch(UUID id, CustomerPatchRequest req) {
         Customer c = customerRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Customer not found"));
         applyPatch(c, req);

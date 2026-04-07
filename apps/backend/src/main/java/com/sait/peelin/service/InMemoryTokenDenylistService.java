@@ -8,7 +8,7 @@ import java.time.Instant;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Service
-@Profile("dev")
+@Profile("test | local-no-redis")
 @RequiredArgsConstructor
 public class InMemoryTokenDenylistService implements TokenDenylistService {
 

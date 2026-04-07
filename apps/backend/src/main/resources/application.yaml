@@ -1,7 +1,12 @@
 spring:
   data:
     redis:
-      url: ${UPSTASH_REDIS_URL}
+      host: ${VALKEY_HOST:localhost}
+      port: ${VALKEY_PORT:6379}
+      username: ${VALKEY_USERNAME:default}
+      password: ${VALKEY_PASSWORD:}
+      ssl:
+        enabled: {VALKEY_SSL:false}
   application:
     name: Peelin' Good
   config:
