@@ -1,5 +1,6 @@
 <script>
 	import { registerUser } from '$lib/services/auth.js';
+	import { resolve } from '$app/paths';
 
 	let fields = {
 		firstName: '',
@@ -396,7 +397,7 @@
 
 				<p class="text-center text-sm">
 					Already have an account?
-					<a href="/login" class="font-semibold text-primary hover:underline">Sign in</a>
+					<a href={resolve('/login')} class="font-semibold text-primary hover:underline">Sign in</a>
 				</p>
 			</form>
 		</div>

@@ -169,7 +169,7 @@
 
 			{#if loading}
 				<div class="grid grid-cols-2 gap-5 lg:grid-cols-3">
-					{#each Array(6) as _, i (i)}
+					{#each Array.from({ length: 6 }), i (i)}
 						<div class="flex flex-col overflow-hidden rounded-xl border border-border bg-white">
 							<Skeleton class="h-48 w-full rounded-none" />
 							<div class="flex flex-col gap-3 p-4">

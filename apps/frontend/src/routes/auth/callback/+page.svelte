@@ -1,6 +1,7 @@
 <script>
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import { setAuth } from '$lib/stores/authStore.js';
 
 	onMount(() => {
@@ -11,9 +12,9 @@
 
 		if (username && role && userId) {
 			setAuth({ username, role, userId });
-			goto('/profile');
+			goto(resolve('/profile'));
 		} else {
-			goto('/login?error=oauth_failed');
+			goto(resolve('/login?error=oauth_failed'));
 		}
 	});
 </script>

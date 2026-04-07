@@ -1,5 +1,3 @@
-import { get } from 'svelte/store';
-
 let cache = null;
 
 const API_BASE = '/api/v1/tags';

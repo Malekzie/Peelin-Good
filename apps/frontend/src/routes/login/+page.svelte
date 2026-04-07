@@ -83,7 +83,7 @@
 			<!-- OAuth -->
 			<div class="grid gap-3 sm:grid-cols-2">
 				<a
-					href="/oauth2/authorization/google"
+					href={resolve('/oauth2/authorization/google')}
 					class="flex items-center justify-center gap-3 rounded-full border border-border bg-white px-4 py-3 text-sm font-semibold text-gray-700 shadow-sm transition hover:cursor-pointer hover:bg-gray-50 hover:shadow-md active:scale-[0.98]"
 				>
 					<img src="/images/google_logo.svg" alt="Google" class="h-5 w-5" />

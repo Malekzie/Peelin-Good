@@ -9,7 +9,7 @@
 
 	const API = 'http://localhost:8080';
 
-	let profile = $state<Record<string, any> | null>(null);
+	let profile = $state<Record<string, unknown> | null>(null);
 	let guestName = $state('');
 	let guestEmail = $state('');
 	let guestPhone = $state('');
@@ -45,7 +45,9 @@
 			city = profile.address?.city ?? '';
 			province = profile.address?.province ?? '';
 			postalCode = profile.address?.postalCode ?? '';
-		} catch {}
+		} catch {
+			console.warn('Failed to load profile, proceeding with empty checkout form');
+		}
 	});
 
 	async function submit() {
