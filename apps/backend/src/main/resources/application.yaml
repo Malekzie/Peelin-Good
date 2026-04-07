@@ -7,6 +7,8 @@ spring:
       password: ${VALKEY_PASSWORD:}
       ssl:
         enabled: ${VALKEY_SSL:false}
+      repositories:
+        enabled: false
   application:
     name: Peelin' Good
   config:
