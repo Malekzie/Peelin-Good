@@ -18,7 +18,7 @@
 
 	const navLinks = [
 		{ label: 'Profile', href: '/profile', icon: User },
-		{ label: 'Orders', href: '/orders', icon: ShoppingBag },
+		{ label: 'Orders', href: '/orders/orderHistory', icon: ShoppingBag },
 		{ label: 'Preferences', href: '/profile/preferences', icon: SlidersHorizontal }
 	];
 
