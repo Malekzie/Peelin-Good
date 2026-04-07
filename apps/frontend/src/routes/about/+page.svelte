@@ -1,7 +1,7 @@
 <script lang="ts">
-	import AboutUsHero from '$lib/components/AboutUsHero.svelte';
-	import AboutUsValues from '$lib/components/AboutUsValues.svelte';
-	import BakeryLocations from '$lib/components/BakeryLocations.svelte';
+	import AboutUsHero from '$lib/components/about/AboutUsHero.svelte';
+	import AboutUsValues from '$lib/components/about/AboutUsValues.svelte';
+	import BakeryLocations from '$lib/components/about/BakeryLocations.svelte';
 	import { resolve } from '$app/paths';
 </script>
 

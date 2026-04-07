@@ -6,17 +6,20 @@ import com.sait.peelin.dto.v1.auth.LoginRequest;
 import com.sait.peelin.dto.v1.auth.RegisterRequest;
 import com.sait.peelin.service.AuthService;
 import com.sait.peelin.service.JwtService;
+import com.sait.peelin.service.TokenDenylistService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 import org.springframework.boot.autoconfigure.security.servlet.SecurityFilterAutoConfiguration;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.http.MediaType;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.web.cors.CorsConfigurationSource;
 
 import java.util.UUID;
 
@@ -42,6 +45,9 @@ class AuthControllerTest {
     private JwtService jwtService;
 
     @MockitoBean
+    private TokenDenylistService tokenDenylistService;
+
+    @MockitoBean
     private UserDetailsService userDetailsService;
 
     @MockitoBean
@@ -56,8 +62,8 @@ class AuthControllerTest {
         when(authService.login(any(LoginRequest.class))).thenReturn(new AuthResponse("token", "user", "role", UUID.randomUUID()));
 
         mockMvc.perform(post("/api/v1/auth/login")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(req)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isOk());
     }
 
@@ -70,12 +76,16 @@ class AuthControllerTest {
         req.setFirstName("First");
         req.setLastName("Last");
         req.setPhone("1234567890");
+        req.setAddressLine1("123 Main St");
+        req.setCity("Calgary");
+        req.setProvince("AB");
+        req.setPostalCode("T1X1X1");
 
         when(authService.register(any(RegisterRequest.class))).thenReturn(new AuthResponse("token", "newuser", "customer", UUID.randomUUID()));
 
         mockMvc.perform(post("/api/v1/auth/register")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(req)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isCreated());
     }
 }

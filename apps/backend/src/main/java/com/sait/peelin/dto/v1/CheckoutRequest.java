@@ -21,6 +21,10 @@ public class CheckoutRequest {
     /** Optional manual discount (e.g. staff override); otherwise reward-tier discount applies. */
     private BigDecimal manualDiscount;
 
+    /** Required for unauthenticated guest checkout. */
+    @Valid
+    private GuestCustomerRequest guest;
+
     @NotNull
     private Integer bakeryId;
     @NotNull

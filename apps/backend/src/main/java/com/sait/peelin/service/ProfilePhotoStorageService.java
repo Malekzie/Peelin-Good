@@ -47,6 +47,115 @@ public class ProfilePhotoStorageService {
         this.prefix = prefix;
     }
 
+    /**
+     * Uploads a file to an arbitrary folder within the configured bucket.
+     * The object key is {@code folder/entityId/<uuid>.<ext>}.
+     *
+     * @param folder   top-level folder name (e.g. "customers", "employees", "bakery")
+     * @param entityId identifier used as the sub-folder (UUID or numeric ID as string)
+     * @param file     multipart file to upload
+     * @return publicly accessible URL of the uploaded object
+     */
+    public String uploadToFolder(String folder, String entityId, MultipartFile file) {
+        if (!StringUtils.hasText(endpoint) || !StringUtils.hasText(bucket)
+                || !StringUtils.hasText(accessKey) || !StringUtils.hasText(secretKey)
+                || !StringUtils.hasText(baseUrl)) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Object storage is not configured");
+        }
+        try {
+            String ext = extensionFor(file.getContentType());
+            String key = String.format("%s/%s/%s%s", cleanPrefix(folder), entityId, UUID.randomUUID(), ext);
+
+            AwsBasicCredentials credentials = AwsBasicCredentials.create(accessKey, secretKey);
+            String endpointUrl = endpoint.startsWith("http") ? endpoint : "https://" + endpoint;
+            try (S3Client s3 = S3Client.builder()
+                    .endpointOverride(URI.create(endpointUrl))
+                    .region(Region.US_EAST_1)
+                    .credentialsProvider(StaticCredentialsProvider.create(credentials))
+                    .forcePathStyle(false)
+                    .build()) {
+
+                PutObjectRequest req = PutObjectRequest.builder()
+                        .bucket(bucket)
+                        .key(key)
+                        .contentType(file.getContentType())
+                        .acl(ObjectCannedACL.PUBLIC_READ)
+                        .build();
+
+                s3.putObject(req, RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
+            }
+
+            return baseUrl.replaceAll("/+$", "") + "/" + key;
+        } catch (Exception e) {
+            log.error("Upload failed for entity {} in folder {} via endpoint {}", entityId, folder, endpoint, e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Failed to upload file: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Uploads a product image directly into the {@code bakery/} folder with no entity sub-folder.
+     * The object key is {@code bakery/<uuid>.<ext>}. If the product already has an image, the old
+     * object is deleted from storage after the new one is successfully uploaded.
+     *
+     * @param file        multipart image file to upload
+     * @param existingUrl current image URL on the product record, or {@code null} if none
+     * @return publicly accessible URL of the newly uploaded object
+     */
+    public String uploadProductImage(MultipartFile file, String existingUrl) {
+        if (!StringUtils.hasText(endpoint) || !StringUtils.hasText(bucket)
+                || !StringUtils.hasText(accessKey) || !StringUtils.hasText(secretKey)
+                || !StringUtils.hasText(baseUrl)) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Object storage is not configured");
+        }
+        try {
+            String ext = extensionFor(file.getContentType());
+            String key = String.format("bakery/%s%s", UUID.randomUUID(), ext);
+
+            AwsBasicCredentials credentials = AwsBasicCredentials.create(accessKey, secretKey);
+            String endpointUrl = endpoint.startsWith("http") ? endpoint : "https://" + endpoint;
+            try (S3Client s3 = S3Client.builder()
+                    .endpointOverride(URI.create(endpointUrl))
+                    .region(Region.US_EAST_1)
+                    .credentialsProvider(StaticCredentialsProvider.create(credentials))
+                    .forcePathStyle(false)
+                    .build()) {
+
+                PutObjectRequest req = PutObjectRequest.builder()
+                        .bucket(bucket)
+                        .key(key)
+                        .contentType(file.getContentType())
+                        .acl(ObjectCannedACL.PUBLIC_READ)
+                        .build();
+
+                s3.putObject(req, RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
+
+                // Delete the old image only after the new one is successfully uploaded
+                if (StringUtils.hasText(existingUrl)) {
+                    String oldKey = extractObjectKey(existingUrl);
+                    if (StringUtils.hasText(oldKey)) {
+                        try {
+                            s3.deleteObject(DeleteObjectRequest.builder()
+                                    .bucket(bucket)
+                                    .key(oldKey)
+                                    .build());
+                        } catch (Exception deleteEx) {
+                            log.warn("Failed to delete old product image {} from bucket {}", oldKey, bucket, deleteEx);
+                        }
+                    }
+                }
+            }
+
+            return baseUrl.replaceAll("/+$", "") + "/" + key;
+        } catch (ResponseStatusException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Product image upload failed via endpoint {}", endpoint, e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Failed to upload product image: " + e.getMessage());
+        }
+    }
+
     public String uploadCustomerProfilePhoto(UUID userId, MultipartFile file) {
         if (!StringUtils.hasText(endpoint) || !StringUtils.hasText(bucket)
                 || !StringUtils.hasText(accessKey) || !StringUtils.hasText(secretKey)

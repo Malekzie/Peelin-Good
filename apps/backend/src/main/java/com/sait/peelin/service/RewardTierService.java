@@ -6,6 +6,8 @@ import com.sait.peelin.exception.ResourceNotFoundException;
 import com.sait.peelin.model.RewardTier;
 import com.sait.peelin.repository.RewardTierRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,15 +19,18 @@ public class RewardTierService {
 
     private final RewardTierRepository rewardTierRepository;
 
+    @Cacheable("reward-tiers")
     public List<RewardTierDto> list() {
         return rewardTierRepository.findAll().stream().map(this::toDto).toList();
     }
 
+    @Cacheable(value = "reward-tiers", key = "#id")
     public RewardTierDto get(Integer id) {
         return toDto(rewardTierRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Reward tier not found")));
     }
 
     @Transactional
+    @CacheEvict(value = "reward-tiers", allEntries = true)
     public RewardTierDto create(RewardTierUpsertRequest req) {
         RewardTier t = new RewardTier();
         apply(req, t);
@@ -33,6 +38,7 @@ public class RewardTierService {
     }
 
     @Transactional
+    @CacheEvict(value = "reward-tiers", allEntries = true)
     public RewardTierDto update(Integer id, RewardTierUpsertRequest req) {
         RewardTier t = rewardTierRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Reward tier not found"));
         apply(req, t);
@@ -40,6 +46,7 @@ public class RewardTierService {
     }
 
     @Transactional
+    @CacheEvict(value = "reward-tiers", allEntries = true)
     public void delete(Integer id) {
         if (!rewardTierRepository.existsById(id)) {
             throw new ResourceNotFoundException("Reward tier not found");

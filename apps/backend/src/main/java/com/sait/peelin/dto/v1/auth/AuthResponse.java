@@ -23,6 +23,10 @@ public class AuthResponse {
     @Setter
     private UUID userId;
 
+    @Getter
+    @Setter
+    private String email;
+
     public AuthResponse() {}
 
     public AuthResponse(String token, String username, String role, UUID userId) {

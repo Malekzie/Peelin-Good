@@ -9,6 +9,8 @@ import com.sait.peelin.model.User;
 import com.sait.peelin.repository.AddressRepository;
 import com.sait.peelin.repository.EmployeeRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,6 +28,7 @@ public class EmployeeProfileService {
     private final CurrentUserService currentUserService;
 
     @Transactional(readOnly = true)
+    @Cacheable(value = "employees", keyGenerator = "userIdKeyGenerator")
     public EmployeeDto me() {
         User u = currentUserService.requireUser();
         Employee e = employeeRepository.findByUser_UserId(u.getUserId())
@@ -39,6 +42,7 @@ public class EmployeeProfileService {
     }
 
     @Transactional
+    @CacheEvict(value = "employees", keyGenerator = "userIdKeyGenerator")
     public EmployeeDto patchMe(EmployeePatchRequest req) {
         User u = currentUserService.requireUser();
         Employee e = employeeRepository.findByUser_UserId(u.getUserId())
@@ -72,11 +76,11 @@ public class EmployeeProfileService {
         employeeRepository.save(e);
         return toDto(e);
     }
-
+    @Transactional(readOnly = true)
     public List<EmployeeDto> listAll() {
         return employeeRepository.findAll().stream().map(this::toDto).toList();
     }
-
+    @Transactional(readOnly = true)
     public EmployeeDto get(UUID id) {
         return toDto(employeeRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Employee not found")));
     }

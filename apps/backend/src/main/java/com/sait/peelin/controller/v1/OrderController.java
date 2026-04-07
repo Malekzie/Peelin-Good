@@ -55,7 +55,7 @@ public class OrderController {
     })
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public OrderDto checkout(@Valid @RequestBody CheckoutRequest req) {
+    public CheckoutSessionResponse checkout(@Valid @RequestBody CheckoutRequest req) {
         return orderService.checkout(req);
     }
 
@@ -82,5 +82,10 @@ public class OrderController {
     @PatchMapping("/{id}/delivered")
     public OrderDto markDelivered(@PathVariable UUID id, @RequestBody(required = false) OrderDeliveredPatchRequest req) {
         return orderService.markDelivered(id, req != null ? req : new OrderDeliveredPatchRequest());
+    }
+
+    @PatchMapping("/{id}/accept-delivery")
+    public OrderDto acceptDelivery(@PathVariable UUID id) {
+        return orderService.acceptDelivery(id);
     }
 }

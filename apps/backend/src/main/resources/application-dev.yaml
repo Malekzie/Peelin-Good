@@ -1,13 +1,17 @@
 spring:
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/peelin}
-    username: ${SPRING_DATASOURCE_USERNAME:peelin}
-    password: ${SPRING_DATASOURCE_PASSWORD:peelin}
+    username: ${SPRING_DATASOURCE_USERNAME:baker}
+    password: ${SPRING_DATASOURCE_PASSWORD:Password1}
     # Small DO tiers have very few connections for non-superuser roles; keep pool tiny so Flyway + JPA can start.
     hikari:
       maximum-pool-size: 2
       minimum-idle: 0
       connection-timeout: 60000
+  data:
+    redis:
+      # Dev defaults to local Valkey; override with SPRING_DATA_REDIS_URL when needed.
+      url: ${SPRING_DATA_REDIS_URL:redis://localhost:6379}
   jpa:
     hibernate:
       ddl-auto: none
@@ -15,14 +19,9 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
-  cache:
-    type: none
-  data:
-    redis:
-      url: ""
-  autoconfigure:
-    exclude:
-      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+    validate-on-migrate: false
+    # After one successful run, align the DB with: UPDATE flyway_schema_history SET checksum = -316084932 WHERE version = '10';
+    # Then set validate-on-migrate back to true (or omit).
   spaces:
     endpoint: ${DO_SPACES_ENDPOINT:}
     bucket: ${DO_SPACES_BUCKET:}
@@ -30,3 +29,8 @@ spring:
     secret-key: ${DO_SPACES_SECRET:}
     base_url: ${DO_SPACES_BASE_URL:}
     prefix: ${DO_SPACES_PREFIX:customers}
+
+stripe:
+  secret-key: ${STRIPE_SECRET_KEY:}
+  webhook-secret: ${STRIPE_WEBHOOK_SECRET:}
+  publishable-key: ${STRIPE_PUBLISHABLE_KEY:}

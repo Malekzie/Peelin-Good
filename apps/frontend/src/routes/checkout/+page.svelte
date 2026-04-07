@@ -2,9 +2,14 @@
 	import { resolve } from '$app/paths';
 	import { goto } from '$app/navigation';
 	import { cart } from '$lib/stores/cart';
+	import { isProfileComplete } from '$lib/utils/profile';
+	import { onMount } from 'svelte';
+	import { getProfile } from '$lib/services/profile';
+	import * as Sentry from '@sentry/sveltekit';
 
 	const API = 'http://localhost:8080';
 
+	let profile = $state<Record<string, unknown> | null>(null);
 	let guestName = $state('');
 	let guestEmail = $state('');
 	let guestPhone = $state('');
@@ -22,6 +27,28 @@
 	let error = $state('');
 
 	const BAKERY_ID = 1;
+
+	onMount(async () => {
+		try {
+			profile = await getProfile();
+
+			if (!profile || !isProfileComplete(profile)) {
+				goto(resolve('/profile/edit?reason=checkout'));
+				return;
+			}
+
+			guestName = `${profile.firstName} ${profile.lastName}`.trim();
+			guestEmail = profile.email ?? '';
+			guestPhone = profile.phone ?? '';
+			line1 = profile.address?.line1 ?? '';
+			line2 = profile.address?.line2 ?? '';
+			city = profile.address?.city ?? '';
+			province = profile.address?.province ?? '';
+			postalCode = profile.address?.postalCode ?? '';
+		} catch {
+			console.warn('Failed to load profile, proceeding with empty checkout form');
+		}
+	});
 
 	async function submit() {
 		error = '';
@@ -74,6 +101,11 @@
 			cart.clear();
 			goto(resolve(`/order/confirmation/${order.orderNumber}`));
 		} catch (err: unknown) {
+			Sentry.withScope((scope) => {
+				scope.setTag('action', 'CHECKOUT_FAILED');
+				scope.setTag('reason', 'api_error');
+				Sentry.captureException(err instanceof Error ? err : new Error(String(err)));
+			});
 			error = err instanceof Error ? err.message : 'Unexpected error. Please try again.';
 		} finally {
 			submitting = false;

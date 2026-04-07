@@ -38,6 +38,9 @@ public class Payment {
     @Column(name = "payment_transaction_id", length = 100)
     private String paymentTransactionId;
 
+    @Column(name = "stripe_session_id", length = 255)
+    private String stripeSessionId;
+
     @NotNull
     @ColumnDefault("'pending'")
     @Enumerated(EnumType.STRING)
@@ -48,60 +51,27 @@ public class Payment {
     @Column(name = "payment_paid_at")
     private OffsetDateTime paymentPaidAt;
 
-    public UUID getId() {
-        return id;
-    }
+    public UUID getId() { return id; }
+    public void setId(UUID id) { this.id = id; }
 
-    public void setId(UUID id) {
-        this.id = id;
-    }
+    public Order getOrder() { return order; }
+    public void setOrder(Order order) { this.order = order; }
 
-    public Order getOrder() {
-        return order;
-    }
+    public BigDecimal getPaymentAmount() { return paymentAmount; }
+    public void setPaymentAmount(BigDecimal paymentAmount) { this.paymentAmount = paymentAmount; }
 
-    public void setOrder(Order order) {
-        this.order = order;
-    }
+    public PaymentMethod getPaymentMethod() { return paymentMethod; }
+    public void setPaymentMethod(PaymentMethod paymentMethod) { this.paymentMethod = paymentMethod; }
 
-    public BigDecimal getPaymentAmount() {
-        return paymentAmount;
-    }
+    public String getPaymentTransactionId() { return paymentTransactionId; }
+    public void setPaymentTransactionId(String paymentTransactionId) { this.paymentTransactionId = paymentTransactionId; }
 
-    public void setPaymentAmount(BigDecimal paymentAmount) {
-        this.paymentAmount = paymentAmount;
-    }
+    public String getStripeSessionId() { return stripeSessionId; }
+    public void setStripeSessionId(String stripeSessionId) { this.stripeSessionId = stripeSessionId; }
 
-    public PaymentMethod getPaymentMethod() {
-        return paymentMethod;
-    }
+    public PaymentStatus getPaymentStatus() { return paymentStatus; }
+    public void setPaymentStatus(PaymentStatus paymentStatus) { this.paymentStatus = paymentStatus; }
 
-    public void setPaymentMethod(PaymentMethod paymentMethod) {
-        this.paymentMethod = paymentMethod;
-    }
-
-    public String getPaymentTransactionId() {
-        return paymentTransactionId;
-    }
-
-    public void setPaymentTransactionId(String paymentTransactionId) {
-        this.paymentTransactionId = paymentTransactionId;
-    }
-
-    public PaymentStatus getPaymentStatus() {
-        return paymentStatus;
-    }
-
-    public void setPaymentStatus(PaymentStatus paymentStatus) {
-        this.paymentStatus = paymentStatus;
-    }
-
-    public OffsetDateTime getPaymentPaidAt() {
-        return paymentPaidAt;
-    }
-
-    public void setPaymentPaidAt(OffsetDateTime paymentPaidAt) {
-        this.paymentPaidAt = paymentPaidAt;
-    }
-
+    public OffsetDateTime getPaymentPaidAt() { return paymentPaidAt; }
+    public void setPaymentPaidAt(OffsetDateTime paymentPaidAt) { this.paymentPaidAt = paymentPaidAt; }
 }

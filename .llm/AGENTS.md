@@ -8,19 +8,19 @@ You are working on **Workshop7**, a full-stack e-commerce platform for a bakery 
 
 Before writing a single line of code, read the following files in order:
 
-| File | What it tells you |
-|---|---|
-| `docs/backend.md` | API architecture, security model, database setup, CI/CD |
-| `docs/frontend.md` | SvelteKit structure, routing conventions, styling rules |
-| `docs/database-design.md` | Full entity model, column types, relationships |
-| `docs/contributing.md` | Branching strategy, commit conventions, PR process |
-| `docs/auth-contract.md` | JWT auth flow, endpoints, roles, error codes (once written) |
+| File                      | What it tells you                                               |
+| ------------------------- | --------------------------------------------------------------- |
+| `docs/backend.md`         | API architecture, security model, database setup, CI/CD         |
+| `docs/frontend.md`        | SvelteKit structure, routing conventions, styling rules         |
+| `docs/database-design.md` | Full entity model, column types, relationships                  |
+| `docs/contributing.md`    | Branching strategy, commit conventions, PR process              |
+| `docs/auth-contract.md`   | JWT auth flow, endpoints, roles, error codes (once written)     |
 | `docs/superpowers/specs/` | Design specs for features — read any spec relevant to your task |
 
 Then read:
 
-| File | What it tells you |
-|---|---|
+| File                | What it tells you                                                          |
+| ------------------- | -------------------------------------------------------------------------- |
 | `.llm/CHANGELOG.md` | What AI agents have already changed — prevents duplicating or undoing work |
 
 **Do not assume you know the current state of the codebase from your training data. Read the files.**
@@ -31,12 +31,12 @@ Then read:
 
 ### Three-tier architecture
 
-| Tier | Project | Stack | Notes |
-|---|---|---|---|
-| Desktop management app | Workshop5 | JavaFX + MySQL | Staff-only. Direct JDBC to MySQL. Does NOT call this API. Has its own auth. |
-| REST API | Workshop7 / `apps/backend` | Spring Boot 3.5 + PostgreSQL | Serves web and mobile clients |
-| Web frontend | Workshop7 / `apps/frontend` | SvelteKit 5 + TypeScript | Customer-facing e-commerce site |
-| Android mobile app | Workshop06 | Kotlin + Room | Secondary/reference. Calls the same API. |
+| Tier                   | Project                     | Stack                        | Notes                                                                       |
+| ---------------------- | --------------------------- | ---------------------------- | --------------------------------------------------------------------------- |
+| Desktop management app | Workshop5                   | JavaFX + MySQL               | Staff-only. Direct JDBC to MySQL. Does NOT call this API. Has its own auth. |
+| REST API               | Workshop7 / `apps/backend`  | Spring Boot 3.5 + PostgreSQL | Serves web and mobile clients                                               |
+| Web frontend           | Workshop7 / `apps/frontend` | SvelteKit 5 + TypeScript     | Customer-facing e-commerce site                                             |
+| Android mobile app     | Workshop06                  | Kotlin + Room                | Secondary/reference. Calls the same API.                                    |
 
 **Workshop5 is a completely separate system.** Never design Workshop7 features to accommodate it.
 
@@ -62,13 +62,13 @@ The `V1__baseline.sql` migration defines the canonical schema. When in doubt abo
 
 ### Current migration versions
 
-| File | Purpose |
-|---|---|
-| `V0__extensions.sql` | pgcrypto extension |
-| `V1__baseline.sql` | Full schema baseline |
-| `V2__unified_schema.sql` | Schema refinements |
-| `V3__seed_data.sql` | Seed/test data |
-| `V4+` | Add new migrations here, incrementing version |
+| File                     | Purpose                                       |
+| ------------------------ | --------------------------------------------- |
+| `V0__extensions.sql`     | pgcrypto extension                            |
+| `V1__baseline.sql`       | Full schema baseline                          |
+| `V2__unified_schema.sql` | Schema refinements                            |
+| `V3__seed_data.sql`      | Seed/test data                                |
+| `V4+`                    | Add new migrations here, incrementing version |
 
 ---
 
@@ -111,15 +111,19 @@ The `V1__baseline.sql` migration defines the canonical schema. When in doubt abo
 **Session context:** What task or feature was being worked on.
 
 ### Fixed
+
 - `path/to/file.java` — What was wrong, what you changed, why.
 
 ### Added
+
 - `path/to/file.ts` — What you added and why.
 
 ### Changed
+
 - `path/to/file.md` — What changed and the reason.
 
 ### Migrations
+
 - `V4__description.sql` — What schema change and why it was needed.
 ```
 

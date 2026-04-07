@@ -4,9 +4,12 @@ import com.sait.peelin.dto.v1.*;
 import com.sait.peelin.exception.ResourceNotFoundException;
 import com.sait.peelin.model.*;
 import com.sait.peelin.repository.*;
+import com.stripe.model.PaymentIntent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,12 +18,15 @@ import org.springframework.web.server.ResponseStatusException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class OrderService {
+
+    private static final Logger log = LoggerFactory.getLogger(OrderService.class);
 
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
@@ -32,7 +38,10 @@ public class OrderService {
     private final BatchRepository batchRepository;
     private final CustomerRepository customerRepository;
     private final EmployeeRepository employeeRepository;
+    private final TaxRateRepository taxRateRepository;
+    private final CustomerService customerService;
     private final CurrentUserService currentUserService;
+    private final StripeService stripeService;
 
     @Transactional(readOnly = true)
     @Cacheable(value = "orders", keyGenerator = "userIdKeyGenerator")
@@ -60,11 +69,21 @@ public class OrderService {
     }
 
     @Transactional
-    @CacheEvict(value = "orders", allEntries = true)
-    public OrderDto checkout(CheckoutRequest req) {
+    @CacheEvict(value = {"orders", "analytics", "dashboard"}, allEntries = true)
+    public CheckoutSessionResponse checkout(CheckoutRequest req) {
         User user = currentUserService.requireUser();
         Customer customer;
-        if (user.getUserRole() == UserRole.customer) {
+        boolean guestCheckout = false;
+        if (user == null) {
+            if (req.getGuest() == null) {
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication or guest details are required");
+            }
+            if (req.getCustomerId() != null) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Guest checkout cannot target an existing customer id");
+            }
+            customer = customerService.resolveOrCreateGuestCustomer(req.getGuest());
+            guestCheckout = true;
+        } else if (user.getUserRole() == UserRole.customer) {
             customer = customerRepository.findByUser_UserId(user.getUserId())
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Customer profile not found"));
         } else if (user.getUserRole() == UserRole.admin || user.getUserRole() == UserRole.employee) {
@@ -87,13 +106,17 @@ public class OrderService {
         Bakery bakery = bakeryRepository.findById(req.getBakeryId())
                 .orElseThrow(() -> new ResourceNotFoundException("Bakery not found"));
 
-        if (req.getOrderMethod() == OrderMethod.delivery && req.getAddressId() == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Delivery requires addressId");
+        if (req.getOrderMethod() == OrderMethod.delivery
+                && req.getAddressId() == null
+                && customer.getAddress() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Delivery requires address information");
         }
         Address address = null;
         if (req.getAddressId() != null) {
             address = addressRepository.findById(req.getAddressId())
                     .orElseThrow(() -> new ResourceNotFoundException("Address not found"));
+        } else if (req.getOrderMethod() == OrderMethod.delivery) {
+            address = customer.getAddress();
         }
 
         BigDecimal subtotal = BigDecimal.ZERO;
@@ -108,7 +131,9 @@ public class OrderService {
         BigDecimal discount = BigDecimal.ZERO;
         if (req.getManualDiscount() != null) {
             discount = req.getManualDiscount().max(BigDecimal.ZERO);
-        } else if (customer.getRewardTier().getRewardTierDiscountRate() != null) {
+        } else if (!guestCheckout
+                && customer.getRewardTier() != null
+                && customer.getRewardTier().getRewardTierDiscountRate() != null) {
             discount = subtotal.multiply(customer.getRewardTier().getRewardTierDiscountRate())
                     .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
         }
@@ -119,6 +144,10 @@ public class OrderService {
         if (total.compareTo(BigDecimal.ZERO) < 0) {
             total = BigDecimal.ZERO;
         }
+        BigDecimal taxRatePercent = resolveTaxRatePercent(resolveTaxProvince(customer));
+        BigDecimal taxAmount = total.multiply(taxRatePercent)
+                .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+        BigDecimal grandTotal = total.add(taxAmount);
 
         Order order = new Order();
         order.setOrderNumber("ORD-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
@@ -131,9 +160,17 @@ public class OrderService {
         order.setOrderPlacedDatetime(OffsetDateTime.now());
         order.setOrderTotal(total);
         order.setOrderDiscount(discount);
-        order.setOrderStatus(OrderStatus.completed);
+        order.setOrderTaxRate(taxRatePercent);
+        order.setOrderTaxAmount(taxAmount);
+        if (guestCheckout && req.getGuest() != null) {
+            order.setGuestName(buildGuestName(req.getGuest().getFirstName(), req.getGuest().getLastName()));
+            order.setGuestEmail(req.getGuest().getEmail().trim().toLowerCase());
+            order.setGuestPhone(req.getGuest().getPhone().trim());
+        }
+        order.setOrderStatus(OrderStatus.pending_payment);
         order = orderRepository.save(order);
 
+        List<OrderItem> savedItems = new ArrayList<>();
         for (CheckoutRequest.CheckoutLineRequest line : req.getItems()) {
             Product p = productRepository.findById(line.getProductId()).orElseThrow();
             Batch batch = null;
@@ -150,34 +187,76 @@ public class OrderService {
             oi.setOrderItemQuantity(line.getQuantity());
             oi.setOrderItemUnitPriceAtTime(unit);
             oi.setOrderItemLineTotal(lineTotal);
-            orderItemRepository.save(oi);
+            savedItems.add(orderItemRepository.save(oi));
         }
 
         Payment pay = new Payment();
         pay.setOrder(order);
-        pay.setPaymentAmount(total);
+        pay.setPaymentAmount(grandTotal);
         pay.setPaymentMethod(req.getPaymentMethod());
-        pay.setPaymentStatus(PaymentStatus.completed);
-        pay.setPaymentPaidAt(OffsetDateTime.now());
-        pay.setPaymentTransactionId("TXN-" + UUID.randomUUID().toString().substring(0, 12).toUpperCase());
+        pay.setPaymentStatus(PaymentStatus.pending);
+
+        String clientSecret;
+        String paymentIntentId;
+        try {
+            PaymentIntent intent = stripeService.createPaymentIntent(order.getId(), total);
+            pay.setStripeSessionId(intent.getId());
+            clientSecret = intent.getClientSecret();
+            paymentIntentId = intent.getId();
+        } catch (Exception e) {
+            log.error("Failed to create Stripe payment intent for order {}", order.getId(), e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Payment provider unavailable");
+        }
+
         paymentRepository.save(pay);
 
-        int points = total.setScale(0, RoundingMode.DOWN).intValue();
-        Reward reward = new Reward();
-        reward.setCustomer(customer);
-        reward.setOrder(order);
-        reward.setRewardPointsEarned(Math.max(points, 1));
-        reward.setRewardTransactionDate(OffsetDateTime.now());
-        rewardRepository.save(reward);
+        return new CheckoutSessionResponse(order.getId(), order.getOrderNumber(), clientSecret, paymentIntentId);
+    }
 
-        customer.setCustomerRewardBalance(customer.getCustomerRewardBalance() + reward.getRewardPointsEarned());
-        customerRepository.save(customer);
+    private String resolveTaxProvince(Customer customer) {
+        Address source = customer.getAddress();
+        if (source == null || source.getAddressProvince() == null || source.getAddressProvince().trim().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Customer province is required for tax calculation");
+        }
+        return source.getAddressProvince();
+    }
 
-        return toDto(orderRepository.findById(order.getId()).orElseThrow());
+    private String buildGuestName(String firstName, String lastName) {
+        return ((firstName != null ? firstName.trim() : "") + " " + (lastName != null ? lastName.trim() : "")).trim();
+    }
+
+    private BigDecimal resolveTaxRatePercent(String provinceRaw) {
+        String normalizedProvince = normalizeProvince(provinceRaw);
+        return taxRateRepository.findByProvinceNameIgnoreCase(normalizedProvince)
+                .map(TaxRate::getTaxPercent)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "No tax rate configured for province/territory: " + normalizedProvince));
+    }
+
+    private String normalizeProvince(String provinceRaw) {
+        String province = provinceRaw == null ? "" : provinceRaw.trim();
+        String upper = province.toUpperCase();
+        return switch (upper) {
+            case "AB" -> "Alberta";
+            case "BC" -> "British Columbia";
+            case "MB" -> "Manitoba";
+            case "NB" -> "New Brunswick";
+            case "NL", "NF" -> "Newfoundland and Labrador";
+            case "NT" -> "Northwest Territories";
+            case "NS" -> "Nova Scotia";
+            case "NU" -> "Nunavut";
+            case "ON" -> "Ontario";
+            case "PE", "PEI" -> "Prince Edward Island";
+            case "QC", "PQ" -> "Quebec";
+            case "SK" -> "Saskatchewan";
+            case "YT", "YK" -> "Yukon";
+            default -> province;
+        };
     }
 
     @Transactional
-    @CacheEvict(value = "orders", allEntries = true)
+    @CacheEvict(value = {"orders", "analytics", "dashboard"}, allEntries = true)
     public OrderDto updateStatus(UUID orderId, OrderStatusPatchRequest req) {
         User u = currentUserService.requireUser();
         if (u.getUserRole() != UserRole.admin && u.getUserRole() != UserRole.employee) {
@@ -195,7 +274,7 @@ public class OrderService {
     }
 
     @Transactional
-    @CacheEvict(value = "orders", allEntries = true)
+    @CacheEvict(value = {"orders", "analytics", "dashboard"}, allEntries = true)
     public OrderDto markDelivered(UUID orderId, OrderDeliveredPatchRequest req) {
         User u = currentUserService.requireUser();
         if (u.getUserRole() != UserRole.admin && u.getUserRole() != UserRole.employee) {
@@ -212,6 +291,26 @@ public class OrderService {
         if (o.getOrderStatus() != OrderStatus.cancelled) {
             o.setOrderStatus(OrderStatus.completed);
         }
+        return toDto(orderRepository.save(o));
+    }
+
+    @Transactional
+    @CacheEvict(value = {"orders", "analytics", "dashboard"}, allEntries = true)
+    public OrderDto acceptDelivery(UUID orderId) {
+        User u = currentUserService.requireUser();
+        if (u.getUserRole() != UserRole.customer) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+        Order o = orderRepository.findById(orderId).orElseThrow(() -> new ResourceNotFoundException("Order not found"));
+        if (o.getCustomer() == null || o.getCustomer().getUser() == null
+                || !o.getCustomer().getUser().getUserId().equals(u.getUserId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+        if (o.getOrderStatus() != OrderStatus.delivered && o.getOrderStatus() != OrderStatus.picked_up) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Only delivered or picked_up orders can be accepted");
+        }
+        o.setOrderStatus(OrderStatus.completed);
         return toDto(orderRepository.save(o));
     }
 

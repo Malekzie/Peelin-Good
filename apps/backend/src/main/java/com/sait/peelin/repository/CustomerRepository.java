@@ -28,4 +28,74 @@ public interface CustomerRepository extends JpaRepository<Customer, UUID> {
 
     @EntityGraph(attributePaths = {"address", "rewardTier", "user"})
     Optional<Customer> findById(UUID id);
+
+    @EntityGraph(attributePaths = {"address", "rewardTier", "user"})
+    @Query("""
+            SELECT c FROM Customer c
+            WHERE LOWER(TRIM(c.customerEmail)) = LOWER(TRIM(:email))
+            ORDER BY CASE WHEN c.user IS NULL THEN 1 ELSE 0 END, c.id
+            """)
+    List<Customer> findByCustomerEmailNormalized(@Param("email") String email);
+
+    @EntityGraph(attributePaths = {"address", "rewardTier", "user"})
+    @Query("""
+            SELECT c FROM Customer c
+            JOIN c.address a
+            WHERE LOWER(TRIM(c.customerFirstName)) = LOWER(TRIM(:firstName))
+              AND LOWER(COALESCE(TRIM(c.customerMiddleInitial), '')) = LOWER(COALESCE(TRIM(:middleInitial), ''))
+              AND LOWER(TRIM(c.customerLastName)) = LOWER(TRIM(:lastName))
+              AND TRIM(c.customerPhone) = TRIM(:phone)
+              AND COALESCE(TRIM(c.customerBusinessPhone), '') = COALESCE(TRIM(:businessPhone), '')
+              AND LOWER(TRIM(c.customerEmail)) = LOWER(TRIM(:email))
+              AND LOWER(TRIM(a.addressLine1)) = LOWER(TRIM(:addressLine1))
+              AND LOWER(COALESCE(TRIM(a.addressLine2), '')) = LOWER(COALESCE(TRIM(:addressLine2), ''))
+              AND LOWER(TRIM(a.addressCity)) = LOWER(TRIM(:city))
+              AND LOWER(TRIM(a.addressProvince)) = LOWER(TRIM(:province))
+              AND UPPER(REPLACE(TRIM(a.addressPostalCode), ' ', '')) = UPPER(REPLACE(TRIM(:postalCode), ' ', ''))
+            ORDER BY CASE WHEN c.user IS NULL THEN 1 ELSE 0 END, c.id
+            """)
+    List<Customer> findExactMatches(
+            @Param("firstName") String firstName,
+            @Param("middleInitial") String middleInitial,
+            @Param("lastName") String lastName,
+            @Param("phone") String phone,
+            @Param("businessPhone") String businessPhone,
+            @Param("email") String email,
+            @Param("addressLine1") String addressLine1,
+            @Param("addressLine2") String addressLine2,
+            @Param("city") String city,
+            @Param("province") String province,
+            @Param("postalCode") String postalCode
+    );
+
+    @EntityGraph(attributePaths = {"address", "rewardTier", "user"})
+    @Query("""
+            SELECT c FROM Customer c
+            JOIN c.address a
+            WHERE c.user IS NULL
+              AND LOWER(TRIM(c.customerFirstName)) = LOWER(TRIM(:firstName))
+              AND LOWER(COALESCE(TRIM(c.customerMiddleInitial), '')) = LOWER(COALESCE(TRIM(:middleInitial), ''))
+              AND LOWER(TRIM(c.customerLastName)) = LOWER(TRIM(:lastName))
+              AND TRIM(c.customerPhone) = TRIM(:phone)
+              AND COALESCE(TRIM(c.customerBusinessPhone), '') = COALESCE(TRIM(:businessPhone), '')
+              AND LOWER(TRIM(c.customerEmail)) = LOWER(TRIM(:email))
+              AND LOWER(TRIM(a.addressLine1)) = LOWER(TRIM(:addressLine1))
+              AND LOWER(COALESCE(TRIM(a.addressLine2), '')) = LOWER(COALESCE(TRIM(:addressLine2), ''))
+              AND LOWER(TRIM(a.addressCity)) = LOWER(TRIM(:city))
+              AND LOWER(TRIM(a.addressProvince)) = LOWER(TRIM(:province))
+              AND UPPER(REPLACE(TRIM(a.addressPostalCode), ' ', '')) = UPPER(REPLACE(TRIM(:postalCode), ' ', ''))
+            """)
+    List<Customer> findExactGuestMatches(
+            @Param("firstName") String firstName,
+            @Param("middleInitial") String middleInitial,
+            @Param("lastName") String lastName,
+            @Param("phone") String phone,
+            @Param("businessPhone") String businessPhone,
+            @Param("email") String email,
+            @Param("addressLine1") String addressLine1,
+            @Param("addressLine2") String addressLine2,
+            @Param("city") String city,
+            @Param("province") String province,
+            @Param("postalCode") String postalCode
+    );
 }

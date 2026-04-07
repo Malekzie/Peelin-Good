@@ -57,14 +57,14 @@ npm install      # install packages — use npm for installs, not bun
 
 ## Backend — Package Layout
 
-| Package | Contents |
-|---|---|
-| `com.sait.peelin.model` | JPA entities |
-| `com.sait.peelin.repository` | Spring Data JPA repositories |
-| `com.sait.peelin.service` | Business logic |
-| `com.sait.peelin.controller.v1` | REST controllers |
-| `com.sait.peelin.dto.v1.{domain}` | Request/response DTOs |
-| `com.sait.peelin.security` | JWT filter, security config |
+| Package                           | Contents                     |
+| --------------------------------- | ---------------------------- |
+| `com.sait.peelin.model`           | JPA entities                 |
+| `com.sait.peelin.repository`      | Spring Data JPA repositories |
+| `com.sait.peelin.service`         | Business logic               |
+| `com.sait.peelin.controller.v1`   | REST controllers             |
+| `com.sait.peelin.dto.v1.{domain}` | Request/response DTOs        |
+| `com.sait.peelin.security`        | JWT filter, security config  |
 
 API prefix: `/api/v1/` — route groups: `auth`, `products`, `bakeries`, `admin`, `employee`, `customer`
 
@@ -84,34 +84,34 @@ API prefix: `/api/v1/` — route groups: `auth`, `products`, `bakeries`, `admin`
 
 Naming: `V{n}__{description}.sql` (double underscore, incrementing integer)
 
-| File | Purpose |
-|---|---|
-| `V0__extensions.sql` | pgcrypto extension |
-| `V1__baseline.sql` | Full schema baseline — source of truth |
-| `V2__unified_schema.sql` | Schema refinements |
-| `V3__seed_data.sql` | Seed/test data |
-| `V4+` | Next migration starts here |
+| File                     | Purpose                                |
+| ------------------------ | -------------------------------------- |
+| `V0__extensions.sql`     | pgcrypto extension                     |
+| `V1__baseline.sql`       | Full schema baseline — source of truth |
+| `V2__unified_schema.sql` | Schema refinements                     |
+| `V3__seed_data.sql`      | Seed/test data                         |
+| `V4+`                    | Next migration starts here             |
 
 ---
 
 ## Frontend — Code Rules
 
-| Rule | Detail |
-|---|---|
-| State | Svelte 5 runes only: `$state`, `$derived`, `$effect`, `$props` — no `$:` or `export let` |
+| Rule       | Detail                                                                                                  |
+| ---------- | ------------------------------------------------------------------------------------------------------- |
+| State      | Svelte 5 runes only: `$state`, `$derived`, `$effect`, `$props` — no `$:` or `export let`                |
 | Navigation | `goto()`, `pushState()`, `replaceState()` from `$app/navigation` — never bare `<a>` for SPA transitions |
-| Styling | Tailwind CSS v4 only — no other CSS frameworks |
-| Icons | `@lucide/svelte` only |
-| Components | `src/lib/components/ui/` following shadcn-svelte conventions |
+| Styling    | Tailwind CSS v4 only — no other CSS frameworks                                                          |
+| Icons      | `@lucide/svelte` only                                                                                   |
+| Components | `src/lib/components/ui/` following shadcn-svelte conventions                                            |
 
 ### Design tokens
 
-| Name | Hex |
-|---|---|
-| Cream | `#FAF7F2` |
-| Walnut | `#2C1A0E` |
+| Name       | Hex       |
+| ---------- | --------- |
+| Cream      | `#FAF7F2` |
+| Walnut     | `#2C1A0E` |
 | Terracotta | `#C4714A` |
-| Sage | `#8A9E7F` |
+| Sage       | `#8A9E7F` |
 
 ---
 

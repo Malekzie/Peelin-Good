@@ -13,11 +13,16 @@ import com.sait.peelin.repository.TagRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -26,6 +31,7 @@ public class ProductService {
     private final ProductRepository productRepository;
     private final ProductTagRepository productTagRepository;
     private final TagRepository tagRepository;
+    private final ProfilePhotoStorageService profilePhotoStorageService;
 
     @Cacheable(value = "products", key = "'all:' + #search + ':' + #tagId")
     public List<ProductDto> list(String search, Integer tagId) {
@@ -81,6 +87,36 @@ public class ProductService {
         productTagRepository.deleteByProduct_Id(id);
         syncTags(id, req.getTagIds());
         return CatalogMapper.product(productRepository.findById(id).orElseThrow(), productTagRepository);
+    }
+
+    /**
+     * Uploads an image for a product to the {@code bakery/} folder in object storage,
+     * then persists the resulting public URL on the product record.
+     *
+     * @param id    product ID
+     * @param image image file (JPG or PNG, max 5 MB)
+     * @return updated {@link ProductDto}
+     */
+    @Transactional
+    @CacheEvict(value = "products", allEntries = true)
+    public ProductDto uploadImage(Integer id, MultipartFile image) {
+        if (image == null || image.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Image file is required");
+        }
+        String ct = image.getContentType() != null ? image.getContentType().toLowerCase() : "";
+        if (!ct.equals("image/jpeg") && !ct.equals("image/jpg") && !ct.equals("image/png")) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only JPG and PNG images are allowed");
+        }
+        if (image.getSize() > 5L * 1024L * 1024L) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Image exceeds 5 MB limit");
+        }
+
+        Product p = productRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
+
+        String url = profilePhotoStorageService.uploadProductImage(image, p.getProductImageUrl());
+        p.setProductImageUrl(url);
+        return CatalogMapper.product(productRepository.save(p), productTagRepository);
     }
 
     @Transactional

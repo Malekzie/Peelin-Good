@@ -13,6 +13,7 @@ import java.util.UUID;
 @Entity
 @Table(name = "review", indexes = {
         @Index(name = "idx_review_product", columnList = "product_id"),
+        @Index(name = "idx_review_bakery", columnList = "bakery_id"),
         @Index(name = "idx_review_customer", columnList = "customer_id")})
 public class Review {
     @Id
@@ -33,6 +34,15 @@ public class Review {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "employee_id")
     private Employee employee;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "order_id")
+    private Order order;
+
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "bakery_id", nullable = false)
+    private Bakery bakery;
 
     @NotNull
     @Column(name = "review_rating", nullable = false)
@@ -87,6 +97,22 @@ public class Review {
 
     public void setEmployee(Employee employee) {
         this.employee = employee;
+    }
+
+    public Order getOrder() {
+        return order;
+    }
+
+    public void setOrder(Order order) {
+        this.order = order;
+    }
+
+    public Bakery getBakery() {
+        return bakery;
+    }
+
+    public void setBakery(Bakery bakery) {
+        this.bakery = bakery;
     }
 
     public Short getReviewRating() {

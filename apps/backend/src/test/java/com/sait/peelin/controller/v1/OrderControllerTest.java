@@ -2,7 +2,7 @@ package com.sait.peelin.controller.v1;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sait.peelin.dto.v1.CheckoutRequest;
-import com.sait.peelin.dto.v1.OrderDto;
+import com.sait.peelin.dto.v1.CheckoutSessionResponse;
 import com.sait.peelin.service.JwtService;
 import com.sait.peelin.service.OrderService;
 import org.junit.jupiter.api.Test;
@@ -59,10 +59,8 @@ class OrderControllerTest {
         req.setPaymentMethod(com.sait.peelin.model.PaymentMethod.credit_card);
         req.setItems(java.util.List.of(line));
 
-        OrderDto responseDto = new OrderDto(
-                UUID.randomUUID(), "ORD-123", UUID.randomUUID(), 1, "Bakery", 
-                null, com.sait.peelin.model.OrderMethod.pickup, null, BigDecimal.TEN, BigDecimal.ZERO, 
-                null, null, null, "Comment", java.util.List.of());
+        CheckoutSessionResponse responseDto = new CheckoutSessionResponse(
+                UUID.randomUUID(), "ORD-123", "pi_test_secret_123", "pi_test_id_123");
         when(orderService.checkout(any(CheckoutRequest.class))).thenReturn(responseDto);
 
         mockMvc.perform(post("/api/v1/orders")

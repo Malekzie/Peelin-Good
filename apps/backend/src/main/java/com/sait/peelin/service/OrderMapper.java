@@ -6,6 +6,7 @@ import com.sait.peelin.model.Order;
 import com.sait.peelin.model.OrderItem;
 import com.sait.peelin.repository.OrderItemRepository;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 public final class OrderMapper {
@@ -15,6 +16,12 @@ public final class OrderMapper {
     public static OrderDto toDto(Order o, OrderItemRepository orderItemRepository) {
         List<OrderItem> items = orderItemRepository.findByOrder_Id(o.getId());
         List<OrderItemDto> itemDtos = items.stream().map(OrderMapper::itemDto).toList();
+        BigDecimal subtotal = o.getOrderTotal();
+        BigDecimal taxAmount = o.getOrderTaxAmount();
+        BigDecimal grandTotal = subtotal;
+        if (subtotal != null && taxAmount != null) {
+            grandTotal = subtotal.add(taxAmount);
+        }
         return new OrderDto(
                 o.getId(),
                 o.getOrderNumber(),
@@ -26,6 +33,9 @@ public final class OrderMapper {
                 o.getOrderStatus(),
                 o.getOrderTotal(),
                 o.getOrderDiscount(),
+                o.getOrderTaxRate(),
+                o.getOrderTaxAmount(),
+                grandTotal,
                 o.getOrderPlacedDatetime(),
                 o.getOrderScheduledDatetime(),
                 o.getOrderDeliveredDatetime(),

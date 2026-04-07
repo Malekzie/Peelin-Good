@@ -1,6 +1,6 @@
 <script>
-	import ProfilePreferencesCards from '$lib/components/ProfilePreferencesCards.svelte';
-	import ProfileSidebar from '$lib/components/ProfileSidebar.svelte';
+	import ProfilePreferencesCards from '$lib/components/profile/ProfilePreferencesCards.svelte';
+	import ProfileSidebar from '$lib/components/profile/ProfileSidebar.svelte';
 
 	let preferences = {
 		emailNotifications: true,
