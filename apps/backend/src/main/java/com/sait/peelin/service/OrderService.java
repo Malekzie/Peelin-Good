@@ -209,14 +209,21 @@ public class OrderService {
 
         String clientSecret;
         String paymentIntentId;
-        try {
-            PaymentIntent intent = stripeService.createPaymentIntent(order.getId(), grandTotal);
-            pay.setStripeSessionId(intent.getId());
-            clientSecret = intent.getClientSecret();
-            paymentIntentId = intent.getId();
-        } catch (Exception e) {
-            log.error("Failed to create Stripe payment intent for order {}", order.getId(), e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Payment provider unavailable");
+        if (!stripeService.isConfigured()) {
+            log.warn("Stripe is not configured; using dev payment placeholder for order {}", order.getId());
+            paymentIntentId = "dev_pi_" + order.getId();
+            clientSecret = paymentIntentId + "_secret_dev";
+            pay.setStripeSessionId(paymentIntentId);
+        } else {
+            try {
+                PaymentIntent intent = stripeService.createPaymentIntent(order.getId(), grandTotal);
+                pay.setStripeSessionId(intent.getId());
+                clientSecret = intent.getClientSecret();
+                paymentIntentId = intent.getId();
+            } catch (Exception e) {
+                log.error("Failed to create Stripe payment intent for order {}", order.getId(), e);
+                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Payment provider unavailable");
+            }
         }
 
         paymentRepository.save(pay);

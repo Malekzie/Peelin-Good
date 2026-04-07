@@ -84,6 +84,8 @@ class OrderServiceTest {
         taxRate = new TaxRate();
         taxRate.setProvinceName("Ontario");
         taxRate.setTaxPercent(BigDecimal.valueOf(13));
+
+        lenient().when(stripeService.isConfigured()).thenReturn(true);
     }
 
     @Test
@@ -97,8 +99,6 @@ class OrderServiceTest {
         when(orderRepository.save(any(Order.class))).thenAnswer(invocation -> {
             Order o = invocation.getArgument(0);
             o.setId(UUID.randomUUID());
-            when(orderRepository.findById(o.getId())).thenReturn(Optional.of(o));
-            when(orderItemRepository.findByOrder_Id(o.getId())).thenReturn(List.of());
             return o;
         });
 
@@ -151,6 +151,7 @@ class OrderServiceTest {
         doReturn(user).when(currentUserService).currentUserOrNull();
         customer.setAddress(null);
         when(customerRepository.findByUser_UserId(user.getUserId())).thenReturn(Optional.of(customer));
+        when(bakeryRepository.findById(1)).thenReturn(Optional.of(bakery));
 
         CheckoutRequest req = new CheckoutRequest();
         req.setBakeryId(1);
@@ -176,8 +177,6 @@ class OrderServiceTest {
         when(orderRepository.save(any(Order.class))).thenAnswer(invocation -> {
             Order o = invocation.getArgument(0);
             o.setId(UUID.randomUUID());
-            when(orderRepository.findById(o.getId())).thenReturn(Optional.of(o));
-            when(orderItemRepository.findByOrder_Id(o.getId())).thenReturn(List.of());
             return o;
         });
 
@@ -235,8 +234,6 @@ class OrderServiceTest {
         when(orderRepository.save(any(Order.class))).thenAnswer(invocation -> {
             Order o = invocation.getArgument(0);
             o.setId(UUID.randomUUID());
-            when(orderRepository.findById(o.getId())).thenReturn(Optional.of(o));
-            when(orderItemRepository.findByOrder_Id(o.getId())).thenReturn(List.of());
             return o;
         });
 
@@ -278,5 +275,41 @@ class OrderServiceTest {
         verify(stripeService).createPaymentIntent(any(UUID.class),
                 argThat(amt -> amt.compareTo(BigDecimal.valueOf(11.30)) == 0));
         verify(customerService).resolveOrCreateGuestCustomer(guest);
+    }
+
+    @Test
+    void checkout_SkipsStripeWhenNotConfigured() throws Exception {
+        when(stripeService.isConfigured()).thenReturn(false);
+
+        doReturn(user).when(currentUserService).currentUserOrNull();
+        when(customerRepository.findByUser_UserId(user.getUserId())).thenReturn(Optional.of(customer));
+        when(bakeryRepository.findById(1)).thenReturn(Optional.of(bakery));
+        when(productRepository.findById(101)).thenReturn(Optional.of(product));
+        when(taxRateRepository.findByProvinceNameIgnoreCase("Ontario")).thenReturn(Optional.of(taxRate));
+        UUID orderUuid = UUID.randomUUID();
+        when(orderRepository.save(any(Order.class))).thenAnswer(invocation -> {
+            Order o = invocation.getArgument(0);
+            o.setId(orderUuid);
+            return o;
+        });
+
+        CheckoutRequest req = new CheckoutRequest();
+        req.setBakeryId(1);
+        req.setOrderMethod(OrderMethod.pickup);
+        req.setPaymentMethod(PaymentMethod.credit_card);
+        CheckoutRequest.CheckoutLineRequest line = new CheckoutRequest.CheckoutLineRequest();
+        line.setProductId(101);
+        line.setQuantity(1);
+        req.setItems(List.of(line));
+
+        CheckoutSessionResponse result = orderService.checkout(req);
+
+        assertNotNull(result);
+        assertTrue(result.clientSecret().startsWith("dev_pi_" + orderUuid));
+        verify(stripeService, never()).createPaymentIntent(any(), any());
+
+        ArgumentCaptor<Payment> paymentCaptor = ArgumentCaptor.forClass(Payment.class);
+        verify(paymentRepository).save(paymentCaptor.capture());
+        assertEquals("dev_pi_" + orderUuid, paymentCaptor.getValue().getStripeSessionId());
     }
 }

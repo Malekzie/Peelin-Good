@@ -48,7 +48,8 @@ public class CacheConfig implements CachingConfigurer {
         cacheConfigurations.put("tags",             defaultConfig.entryTtl(Duration.ofMinutes(30)));
         cacheConfigurations.put("products",         defaultConfig.entryTtl(Duration.ofMinutes(15)));
         cacheConfigurations.put("bakeries",         defaultConfig.entryTtl(Duration.ofMinutes(20)));
-        cacheConfigurations.put("product-specials", defaultConfig.entryTtl(Duration.ofHours(1)));
+        // Renamed from product-specials: old Redis entries used a different JSON shape than current typing.
+        cacheConfigurations.put("product-specials-v2", defaultConfig.entryTtl(Duration.ofHours(1)));
         cacheConfigurations.put("orders",           defaultConfig.entryTtl(Duration.ofMinutes(2)));
         cacheConfigurations.put("rewards",          defaultConfig.entryTtl(Duration.ofMinutes(5)));
         cacheConfigurations.put("analytics",        defaultConfig.entryTtl(Duration.ofMinutes(30)));
@@ -69,9 +70,10 @@ public class CacheConfig implements CachingConfigurer {
         return new SimpleCacheErrorHandler() {
             @Override
             public void handleCacheGetError(RuntimeException e, Cache cache, Object key) {
-                // Stale cache entries with a different serialization format will fail deserialization.
-                // Log and fall through to the database — the result will re-populate the cache correctly.
-                log.warn("Cache read failed for '{}::{}', falling back to source: {}", cache.getName(), key, e.getMessage());
+                // Stale or cross-version Redis payloads may not deserialize; source load repopulates cache.
+                if (log.isDebugEnabled()) {
+                    log.debug("Cache read failed for '{}::{}', using source: {}", cache.getName(), key, e.getMessage());
+                }
             }
         };
     }
