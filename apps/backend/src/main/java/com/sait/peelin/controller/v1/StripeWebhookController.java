@@ -2,6 +2,7 @@ package com.sait.peelin.controller.v1;
 
 import com.sait.peelin.model.*;
 import com.sait.peelin.repository.*;
+import com.sait.peelin.service.EmailService;
 import com.stripe.exception.SignatureVerificationException;
 import com.stripe.model.Event;
 import com.stripe.model.PaymentIntent;
@@ -34,8 +35,10 @@ public class StripeWebhookController {
 
     private final PaymentRepository paymentRepository;
     private final OrderRepository orderRepository;
+    private final OrderItemRepository orderItemRepository;
     private final RewardRepository rewardRepository;
     private final CustomerRepository customerRepository;
+    private final EmailService emailService;
 
     @PostMapping("/webhook")
     @Transactional
@@ -108,5 +111,7 @@ public class StripeWebhookController {
         customerRepository.save(customer);
 
         log.info("Order {} fulfilled via PaymentIntent {}", order.getId(), paymentIntentId);
+
+        emailService.sendOrderConfirmation(order, orderItemRepository.findByOrder_Id(order.getId()));
     }
 }
