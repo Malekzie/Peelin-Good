@@ -56,6 +56,7 @@ public class CacheConfig implements CachingConfigurer {
         cacheConfigurations.put("dashboard",        defaultConfig.entryTtl(Duration.ofMinutes(5)));
         cacheConfigurations.put("customers",        defaultConfig.entryTtl(Duration.ofMinutes(5)));
         cacheConfigurations.put("employees",        defaultConfig.entryTtl(Duration.ofMinutes(5)));
+        cacheConfigurations.put("current-users",    defaultConfig.entryTtl(Duration.ofMinutes(1)));
         cacheConfigurations.put("reward-tiers",     defaultConfig.entryTtl(Duration.ofMinutes(30)));
         cacheConfigurations.put("reviews",          defaultConfig.entryTtl(Duration.ofMinutes(5)));
 
