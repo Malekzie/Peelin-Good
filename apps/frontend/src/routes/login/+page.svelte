@@ -2,6 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
+	import { Eye, EyeOff } from '@lucide/svelte';
 	import { loginUser } from '$lib/services/auth.js';
 
 	let email = '';
@@ -12,6 +13,7 @@
 
 	let emailTouched = false;
 	let passwordTouched = false;
+	let showPassword = false;
 
 	function validateEmail(value) {
 		if (!value.trim()) return 'Email is required.';
@@ -112,10 +114,14 @@
 				<form class="space-y-6" onsubmit={handleSignIn}>
 					<!-- Email -->
 					<div class="space-y-2">
-						<label class="block text-xs font-semibold tracking-wide text-primary uppercase">
+						<label
+							for="login-email"
+							class="block text-xs font-semibold tracking-wide text-primary uppercase"
+						>
 							Email Address
 						</label>
 						<input
+							id="login-email"
 							class="input w-full rounded-md border border-border p-3 transition focus:border-primary focus:ring-2 focus:ring-primary/40 focus:outline-none
 								{emailError && emailTouched ? 'border-red-400 ring-2 ring-red-400' : ''}"
 							type="email"
@@ -133,20 +139,38 @@
 					<!-- Password -->
 					<div class="space-y-2">
 						<div class="flex items-center justify-between">
-							<label class="block text-xs font-semibold tracking-wide text-primary uppercase">
+							<label
+								for="login-password"
+								class="block text-xs font-semibold tracking-wide text-primary uppercase"
+							>
 								Password
 							</label>
 						</div>
-						<input
-							class="input w-full rounded-md border border-border p-3 transition focus:border-primary focus:ring-2 focus:ring-primary/40 focus:outline-none
-								{passwordError && passwordTouched ? 'border-red-400 ring-2 ring-red-400' : ''}"
-							type="password"
-							placeholder="••••••••"
-							bind:value={password}
-							oninput={() => {
-								if (passwordTouched) passwordError = validatePassword(password);
-							}}
-						/>
+						<div class="relative">
+							<input
+								id="login-password"
+								class="input w-full rounded-md border border-border p-3 pr-12 transition focus:border-primary focus:ring-2 focus:ring-primary/40 focus:outline-none
+									{passwordError && passwordTouched ? 'border-red-400 ring-2 ring-red-400' : ''}"
+								type={showPassword ? 'text' : 'password'}
+								placeholder="••••••••"
+								bind:value={password}
+								oninput={() => {
+									if (passwordTouched) passwordError = validatePassword(password);
+								}}
+							/>
+							<button
+								type="button"
+								onclick={() => (showPassword = !showPassword)}
+								class="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground transition hover:text-foreground"
+								aria-label={showPassword ? 'Hide password' : 'Show password'}
+							>
+								{#if showPassword}
+									<EyeOff size={18} />
+								{:else}
+									<Eye size={18} />
+								{/if}
+							</button>
+						</div>
 						{#if passwordError && passwordTouched}
 							<p class="text-xs text-red-500">{passwordError}</p>
 						{/if}
