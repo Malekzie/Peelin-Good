@@ -18,19 +18,18 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor
-@Tag(name = "Batches", description = "Inventory batch queries for staff. Requires ADMIN or EMPLOYEE role.")
+@Tag(name = "Batches", description = "Inventory batch queries. Public clients may request in-stock batches with `activeOnly=true`.")
 @SecurityRequirement(name = "bearer-jwt")
 public class BatchController {
 
     private final BatchQueryService batchQueryService;
 
-    @Operation(summary = "List batches for a bakery", description = "Returns all inventory batches associated with a bakery. Set `activeOnly=true` to return only batches that are currently in stock.")
+    @Operation(summary = "List batches for a bakery", description = "Returns inventory batches for a bakery. Public clients can read this list for location catalogs.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Batches returned"),
             @ApiResponse(responseCode = "403", description = "Insufficient permissions", content = @Content),
             @ApiResponse(responseCode = "404", description = "Bakery not found", content = @Content)
     })
-    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
     @GetMapping("/bakeries/{bakeryId}/batches")
     public List<BatchDto> byBakery(
             @PathVariable Integer bakeryId,
