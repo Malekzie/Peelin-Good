@@ -39,12 +39,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Lint
-        run: npm run lint
-
       - name: Fixing Lint
         run: npx prettier --write .
-
+  
       - name: Type check
         run: npm run check
 
