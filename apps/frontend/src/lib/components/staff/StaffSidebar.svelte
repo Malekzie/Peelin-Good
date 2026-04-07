@@ -45,7 +45,7 @@
 </script>
 
 <aside
-	class="hidden h-full w-64 flex-shrink-0 flex-col overflow-y-auto border-r border-border bg-card md:flex"
+	class="hidden h-full w-64 shrink-0 flex-col overflow-y-auto border-r border-border bg-card md:flex"
 >
 	<div class="flex flex-col gap-6 p-6 pt-8">
 		<div class="flex items-center gap-3">

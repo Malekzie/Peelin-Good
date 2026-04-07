@@ -18,7 +18,7 @@
 
 	const allNavLinks = [
 		{ label: 'Profile', href: '/profile', icon: User, roles: null },
-		{ label: 'Orders', href: '/orders', icon: ShoppingBag, roles: null },
+		{ label: 'Orders', href: '/orders', icon: ShoppingBag, roles: ['customer'] },
 		{
 			label: 'Preferences',
 			href: '/profile/preferences',

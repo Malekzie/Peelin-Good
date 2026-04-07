@@ -70,7 +70,7 @@
 	];
 </script>
 
-<div class="flex min-h-screen bg-background">
+<div class="flex h-[calc(100dvh-var(--app-navbar-height))] overflow-hidden bg-background">
 	<ProfileSidebar />
 
 	<main class="flex-1 overflow-y-auto p-8 lg:p-10">

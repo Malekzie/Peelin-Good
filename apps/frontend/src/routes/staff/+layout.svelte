@@ -4,7 +4,7 @@
 	let { children } = $props();
 </script>
 
-<div class="flex min-h-screen bg-background">
+<div class="flex h-[calc(100dvh-var(--app-navbar-height))] overflow-hidden bg-background">
 	<StaffSidebar />
 	<div class="flex flex-1 flex-col overflow-hidden">
 		{@render children()}
