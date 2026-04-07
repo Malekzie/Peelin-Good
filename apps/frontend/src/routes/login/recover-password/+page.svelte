@@ -56,8 +56,11 @@
 			{:else}
 				<form class="space-y-6" on:submit={handleSubmit}>
 					<div class="space-y-1.5">
-						<label class="text-on-surface-variant px-1 text-sm font-bold">Email Address</label>
+						<label for="recoveryEmailInput" class="text-on-surface-variant px-1 text-sm font-bold"
+							>Email Address</label
+						>
 						<input
+							id="recoveryEmailInput"
 							type="email"
 							placeholder="email@example.com"
 							bind:value={email}

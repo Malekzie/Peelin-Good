@@ -7,7 +7,12 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
 	import { Separator } from '$lib/components/ui/separator';
-	import { getCustomer, patchCustomer, approvePhoto, rejectPhoto } from '$lib/services/staff-customers.js';
+	import {
+		getCustomer,
+		patchCustomer,
+		approvePhoto,
+		rejectPhoto
+	} from '$lib/services/staff-customers.js';
 
 	const id = page.params.id;
 	const isAdmin = $derived($user?.role === 'admin');
@@ -78,7 +83,8 @@
 			<div class="space-y-4 rounded-xl border border-border bg-card p-6">
 				<div class="flex items-start justify-between">
 					<h1 class="text-xl font-bold text-foreground">
-						{customer.firstName ?? ''} {customer.lastName ?? ''}
+						{customer.firstName ?? ''}
+						{customer.lastName ?? ''}
 					</h1>
 					{#if isAdmin && !editing}
 						<Button size="sm" variant="outline" onclick={() => (editing = true)}>Edit</Button>
@@ -120,25 +126,25 @@
 					<Separator />
 					<dl class="grid grid-cols-2 gap-4 text-sm">
 						<div>
-							<dt class="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+							<dt class="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
 								Email
 							</dt>
 							<dd class="mt-1 text-foreground">{customer.email ?? '—'}</dd>
 						</div>
 						<div>
-							<dt class="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+							<dt class="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
 								Phone
 							</dt>
 							<dd class="mt-1 text-foreground">{customer.phone ?? '—'}</dd>
 						</div>
 						<div>
-							<dt class="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+							<dt class="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
 								Reward Balance
 							</dt>
 							<dd class="mt-1 text-foreground">{customer.rewardBalance ?? 0} pts</dd>
 						</div>
 						<div>
-							<dt class="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+							<dt class="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
 								Address
 							</dt>
 							<dd class="mt-1 text-foreground">
@@ -159,7 +165,7 @@
 					{#if customer.profilePhotoPath}
 						<img
 							src={customer.profilePhotoPath}
-							alt="Pending profile photo"
+							alt=""
 							class="h-24 w-24 rounded-full border border-border object-cover"
 						/>
 					{/if}

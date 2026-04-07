@@ -7,34 +7,40 @@
 			description:
 				'Tangy, open-crumb sourdough with a blistered crust. Made with our 3-year-old starter.',
 			price: 8.5,
+			emoji: '🍞',
 			badge: "Today's Pick"
 		},
 		{
 			name: 'Butter Croissant',
 			description: '72-hour lamination, French-style butter. Flaky layers from edge to edge.',
-			price: 3.75
+			price: 3.75,
+			emoji: '🥐'
 		},
 		{
 			name: 'Lemon Tart',
 			description:
 				'Silky curd in a crisp pastry shell. Bright, just-tart-enough, and gone by noon.',
 			price: 5.25,
+			emoji: '🍋',
 			badge: 'Seasonal'
 		},
 		{
 			name: 'Cinnamon Roll',
 			description: 'Brown sugar swirl, pillowy pull-apart texture, cream cheese glaze.',
-			price: 4.5
+			price: 4.5,
+			emoji: '🥐'
 		},
 		{
 			name: 'Carrot Cake Slice',
 			description: 'Walnuts, warm spice, and whipped cream cheese frosting. A proper slice.',
-			price: 6.0
+			price: 6.0,
+			emoji: '🎂'
 		},
 		{
 			name: 'Almond Danish',
 			description: 'Buttery pastry, almond cream centre, sliced almonds on top.',
 			price: 4.25,
+			emoji: '🥜',
 			badge: 'New'
 		}
 	];

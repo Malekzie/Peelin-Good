@@ -221,13 +221,9 @@
 							class="h-20 w-20 shrink-0 overflow-hidden rounded-full border-2 border-border bg-muted"
 						>
 							{#if photoPreview}
-								<img src={photoPreview} alt="Preview" class="h-full w-full object-cover" />
+								<img src={photoPreview} alt="" class="h-full w-full object-cover" />
 							{:else if profile?.profilePhotoPath}
-								<img
-									src={profile.profilePhotoPath}
-									alt="Current photo"
-									class="h-full w-full object-cover"
-								/>
+								<img src={profile.profilePhotoPath} alt="" class="h-full w-full object-cover" />
 							{:else}
 								<div
 									class="flex h-full w-full items-center justify-center text-2xl font-bold text-muted-foreground"
@@ -292,10 +288,13 @@
 					</CardHeader>
 					<CardContent class="space-y-4">
 						<div class="space-y-1.5">
-							<label class="text-xs font-semibold tracking-widest text-muted-foreground uppercase"
+							<label
+								for="usernameInput"
+								class="text-xs font-semibold tracking-widest text-muted-foreground uppercase"
 								>Username</label
 							>
 							<input
+								id="usernameInput"
 								type="text"
 								bind:value={fields.username}
 								class="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm transition focus:ring-2 focus:ring-primary focus:outline-none
@@ -311,10 +310,13 @@
 						</div>
 
 						<div class="space-y-1.5">
-							<label class="text-xs font-semibold tracking-widest text-muted-foreground uppercase"
+							<label
+								for="emailInput"
+								class="text-xs font-semibold tracking-widest text-muted-foreground uppercase"
 								>Email</label
 							>
 							<input
+								id="emailInput"
 								type="email"
 								bind:value={fields.email}
 								class="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm transition focus:ring-2 focus:ring-primary focus:outline-none
@@ -325,10 +327,13 @@
 						<!-- First / Last Name -->
 						<div class="grid grid-cols-2 gap-4">
 							<div class="space-y-1.5">
-								<label class="text-xs font-semibold tracking-widest text-muted-foreground uppercase"
+								<label
+									for="firstNameInput"
+									class="text-xs font-semibold tracking-widest text-muted-foreground uppercase"
 									>First Name</label
 								>
 								<input
+									id="firstNameInput"
 									type="text"
 									bind:value={fields.firstName}
 									class="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm transition focus:ring-2 focus:ring-primary focus:outline-none
@@ -339,10 +344,13 @@
 									</p>{/if}
 							</div>
 							<div class="space-y-1.5">
-								<label class="text-xs font-semibold tracking-widest text-muted-foreground uppercase"
+								<label
+									for="lastNameInput"
+									class="text-xs font-semibold tracking-widest text-muted-foreground uppercase"
 									>Last Name</label
 								>
 								<input
+									id="lastNameInput"
 									type="text"
 									bind:value={fields.lastName}
 									class="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm transition focus:ring-2 focus:ring-primary focus:outline-none
@@ -354,10 +362,14 @@
 
 						<!-- Middle Initial -->
 						<div class="space-y-1.5">
-							<label class="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
+							<label
+								for="middleInitialInput"
+								class="text-xs font-semibold tracking-widest text-muted-foreground uppercase"
+							>
 								Middle Initial <span class="font-normal normal-case">(optional)</span>
 							</label>
 							<input
+								id="middleInitialInput"
 								type="text"
 								maxlength="1"
 								bind:value={fields.middleInitial}
@@ -367,10 +379,13 @@
 
 						<!-- Phone -->
 						<div class="space-y-1.5">
-							<label class="text-xs font-semibold tracking-widest text-muted-foreground uppercase"
+							<label
+								for="phoneInput2"
+								class="text-xs font-semibold tracking-widest text-muted-foreground uppercase"
 								>Phone</label
 							>
 							<input
+								id="phoneInput2"
 								type="tel"
 								bind:value={fields.phone}
 								oninput={(e) => {
@@ -384,10 +399,14 @@
 
 						<!-- Business Phone -->
 						<div class="space-y-1.5">
-							<label class="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
+							<label
+								for="businessPhoneInput"
+								class="text-xs font-semibold tracking-widest text-muted-foreground uppercase"
+							>
 								Business Phone <span class="font-normal normal-case">(optional)</span>
 							</label>
 							<input
+								id="businessPhoneInput"
 								type="tel"
 								bind:value={fields.businessPhone}
 								oninput={(e) => {
@@ -407,10 +426,13 @@
 					</CardHeader>
 					<CardContent class="space-y-4">
 						<div class="space-y-1.5">
-							<label class="text-xs font-semibold tracking-widest text-muted-foreground uppercase"
+							<label
+								for="addressLine1Input2"
+								class="text-xs font-semibold tracking-widest text-muted-foreground uppercase"
 								>Address Line 1</label
 							>
 							<input
+								id="addressLine1Input2"
 								type="text"
 								bind:value={fields.addressLine1}
 								class="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm transition focus:ring-2 focus:ring-primary focus:outline-none
@@ -422,10 +444,14 @@
 						</div>
 
 						<div class="space-y-1.5">
-							<label class="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
+							<label
+								for="addressLine2Input"
+								class="text-xs font-semibold tracking-widest text-muted-foreground uppercase"
+							>
 								Address Line 2 <span class="font-normal normal-case">(optional)</span>
 							</label>
 							<input
+								id="addressLine2Input"
 								type="text"
 								bind:value={fields.addressLine2}
 								class="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm transition focus:ring-2 focus:ring-primary focus:outline-none"
@@ -434,10 +460,13 @@
 
 						<div class="grid grid-cols-3 gap-4">
 							<div class="space-y-1.5">
-								<label class="text-xs font-semibold tracking-widest text-muted-foreground uppercase"
+								<label
+									for="cityInput"
+									class="text-xs font-semibold tracking-widest text-muted-foreground uppercase"
 									>City</label
 								>
 								<input
+									id="cityInput"
 									type="text"
 									bind:value={fields.city}
 									class="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm transition focus:ring-2 focus:ring-primary focus:outline-none
@@ -446,10 +475,13 @@
 								{#if errors.city}<p class="text-xs text-destructive">{errors.city}</p>{/if}
 							</div>
 							<div class="space-y-1.5">
-								<label class="text-xs font-semibold tracking-widest text-muted-foreground uppercase"
+								<label
+									for="provinceInput"
+									class="text-xs font-semibold tracking-widest text-muted-foreground uppercase"
 									>Province</label
 								>
 								<select
+									id="provinceInput"
 									bind:value={fields.province}
 									class="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm transition focus:ring-2 focus:ring-primary focus:outline-none
 										{errors.province ? 'border-destructive ring-1 ring-destructive' : ''}"
@@ -461,10 +493,13 @@
 								{#if errors.province}<p class="text-xs text-destructive">{errors.province}</p>{/if}
 							</div>
 							<div class="space-y-1.5">
-								<label class="text-xs font-semibold tracking-widest text-muted-foreground uppercase"
+								<label
+									for="postalCodeInput"
+									class="text-xs font-semibold tracking-widest text-muted-foreground uppercase"
 									>Postal Code</label
 								>
 								<input
+									id="postalCodeInput"
 									type="text"
 									maxlength="7"
 									bind:value={fields.postalCode}

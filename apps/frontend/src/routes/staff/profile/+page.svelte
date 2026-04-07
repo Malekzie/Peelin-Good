@@ -17,7 +17,7 @@
 	let uploadingPhoto = $state(false);
 	let draft = $state({});
 
-	let fileInput;
+	let fileInput = $state(null);
 
 	const initials = $derived(
 		profile
@@ -28,7 +28,11 @@
 
 	const fullName = $derived(
 		profile
-			? [profile.firstName, profile.middleInitial ? `${profile.middleInitial}.` : null, profile.lastName]
+			? [
+					profile.firstName,
+					profile.middleInitial ? `${profile.middleInitial}.` : null,
+					profile.lastName
+				]
 					.filter(Boolean)
 					.join(' ')
 			: ''
@@ -101,7 +105,11 @@
 		uploadingPhoto = true;
 		try {
 			const updated = await uploadProfilePhoto(file);
-			profile = { ...profile, profilePhotoPath: updated.profilePhotoPath, photoApprovalPending: true };
+			profile = {
+				...profile,
+				profilePhotoPath: updated.profilePhotoPath,
+				photoApprovalPending: true
+			};
 		} catch {
 			// silent — photo stays unchanged
 		} finally {
@@ -183,7 +191,10 @@
 				<!-- Edit form -->
 				<form
 					class="space-y-4 rounded-xl border border-border bg-card p-6"
-					onsubmit={(e) => { e.preventDefault(); handleSave(); }}
+					onsubmit={(e) => {
+						e.preventDefault();
+						handleSave();
+					}}
 				>
 					<p class="text-sm font-semibold text-foreground">Edit Details</p>
 					<div class="grid grid-cols-3 gap-3">
@@ -205,7 +216,10 @@
 							type="button"
 							size="sm"
 							variant="ghost"
-							onclick={() => { editing = false; resetDraft(); }}
+							onclick={() => {
+								editing = false;
+								resetDraft();
+							}}
 						>
 							Cancel
 						</Button>
@@ -213,47 +227,73 @@
 				</form>
 			{:else}
 				<!-- Contact section -->
-				<div class="rounded-xl border border-border bg-card p-6 space-y-4">
-					<p class="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Contact</p>
+				<div class="space-y-4 rounded-xl border border-border bg-card p-6">
+					<p class="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
+						Contact
+					</p>
 					<div class="grid grid-cols-2 gap-4 text-sm">
 						<div>
-							<p class="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Work Email</p>
+							<p class="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
+								Work Email
+							</p>
 							<p class="mt-1 text-foreground">{profile.workEmail ?? '—'}</p>
 						</div>
 						<div>
-							<p class="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Phone</p>
+							<p class="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
+								Phone
+							</p>
 							<p class="mt-1 text-foreground">{profile.phone ?? '—'}</p>
 						</div>
 						{#if profile.businessPhone}
 							<div>
-								<p class="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Business Phone</p>
+								<p class="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
+									Business Phone
+								</p>
 								<p class="mt-1 text-foreground">{profile.businessPhone}</p>
 							</div>
 						{/if}
 						<div>
-							<p class="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Username</p>
+							<p class="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
+								Username
+							</p>
 							<p class="mt-1 text-foreground">{profile.username ?? '—'}</p>
 						</div>
 					</div>
 				</div>
 
 				<!-- Assignment section -->
-				<div class="rounded-xl border border-border bg-card p-6 space-y-4">
-					<p class="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Assignment</p>
+				<div class="space-y-4 rounded-xl border border-border bg-card p-6">
+					<p class="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
+						Assignment
+					</p>
 					<div class="grid grid-cols-2 gap-4 text-sm">
 						<div>
-							<p class="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Bakery</p>
+							<p class="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
+								Bakery
+							</p>
 							<p class="mt-1 text-foreground">{bakeryName ?? '—'}</p>
 						</div>
 						<div>
-							<p class="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Position</p>
+							<p class="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
+								Position
+							</p>
 							<p class="mt-1 text-foreground">{profile.position ?? '—'}</p>
 						</div>
 						{#if profile.address}
 							<div class="col-span-2">
-								<p class="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Address</p>
+								<p class="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
+									Address
+								</p>
 								<p class="mt-1 text-foreground">
-									{[profile.address.line1, profile.address.line2, profile.address.city, profile.address.province, profile.address.postalCode].filter(Boolean).join(', ')}
+									{[
+										profile.address.line1,
+										profile.address.line2,
+										profile.address.city,
+										profile.address.province,
+										profile.address.postalCode
+									]
+										.filter(Boolean)
+										.join(', ')}
 								</p>
 							</div>
 						{/if}

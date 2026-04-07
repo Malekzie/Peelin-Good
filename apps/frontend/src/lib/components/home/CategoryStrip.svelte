@@ -16,13 +16,13 @@
 		const tags = await getTags();
 
 		categories = tags
-			.map((tag) => ({
+			.map((tag: { id: string; name: string; description?: string; isFeatured: boolean }) => ({
 				id: tag.id,
 				name: tag.name,
 				desc: tag.description ?? 'Freshly baked goods',
 				badge: tag.isFeatured ? 'Featured' : undefined
 			}))
-			.sort((a, b) => a.name.localeCompare(b.name));
+			.sort((a: Category, b: Category) => a.name.localeCompare(b.name));
 	});
 </script>
 

@@ -47,10 +47,7 @@
 			goto(resolve('/staff/dashboard'), { replaceState: true });
 			return;
 		}
-		await Promise.all([
-			getBakeryNames().then((n) => (bakeryNames = n)),
-			loadData()
-		]);
+		await Promise.all([getBakeryNames().then((n) => (bakeryNames = n)), loadData()]);
 	});
 
 	async function loadData() {
@@ -103,30 +100,42 @@
 		<!-- Filters -->
 		<div class="flex flex-wrap items-end gap-3">
 			<div class="flex flex-col gap-1">
-				<label class="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+				<label
+					for="fromDateInput"
+					class="text-xs font-semibold tracking-widest text-muted-foreground uppercase"
+				>
 					From
 				</label>
 				<input
+					id="fromDateInput"
 					type="date"
 					bind:value={startDate}
 					class="rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground"
 				/>
 			</div>
 			<div class="flex flex-col gap-1">
-				<label class="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+				<label
+					for="toDateInput"
+					class="text-xs font-semibold tracking-widest text-muted-foreground uppercase"
+				>
 					To
 				</label>
 				<input
+					id="toDateInput"
 					type="date"
 					bind:value={endDate}
 					class="rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground"
 				/>
 			</div>
 			<div class="flex flex-col gap-1">
-				<label class="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+				<label
+					for="bakerySelectInput"
+					class="text-xs font-semibold tracking-widest text-muted-foreground uppercase"
+				>
 					Bakery
 				</label>
 				<select
+					id="bakerySelectInput"
 					bind:value={selectedBakery}
 					class="rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground"
 				>
