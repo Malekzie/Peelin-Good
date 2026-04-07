@@ -17,6 +17,7 @@
 					</div>
 
 					<button
+						aria-label="Toggle {item.label}"
 						on:click={() => toggle(item.key)}
 						class={`relative h-6 w-11 rounded-full transition ${
 							preferences[item.key] ? 'bg-primary/90' : 'bg-secondary/90'
@@ -26,7 +27,7 @@
 							class={`h-6 w-6 transform rounded-full bg-white shadow-lg ring-2 ring-black/10 transition ${
 								preferences[item.key] ? 'translate-x-5' : ''
 							}`}
-						/>
+						></div>
 					</button>
 				</div>
 			{/each}
@@ -43,6 +44,7 @@
 					<p class="text-on-surface font-medium">{item.label}</p>
 
 					<button
+						aria-label="Toggle {item.label}"
 						on:click={() => toggle(item.key)}
 						class={`relative h-6 w-11 rounded-full transition ${
 							preferences[item.key] ? 'bg-primary/90' : 'bg-secondary/90'
@@ -52,7 +54,7 @@
 							class={`h-6 w-6 transform rounded-full bg-white shadow-lg ring-2 ring-black/10 transition ${
 								preferences[item.key] ? 'translate-x-5' : ''
 							}`}
-						/>
+						></div>
 					</button>
 				</div>
 			{/each}
@@ -69,6 +71,7 @@
 					<p class="text-on-surface font-medium">{item.label}</p>
 
 					<button
+						aria-label="Toggle {item.label} allergy"
 						on:click={() => toggle(item.key)}
 						class={`relative h-6 w-11 rounded-full transition ${
 							preferences[item.key] ? 'bg-primary/90' : 'bg-secondary/90'
@@ -78,15 +81,18 @@
 							class={`h-6 w-6 transform rounded-full bg-white shadow-lg ring-2 ring-black/10 transition ${
 								preferences[item.key] ? 'translate-x-5' : ''
 							}`}
-						/>
+						></div>
 					</button>
 				</div>
 			{/each}
 		</div>
 
 		<div>
-			<label class="text-outline text-[11px] font-bold uppercase"> Other Allergies </label>
+			<label for="otherAllergiesInput" class="text-outline text-[11px] font-bold uppercase">
+				Other Allergies
+			</label>
 			<input
+				id="otherAllergiesInput"
 				type="text"
 				bind:value={preferences.otherAllergies}
 				class="bg-surface-container border-outline-variant mt-2 w-full rounded-lg border px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"

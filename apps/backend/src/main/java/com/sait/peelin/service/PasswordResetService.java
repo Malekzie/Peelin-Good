@@ -27,10 +27,13 @@ public class PasswordResetService {
     private final PasswordResetTokenRepository tokenRepository;
     private final PasswordEncoder passwordEncoder;
 
-    @Value("${app.resend.api-key}")
+    @Value("${app.resend.enabled:false}")
+    private boolean resendEnabled;
+
+    @Value("${app.resend.api-key:}")
     private String resendApiKey;
 
-    @Value("${app.resend.from-email}")
+    @Value("${app.resend.from-email:onboarding@resend.dev}")
     private String fromEmail;
 
     @Value("${app.frontend.url:http://localhost:5173}")
@@ -98,6 +101,11 @@ public class PasswordResetService {
     private void sendResetEmail(User user, String token) {
         String resetLink = frontendUrl + "/login/reset-password?token=" + token;
 
+        if (!resendEnabled || resendApiKey == null || resendApiKey.isBlank()) {
+            System.out.println("Password reset email delivery is disabled (Resend not configured). Reset link: " + resetLink);
+            return;
+        }
+
         String htmlBody = """
                 <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
                     <h2 style="color: #703210;">Reset Your Password</h2>
@@ -114,7 +122,7 @@ public class PasswordResetService {
 
 
         System.out.println("Attempting to send email to: " + user.getUserEmail());
-        System.out.println("Using API key starting with: " + resendApiKey.substring(0, 5));
+        System.out.println("Using API key starting with: " + resendApiKey.substring(0, Math.min(5, resendApiKey.length())));
         System.out.println("Reset link: " + resetLink);
         try {
             Resend resend = new Resend(resendApiKey);

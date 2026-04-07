@@ -19,6 +19,12 @@ public class RegisterRequest {
     @Size(max = 254)
     private String email;
 
+    /**
+     * Optional; if provided, used to detect a prior guest checkout by phone when linking at registration.
+     */
+    @Size(max = 30)
+    private String phone;
+
     @NotBlank
     private String password;
 }

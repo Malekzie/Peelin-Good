@@ -9,7 +9,19 @@
 
 	const API = 'http://localhost:8080';
 
-	let profile = $state<Record<string, unknown> | null>(null);
+	let profile = $state<{
+		firstName?: string;
+		lastName?: string;
+		email?: string;
+		phone?: string;
+		address?: {
+			line1?: string;
+			line2?: string;
+			city?: string;
+			province?: string;
+			postalCode?: string;
+		};
+	} | null>(null);
 	let guestName = $state('');
 	let guestEmail = $state('');
 	let guestPhone = $state('');
@@ -99,7 +111,7 @@
 
 			const order = await res.json();
 			cart.clear();
-			goto(resolve(`/order/confirmation/${order.orderNumber}`));
+			goto(resolve(`/orders/${order.orderNumber}/confirmation`));
 		} catch (err: unknown) {
 			Sentry.withScope((scope) => {
 				scope.setTag('action', 'CHECKOUT_FAILED');

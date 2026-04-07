@@ -55,7 +55,6 @@
 		</div>
 	{:else if order}
 		<div class="mb-10 flex flex-col items-center gap-2 text-center">
-			<span class="text-5xl">🎉</span>
 			<h1 class="font-serif text-4xl font-bold text-foreground">Order Confirmed!</h1>
 			<p class="text-muted-foreground">
 				Your order <span class="font-semibold text-foreground">#{order.orderNumber}</span> has been placed.
@@ -121,7 +120,7 @@
 
 		<div class="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
 			<a
-				href={resolve(`/order/${order.orderNumber}`)}
+				href={resolve(`/orders/${order.orderNumber}`)}
 				class="rounded-lg border border-border px-6 py-3 text-center text-sm font-medium text-foreground transition-colors hover:bg-muted"
 			>
 				Track Order

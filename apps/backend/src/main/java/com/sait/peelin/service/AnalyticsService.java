@@ -32,7 +32,7 @@ public class AnalyticsService {
     private final CurrentUserService currentUserService;
     private final EmployeeRepository employeeRepository;
 
-    String currentUsername() {
+    public String currentUsername() {
         return SecurityContextHolder.getContext().getAuthentication().getName();
     }
 
@@ -76,7 +76,7 @@ public class AnalyticsService {
     }
 
     private static final String REVENUE_STATUS =
-            "o.order_status::text IN ('completed', 'delivered')";
+            " o.order_status::text IN ('completed', 'delivered')";
 
     @Cacheable(value = "analytics", key = "#root.target.currentUsername() + ':totalRevenue:' + #start + ':' + #end + ':' + #bakerySelection")
     @Transactional(readOnly = true)

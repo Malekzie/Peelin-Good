@@ -81,9 +81,16 @@ class CustomerServiceTest {
 
         when(currentUserService.requireUser()).thenReturn(user);
         when(customerRepository.findByUser_UserId(user.getUserId())).thenReturn(Optional.empty());
-        when(customerRepository.findByCustomerEmailNormalized("jamie@example.com"))
+        when(customerRepository.findGuestCustomersByEmailNormalized("jamie@example.com"))
                 .thenReturn(List.of(guestCustomer));
         when(customerRepository.save(any(Customer.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(addressRepository.save(any(Address.class))).thenAnswer(invocation -> {
+            Address a = invocation.getArgument(0);
+            if (a.getId() == null) {
+                a.setId(999);
+            }
+            return a;
+        });
         when(userRepository.findById(user.getUserId())).thenReturn(Optional.of(user));
 
         CustomerDto result = customerService.createMyProfile(request);
@@ -106,7 +113,9 @@ class CustomerServiceTest {
         existingCustomer.setId(UUID.randomUUID());
         existingCustomer.setRewardTier(tier);
         existingCustomer.setCustomerRewardBalance(250);
+        existingCustomer.setCustomerPhone("4035550000");
         existingCustomer.setCustomerEmail("jamie@example.com");
+        existingCustomer.setUser(null);
 
         GuestCustomerRequest request = new GuestCustomerRequest();
         request.setFirstName("Someone");
@@ -118,8 +127,9 @@ class CustomerServiceTest {
         request.setProvince("Ontario");
         request.setPostalCode("M5V2T6");
 
-        when(customerRepository.findByCustomerEmailNormalized("jamie@example.com"))
+        when(customerRepository.findGuestCustomersByEmailNormalized("jamie@example.com"))
                 .thenReturn(List.of(existingCustomer));
+        when(customerRepository.save(existingCustomer)).thenReturn(existingCustomer);
 
         Customer result = customerService.resolveOrCreateGuestCustomer(request);
 

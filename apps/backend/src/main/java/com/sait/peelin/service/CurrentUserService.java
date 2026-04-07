@@ -1,7 +1,6 @@
 package com.sait.peelin.service;
 
 import com.sait.peelin.model.User;
-import com.sait.peelin.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
@@ -13,7 +12,7 @@ import org.springframework.web.server.ResponseStatusException;
 @RequiredArgsConstructor
 public class CurrentUserService {
 
-    private final UserRepository userRepository;
+    private final UserLookupCacheService userLookupCacheService;
 
     public User requireUser() {
         User user = currentUserOrNull();
@@ -33,7 +32,6 @@ public class CurrentUserService {
             return null;
         }
         String trimmed = name.trim();
-        return userRepository.findByUsernameIgnoreCaseOrUserEmailIgnoreCase(trimmed, trimmed)
-                .orElse(null);
+        return userLookupCacheService.findActiveByLoginIdentifier(trimmed);
     }
 }

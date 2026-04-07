@@ -71,7 +71,7 @@ public class OrderService {
     @Transactional
     @CacheEvict(value = {"orders", "analytics", "dashboard"}, allEntries = true)
     public CheckoutSessionResponse checkout(CheckoutRequest req) {
-        User user = currentUserService.requireUser();
+        User user = currentUserService.currentUserOrNull();
         Customer customer;
         boolean guestCheckout = false;
         if (user == null) {
@@ -144,7 +144,8 @@ public class OrderService {
         if (total.compareTo(BigDecimal.ZERO) < 0) {
             total = BigDecimal.ZERO;
         }
-        BigDecimal taxRatePercent = resolveTaxRatePercent(resolveTaxProvince(customer));
+        BigDecimal taxRatePercent = resolveTaxRatePercent(
+                resolveTaxProvinceForCheckout(customer, address, bakery));
         BigDecimal taxAmount = total.multiply(taxRatePercent)
                 .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
         BigDecimal grandTotal = total.add(taxAmount);
@@ -164,8 +165,18 @@ public class OrderService {
         order.setOrderTaxAmount(taxAmount);
         if (guestCheckout && req.getGuest() != null) {
             order.setGuestName(buildGuestName(req.getGuest().getFirstName(), req.getGuest().getLastName()));
-            order.setGuestEmail(req.getGuest().getEmail().trim().toLowerCase());
-            order.setGuestPhone(req.getGuest().getPhone().trim());
+            String ge = req.getGuest().getEmail();
+            if (ge != null && !ge.trim().isEmpty()) {
+                order.setGuestEmail(ge.trim().toLowerCase());
+            } else {
+                order.setGuestEmail(null);
+            }
+            String gp = req.getGuest().getPhone();
+            if (gp != null && !gp.trim().isEmpty()) {
+                order.setGuestPhone(gp.trim());
+            } else {
+                order.setGuestPhone(null);
+            }
         }
         order.setOrderStatus(OrderStatus.pending_payment);
         order = orderRepository.save(order);
@@ -198,14 +209,21 @@ public class OrderService {
 
         String clientSecret;
         String paymentIntentId;
-        try {
-            PaymentIntent intent = stripeService.createPaymentIntent(order.getId(), total);
-            pay.setStripeSessionId(intent.getId());
-            clientSecret = intent.getClientSecret();
-            paymentIntentId = intent.getId();
-        } catch (Exception e) {
-            log.error("Failed to create Stripe payment intent for order {}", order.getId(), e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Payment provider unavailable");
+        if (!stripeService.isConfigured()) {
+            log.warn("Stripe is not configured; using dev payment placeholder for order {}", order.getId());
+            paymentIntentId = "dev_pi_" + order.getId();
+            clientSecret = paymentIntentId + "_secret_dev";
+            pay.setStripeSessionId(paymentIntentId);
+        } else {
+            try {
+                PaymentIntent intent = stripeService.createPaymentIntent(order.getId(), grandTotal);
+                pay.setStripeSessionId(intent.getId());
+                clientSecret = intent.getClientSecret();
+                paymentIntentId = intent.getId();
+            } catch (Exception e) {
+                log.error("Failed to create Stripe payment intent for order {}", order.getId(), e);
+                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Payment provider unavailable");
+            }
         }
 
         paymentRepository.save(pay);
@@ -213,12 +231,26 @@ public class OrderService {
         return new CheckoutSessionResponse(order.getId(), order.getOrderNumber(), clientSecret, paymentIntentId);
     }
 
-    private String resolveTaxProvince(Customer customer) {
-        Address source = customer.getAddress();
-        if (source == null || source.getAddressProvince() == null || source.getAddressProvince().trim().isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Customer province is required for tax calculation");
+    /**
+     * Prefer the order/delivery address, then the customer profile, then the bakery (e.g. guest pickup without profile address).
+     */
+    private String resolveTaxProvinceForCheckout(Customer customer, Address orderAddress, Bakery bakery) {
+        if (orderAddress != null && hasProvince(orderAddress)) {
+            return orderAddress.getAddressProvince();
         }
-        return source.getAddressProvince();
+        Address custAddr = customer.getAddress();
+        if (custAddr != null && hasProvince(custAddr)) {
+            return custAddr.getAddressProvince();
+        }
+        Address bakeryAddr = bakery.getAddress();
+        if (bakeryAddr != null && hasProvince(bakeryAddr)) {
+            return bakeryAddr.getAddressProvince();
+        }
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Province is required for tax calculation");
+    }
+
+    private static boolean hasProvince(Address address) {
+        return address.getAddressProvince() != null && !address.getAddressProvince().trim().isEmpty();
     }
 
     private String buildGuestName(String firstName, String lastName) {

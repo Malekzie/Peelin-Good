@@ -40,9 +40,9 @@
 </script>
 
 {#if loading}
-	<div class="flex min-h-screen">
+	<div class="flex h-[calc(100dvh-var(--app-navbar-height))] overflow-hidden">
 		<div class="hidden w-72 border-r border-border bg-card md:block"></div>
-		<main class="flex-1 p-10">
+		<main class="flex-1 overflow-y-auto p-10">
 			<div class="mx-auto max-w-5xl space-y-8">
 				<div class="flex items-center gap-6 pb-6">
 					<Skeleton class="h-24 w-24 rounded-full" />
@@ -57,7 +57,9 @@
 		</main>
 	</div>
 {:else if error}
-	<div class="flex min-h-screen items-center justify-center bg-background px-6">
+	<div
+		class="flex h-[calc(100dvh-var(--app-navbar-height))] items-center justify-center overflow-hidden bg-background px-6"
+	>
 		<div
 			class="w-full max-w-md rounded-2xl border border-border bg-card p-10 text-center shadow-sm"
 		>
@@ -81,7 +83,7 @@
 		</div>
 	</div>
 {:else}
-	<div class="flex min-h-screen bg-background">
+	<div class="flex h-[calc(100dvh-var(--app-navbar-height))] overflow-hidden bg-background">
 		<ProfileSidebar />
 
 		<main class="flex-1 overflow-y-auto p-8 lg:p-10">

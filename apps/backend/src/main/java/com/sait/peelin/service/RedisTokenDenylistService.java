@@ -19,14 +19,22 @@ public class RedisTokenDenylistService implements TokenDenylistService {
 
     @Override
     public void deny(String token) {
-        Duration remaining = jwtService.getTimeUntilExpiry(token);
-        if (!remaining.isZero() && !remaining.isNegative()) {
-            redisTemplate.opsForValue().set(PREFIX + token, "1", remaining);
+        try {
+            Duration remaining = jwtService.getTimeUntilExpiry(token);
+            if (!remaining.isZero() && !remaining.isNegative()) {
+                redisTemplate.opsForValue().set(PREFIX + token, "1", remaining);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Redis unavailable: " + e);
         }
     }
 
     @Override
     public boolean isDenied(String token) {
-        return Boolean.TRUE.equals(redisTemplate.hasKey(PREFIX + token));
+        try {
+            return Boolean.TRUE.equals(redisTemplate.hasKey(PREFIX + token));
+        } catch (Exception e) {
+            return false;
+        }
     }
 }

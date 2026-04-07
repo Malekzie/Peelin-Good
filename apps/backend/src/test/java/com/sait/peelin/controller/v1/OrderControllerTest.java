@@ -5,12 +5,17 @@ import com.sait.peelin.dto.v1.CheckoutRequest;
 import com.sait.peelin.dto.v1.CheckoutSessionResponse;
 import com.sait.peelin.service.JwtService;
 import com.sait.peelin.service.OrderService;
+import com.sait.peelin.service.TokenDenylistService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.security.oauth2.client.servlet.OAuth2ClientWebSecurityAutoConfiguration;
+import org.springframework.boot.autoconfigure.security.oauth2.client.OAuth2ClientAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 import org.springframework.boot.autoconfigure.security.servlet.SecurityFilterAutoConfiguration;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.FilterType;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -25,7 +30,16 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(controllers = OrderController.class, excludeAutoConfiguration = {SecurityAutoConfiguration.class, SecurityFilterAutoConfiguration.class})
+@WebMvcTest(
+    controllers = OrderController.class,
+    excludeAutoConfiguration = {
+        SecurityAutoConfiguration.class,
+        SecurityFilterAutoConfiguration.class,
+        OAuth2ClientAutoConfiguration.class,
+        OAuth2ClientWebSecurityAutoConfiguration.class
+    },
+    excludeFilters = @ComponentScan.Filter(type = FilterType.REGEX, pattern = "com\\.sait\\.peelin\\.security\\..*")
+)
 @AutoConfigureMockMvc(addFilters = false)
 class OrderControllerTest {
 
@@ -40,6 +54,9 @@ class OrderControllerTest {
 
     @MockitoBean
     private JwtService jwtService;
+
+    @MockitoBean
+    private TokenDenylistService tokenDenylistService;
 
     @MockitoBean
     private UserDetailsService userDetailsService;

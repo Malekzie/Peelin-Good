@@ -2,7 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { ShoppingCart, User, Menu, X } from '@lucide/svelte';
-	import { isLoggedIn } from '$lib/stores/authStore';
+	import { isLoggedIn, user } from '$lib/stores/authStore';
 
 	interface Props {
 		cartCount?: number;
@@ -21,7 +21,9 @@
 
 	// handles where to direct user when clicking profile based on if they are logged in or not
 	function handleProfileClick() {
-		if ($isLoggedIn) {
+		if ($user?.role === 'admin' || $user?.role === 'employee') {
+			goto(resolve('/staff/dashboard'));
+		} else if ($isLoggedIn) {
 			goto(resolve('/profile'));
 		} else {
 			goto(resolve('/login'));
@@ -31,6 +33,8 @@
 	function handleMenuClick() {
 		goto(resolve('/menu'));
 	}
+
+	const isStaffUser = $derived($user?.role === 'admin' || $user?.role === 'employee');
 </script>
 
 <svelte:window onclick={handleClickOutside} />
@@ -59,10 +63,12 @@
 				href={resolve('/about')}
 				class="text-sm font-medium text-foreground transition-colors hover:text-primary">About</a
 			>
-			<a
-				href={resolve('/order')}
-				class="text-sm font-medium text-foreground transition-colors hover:text-primary">Order</a
-			>
+			{#if !isStaffUser}
+				<a
+					href={resolve('/orders')}
+					class="text-sm font-medium text-foreground transition-colors hover:text-primary">Orders</a
+				>
+			{/if}
 		</div>
 
 		<!-- Right icons -->
@@ -111,8 +117,8 @@
 			<hr class="border-border" />
 			<a href={resolve('/about')} class="text-sm text-foreground hover:text-primary">About</a>
 			<!-- show order if user is logged in -->
-			{#if $isLoggedIn}
-				<a href={resolve('/order')} class="text-sm text-foreground hover:text-primary">Order</a>
+			{#if $isLoggedIn && !isStaffUser}
+				<a href={resolve('/orders')} class="text-sm text-foreground hover:text-primary">Orders</a>
 			{/if}
 			<div class="flex gap-4 pt-2">
 				<button

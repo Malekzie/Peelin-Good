@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -21,8 +22,8 @@ public interface CustomerRepository extends JpaRepository<Customer, UUID> {
 
     @EntityGraph(attributePaths = {"address", "rewardTier", "user"})
     @Query("SELECT c FROM Customer c WHERE "
-            + "LOWER(c.customerFirstName) LIKE LOWER(CONCAT('%', :q, '%')) OR "
-            + "LOWER(c.customerLastName) LIKE LOWER(CONCAT('%', :q, '%')) OR "
+            + "LOWER(COALESCE(c.customerFirstName, '')) LIKE LOWER(CONCAT('%', :q, '%')) OR "
+            + "LOWER(COALESCE(c.customerLastName, '')) LIKE LOWER(CONCAT('%', :q, '%')) OR "
             + "LOWER(c.customerEmail) LIKE LOWER(CONCAT('%', :q, '%'))")
     List<Customer> search(@Param("q") String q);
 
@@ -98,4 +99,27 @@ public interface CustomerRepository extends JpaRepository<Customer, UUID> {
             @Param("province") String province,
             @Param("postalCode") String postalCode
     );
+
+    @EntityGraph(attributePaths = {"address", "rewardTier", "user"})
+    @Query("""
+            SELECT c FROM Customer c
+            WHERE c.user IS NULL AND LOWER(TRIM(c.customerEmail)) = LOWER(TRIM(:email))
+            """)
+    List<Customer> findGuestCustomersByEmailNormalized(@Param("email") String email);
+
+    @Query(value = """
+            SELECT customer_id FROM customer c
+            WHERE c.user_id IS NULL
+            AND regexp_replace(btrim(c.customer_phone), '\\D', '', 'g') = :digits
+            """, nativeQuery = true)
+    List<UUID> findGuestCustomerIdsByPhoneDigits(@Param("digits") String digits);
+
+    @EntityGraph(attributePaths = {"address", "rewardTier", "user"})
+    List<Customer> findByIdIn(Collection<UUID> ids);
+
+    @Query(value = """
+            SELECT COUNT(*) FROM customer c
+            WHERE regexp_replace(btrim(c.customer_phone), '\\D', '', 'g') = :digits
+            """, nativeQuery = true)
+    long countCustomersWithPhoneDigits(@Param("digits") String digits);
 }

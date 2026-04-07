@@ -1,8 +1,7 @@
 package com.sait.peelin.controller.v1;
 
-import com.sait.peelin.dto.v1.CustomerBootstrapRequest;
-import com.sait.peelin.dto.v1.CustomerDto;
-import com.sait.peelin.dto.v1.CustomerPatchRequest;
+import com.sait.peelin.dto.v1.*;
+import com.sait.peelin.service.CustomerPreferenceService;
 import com.sait.peelin.service.CustomerService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -16,6 +15,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @PreAuthorize("hasRole('CUSTOMER')")
 @RestController
 @RequestMapping("/api/v1/customers/me")
@@ -25,6 +26,7 @@ import org.springframework.web.bind.annotation.*;
 public class CustomerSelfController {
 
     private final CustomerService customerService;
+    private final CustomerPreferenceService customerPreferenceService;
 
     @Operation(summary = "Get my profile", description = "Returns the full profile for the currently authenticated customer.")
     @ApiResponses({
@@ -63,5 +65,15 @@ public class CustomerSelfController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteMe() {
         customerService.deleteMe();
+    }
+
+    @GetMapping("/preferences")
+    public List<CustomerPreferenceDto> getPreferences() {
+        return customerPreferenceService.getMyPreferences();
+    }
+
+    @PutMapping("/preferences")
+    public List<CustomerPreferenceDto> savePreferences(@RequestBody CustomerPreferenceSaveRequest request) {
+        return customerPreferenceService.saveMyPreferences(request);
     }
 }

@@ -163,39 +163,54 @@
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 			</plugin>
-			<plugin>
-				<groupId>io.sentry</groupId>
-				<artifactId>sentry-maven-plugin</artifactId>
-				<version>0.11.0</version>
-				<extensions>true</extensions>
-				<configuration>
-					<!-- for showing output of sentry-cli -->
-					<debugSentryCli>true</debugSentryCli>
+		</plugins>
+	</build>
 
-					<org>robbie-zg</org>
+	<profiles>
+		<profile>
+			<id>sentry-upload</id>
+			<activation>
+				<property>
+					<name>env.SENTRY_AUTH_TOKEN</name>
+				</property>
+			</activation>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>io.sentry</groupId>
+						<artifactId>sentry-maven-plugin</artifactId>
+						<version>0.11.0</version>
+						<extensions>true</extensions>
+						<configuration>
+							<!-- for showing output of sentry-cli -->
+							<debugSentryCli>true</debugSentryCli>
 
-					<project>peelin_api</project>
+							<org>robbie-zg</org>
 
-					<!-- in case you're self hosting, provide the URL here -->
-					<!--<url>http://localhost:8000/</url>-->
+							<project>peelin_api</project>
 
-					<!-- provide your auth token via SENTRY_AUTH_TOKEN environment variable -->
-					<authToken>${env.SENTRY_AUTH_TOKEN}</authToken>
-				</configuration>
-				<executions>
-					<execution>
-						<goals>
-							<!--
+							<!-- in case you're self hosting, provide the URL here -->
+							<!--<url>http://localhost:8000/</url>-->
+
+							<!-- provide your auth token via SENTRY_AUTH_TOKEN environment variable -->
+							<authToken>${env.SENTRY_AUTH_TOKEN}</authToken>
+						</configuration>
+						<executions>
+							<execution>
+								<goals>
+									<!--
                             Generates a JVM (Java, Kotlin, etc.) source bundle and uploads your source code to Sentry.
                             This enables source context, allowing you to see your source
                             code as part of your stack traces in Sentry.
                             -->
-							<goal>uploadSourceBundle</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
-		</plugins>
-	</build>
+									<goal>uploadSourceBundle</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
 
 </project>

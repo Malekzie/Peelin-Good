@@ -15,6 +15,7 @@ import com.sait.peelin.repository.AddressRepository;
 import com.sait.peelin.repository.CustomerRepository;
 import com.sait.peelin.repository.RewardTierRepository;
 import com.sait.peelin.repository.UserRepository;
+import com.sait.peelin.support.GuestContactFiller;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -70,28 +71,66 @@ public class CustomerService {
     }
 
     @Transactional
+    public Customer createRegisteredCustomer(User user, String phone) {
+        Customer existing = customerRepository.findByUser_UserId(user.getUserId()).orElse(null);
+        if (existing != null) {
+            return existing;
+        }
+
+        Customer customer = new Customer();
+        customer.setUser(user);
+        customer.setRewardTier(lowestRewardTier());
+        customer.setCustomerEmail(user.getUserEmail());
+        customer.setCustomerPhone(StringUtils.hasText(phone) ? phone.trim() : GuestContactFiller.allocateSyntheticPhoneDigits());
+        customer.setCustomerRewardBalance(0);
+        customer.setCustomerTierAssignedDate(LocalDate.now());
+        customer.setGuestExpiryDate(null);
+
+        return customerRepository.save(customer);
+    }
+
+    @Transactional
     public CustomerDto createMyProfile(CustomerBootstrapRequest request) {
         User u = currentUserService.requireUser();
         if (customerRepository.findByUser_UserId(u.getUserId()).isPresent()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Customer profile already exists");
         }
-        Customer reusableGuest = findReusableGuestCustomer(
-                u.getUserEmail(),
-                request.getFirstName(),
-                request.getMiddleInitial(),
-                request.getLastName(),
-                request.getPhone(),
-                request.getBusinessPhone(),
-                request.getAddressLine1(),
-                request.getAddressLine2(),
-                request.getCity(),
-                request.getProvince(),
-                request.getPostalCode()
-        );
+        Customer reusableGuest = findSingleGuestByContact(u.getUserEmail(), request.getPhone());
+        if (reusableGuest == null) {
+            reusableGuest = findExactGuestCustomer(
+                    request.getFirstName(),
+                    request.getMiddleInitial(),
+                    request.getLastName(),
+                    request.getPhone(),
+                    request.getBusinessPhone(),
+                    u.getUserEmail(),
+                    request.getAddressLine1(),
+                    request.getAddressLine2(),
+                    request.getCity(),
+                    request.getProvince(),
+                    request.getPostalCode()
+            );
+        }
         if (reusableGuest != null) {
             reusableGuest.setUser(u);
-            reusableGuest.setCustomerEmail(normalizeRequired(u.getUserEmail()));
             reusableGuest.setGuestExpiryDate(null);
+            applyCustomerIdentity(
+                    reusableGuest,
+                    request.getFirstName(),
+                    request.getMiddleInitial(),
+                    request.getLastName(),
+                    request.getPhone(),
+                    request.getBusinessPhone(),
+                    u.getUserEmail()
+            );
+            Address linkedAddress = createAddress(
+                    request.getAddressLine1(),
+                    request.getAddressLine2(),
+                    request.getCity(),
+                    request.getProvince(),
+                    request.getPostalCode()
+            );
+            reusableGuest.setAddress(linkedAddress);
             customerRepository.save(reusableGuest);
             return toDto(reusableGuest);
         }
@@ -126,41 +165,33 @@ public class CustomerService {
 
     @Transactional
     public Customer resolveOrCreateGuestCustomer(GuestCustomerRequest request) {
-        Customer existing = findReusableCustomer(
-                request.getEmail(),
-                request.getFirstName(),
-                request.getMiddleInitial(),
-                request.getLastName(),
-                request.getPhone(),
-                request.getBusinessPhone(),
-                request.getAddressLine1(),
-                request.getAddressLine2(),
-                request.getCity(),
-                request.getProvince(),
-                request.getPostalCode()
-        );
+        Customer existing = findSingleGuestByContact(request.getEmail(), request.getPhone());
+        if (existing == null && hasFullGuestIdentity(request)) {
+            existing = findExactGuestCustomer(
+                    request.getFirstName(),
+                    request.getMiddleInitial(),
+                    request.getLastName(),
+                    request.getPhone(),
+                    request.getBusinessPhone(),
+                    request.getEmail(),
+                    request.getAddressLine1(),
+                    request.getAddressLine2(),
+                    request.getCity(),
+                    request.getProvince(),
+                    request.getPostalCode()
+            );
+        }
         if (existing != null) {
-            return existing;
+            mergeSupplementalGuestProfile(existing, request);
+            return customerRepository.save(existing);
         }
 
         Customer customer = new Customer();
         customer.setRewardTier(lowestRewardTier());
-        customer.setAddress(createAddress(
-                request.getAddressLine1(),
-                request.getAddressLine2(),
-                request.getCity(),
-                request.getProvince(),
-                request.getPostalCode()
-        ));
-        applyCustomerIdentity(
-                customer,
-                request.getFirstName(),
-                request.getMiddleInitial(),
-                request.getLastName(),
-                request.getPhone(),
-                request.getBusinessPhone(),
-                request.getEmail()
-        );
+        customer.setAddress(createAddressIfPresent(request));
+        applyNewGuestContact(customer, request);
+        applyGuestOptionalNames(customer, request);
+        customer.setCustomerBusinessPhone(normalizeOptional(request.getBusinessPhone()));
         customer.setCustomerRewardBalance(0);
         customer.setGuestExpiryDate(LocalDate.now().plusYears(1));
         return customerRepository.save(customer);
@@ -307,6 +338,119 @@ public class CustomerService {
         return addressRepository.save(address);
     }
 
+    private Address createAddressIfPresent(GuestCustomerRequest req) {
+        if (!StringUtils.hasText(req.getAddressLine1())) {
+            return null;
+        }
+        return createAddress(
+                req.getAddressLine1(),
+                req.getAddressLine2(),
+                req.getCity(),
+                req.getProvince(),
+                req.getPostalCode()
+        );
+    }
+
+    private boolean hasFullGuestIdentity(GuestCustomerRequest r) {
+        return StringUtils.hasText(r.getFirstName())
+                && StringUtils.hasText(r.getLastName())
+                && StringUtils.hasText(r.getAddressLine1())
+                && StringUtils.hasText(r.getCity())
+                && StringUtils.hasText(r.getProvince())
+                && StringUtils.hasText(r.getPostalCode())
+                && StringUtils.hasText(r.getPhone())
+                && StringUtils.hasText(r.getEmail());
+    }
+
+    private Customer findSingleGuestByContact(String email, String phoneRaw) {
+        if (StringUtils.hasText(email)) {
+            List<Customer> byEmail = customerRepository.findGuestCustomersByEmailNormalized(email.trim());
+            if (byEmail.size() == 1) {
+                return byEmail.get(0);
+            }
+        }
+        String digits = GuestContactFiller.normalizeDigits(phoneRaw);
+        if (digits.length() >= 10) {
+            List<UUID> ids = customerRepository.findGuestCustomerIdsByPhoneDigits(digits);
+            List<Customer> loaded = ids.isEmpty() ? List.of() : customerRepository.findByIdIn(ids);
+            if (loaded.size() == 1) {
+                return loaded.get(0);
+            }
+        }
+        return null;
+    }
+
+    private void applyNewGuestContact(Customer customer, GuestCustomerRequest req) {
+        String emailIn = normalizeOptional(req.getEmail());
+        String digits = GuestContactFiller.normalizeDigits(req.getPhone());
+        boolean hasEmail = StringUtils.hasText(emailIn);
+        boolean hasPhone = digits.length() >= 10;
+        final String storedEmail;
+        final String storedPhone;
+        if (hasEmail && hasPhone) {
+            storedEmail = emailIn.toLowerCase();
+            storedPhone = normalizeRequired(req.getPhone()).trim();
+        } else if (hasEmail) {
+            storedEmail = emailIn.toLowerCase();
+            storedPhone = ensureUniqueSyntheticPhone();
+        } else {
+            storedEmail = GuestContactFiller.syntheticEmailForPhoneDigits(digits);
+            storedPhone = normalizeRequired(req.getPhone()).trim();
+        }
+        customer.setCustomerEmail(storedEmail);
+        customer.setCustomerPhone(storedPhone);
+    }
+
+    private String ensureUniqueSyntheticPhone() {
+        for (int i = 0; i < 24; i++) {
+            String candidate = GuestContactFiller.allocateSyntheticPhoneDigits();
+            if (customerRepository.countCustomersWithPhoneDigits(candidate) == 0) {
+                return candidate;
+            }
+        }
+        throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Could not allocate guest phone placeholder");
+    }
+
+    private void applyGuestOptionalNames(Customer customer, GuestCustomerRequest req) {
+        customer.setCustomerFirstName(normalizeEmptyToNull(req.getFirstName()));
+        customer.setCustomerMiddleInitial(normalizeOptional(req.getMiddleInitial()));
+        customer.setCustomerLastName(normalizeEmptyToNull(req.getLastName()));
+    }
+
+    private String normalizeEmptyToNull(String value) {
+        if (value == null || value.trim().isEmpty()) {
+            return null;
+        }
+        return value.trim();
+    }
+
+    private void mergeSupplementalGuestProfile(Customer existing, GuestCustomerRequest req) {
+        if (StringUtils.hasText(req.getEmail()) && GuestContactFiller.isSyntheticGuestEmail(existing.getCustomerEmail())) {
+            existing.setCustomerEmail(req.getEmail().trim().toLowerCase());
+        }
+        if (existing.getCustomerFirstName() == null && StringUtils.hasText(req.getFirstName())) {
+            existing.setCustomerFirstName(req.getFirstName().trim());
+        }
+        if (existing.getCustomerLastName() == null && StringUtils.hasText(req.getLastName())) {
+            existing.setCustomerLastName(req.getLastName().trim());
+        }
+        if (existing.getCustomerMiddleInitial() == null && StringUtils.hasText(req.getMiddleInitial())) {
+            existing.setCustomerMiddleInitial(normalizeOptional(req.getMiddleInitial()));
+        }
+        if (StringUtils.hasText(req.getBusinessPhone())) {
+            existing.setCustomerBusinessPhone(normalizeOptional(req.getBusinessPhone()));
+        }
+        if (existing.getAddress() == null && StringUtils.hasText(req.getAddressLine1())) {
+            existing.setAddress(createAddress(
+                    req.getAddressLine1(),
+                    req.getAddressLine2(),
+                    req.getCity(),
+                    req.getProvince(),
+                    req.getPostalCode()
+            ));
+        }
+    }
+
     private void applyCustomerIdentity(Customer customer,
                                        String firstName,
                                        String middleInitial,
@@ -347,103 +491,6 @@ public class CustomerService {
                 normalizeRequired(postalCode)
         );
         return matches.isEmpty() ? null : matches.get(0);
-    }
-
-    private Customer findReusableGuestCustomer(String email,
-                                               String firstName,
-                                               String middleInitial,
-                                               String lastName,
-                                               String phone,
-                                               String businessPhone,
-                                               String addressLine1,
-                                               String addressLine2,
-                                               String city,
-                                               String province,
-                                               String postalCode) {
-        Customer emailMatch = findUniqueCustomerByEmail(email, true);
-        if (emailMatch != null) {
-            return emailMatch;
-        }
-        return findExactGuestCustomer(
-                firstName,
-                middleInitial,
-                lastName,
-                phone,
-                businessPhone,
-                email,
-                addressLine1,
-                addressLine2,
-                city,
-                province,
-                postalCode
-        );
-    }
-
-    private Customer findExactCustomer(String firstName,
-                                       String middleInitial,
-                                       String lastName,
-                                       String phone,
-                                       String businessPhone,
-                                       String email,
-                                       String addressLine1,
-                                       String addressLine2,
-                                       String city,
-                                       String province,
-                                       String postalCode) {
-        List<Customer> matches = customerRepository.findExactMatches(
-                normalizeRequired(firstName),
-                normalizeOptional(middleInitial),
-                normalizeRequired(lastName),
-                normalizeRequired(phone),
-                normalizeOptional(businessPhone),
-                normalizeRequired(email).toLowerCase(),
-                normalizeRequired(addressLine1),
-                normalizeOptional(addressLine2),
-                normalizeRequired(city),
-                normalizeRequired(province),
-                normalizeRequired(postalCode)
-        );
-        return matches.isEmpty() ? null : matches.get(0);
-    }
-
-    private Customer findReusableCustomer(String email,
-                                          String firstName,
-                                          String middleInitial,
-                                          String lastName,
-                                          String phone,
-                                          String businessPhone,
-                                          String addressLine1,
-                                          String addressLine2,
-                                          String city,
-                                          String province,
-                                          String postalCode) {
-        Customer emailMatch = findUniqueCustomerByEmail(email, false);
-        if (emailMatch != null) {
-            return emailMatch;
-        }
-        return findExactCustomer(
-                firstName,
-                middleInitial,
-                lastName,
-                phone,
-                businessPhone,
-                email,
-                addressLine1,
-                addressLine2,
-                city,
-                province,
-                postalCode
-        );
-    }
-
-    private Customer findUniqueCustomerByEmail(String email, boolean guestsOnly) {
-        List<Customer> matches = customerRepository.findByCustomerEmailNormalized(
-                normalizeRequired(email).toLowerCase()
-        );
-        if (guestsOnly) {
-            matches = matches.stream().filter(c -> c.getUser() == null).toList();
-        }
-        return matches.size() == 1 ? matches.get(0) : null;
     }
 
     private String normalizeRequired(String value) {

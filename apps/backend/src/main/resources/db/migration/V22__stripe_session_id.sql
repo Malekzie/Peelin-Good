@@ -1,1 +1,1 @@
-ALTER TABLE payment ADD COLUMN stripe_session_id VARCHAR(255);
+ALTER TABLE payment ADD COLUMN IF NOT EXISTS stripe_session_id VARCHAR(255);
