@@ -16,8 +16,6 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.cors.CorsConfigurationSource;
 
@@ -73,13 +71,6 @@ class AuthControllerTest {
         req.setUsername("newuser");
         req.setEmail("new@example.com");
         req.setPassword("password");
-        req.setFirstName("First");
-        req.setLastName("Last");
-        req.setPhone("1234567890");
-        req.setAddressLine1("123 Main St");
-        req.setCity("Calgary");
-        req.setProvince("AB");
-        req.setPostalCode("T1X1X1");
 
         when(authService.register(any(RegisterRequest.class))).thenReturn(new AuthResponse("token", "newuser", "customer", UUID.randomUUID()));
 
