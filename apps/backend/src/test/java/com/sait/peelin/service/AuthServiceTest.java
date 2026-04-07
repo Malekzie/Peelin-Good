@@ -41,6 +41,9 @@ class AuthServiceTest {
     @Mock
     private CurrentUserService currentUserService;
 
+    @Mock
+    private CustomerService customerService;
+
     @InjectMocks
     private AuthService authService;
 
@@ -54,7 +57,6 @@ class AuthServiceTest {
         when(userRepository.existsByUsername("testuser")).thenReturn(false);
         when(userRepository.existsByUserEmail("test@example.com")).thenReturn(false);
         when(customerRepository.findGuestCustomersByEmailNormalized("test@example.com")).thenReturn(List.of());
-        when(customerRepository.findGuestCustomerIdsByPhoneDigits(anyString())).thenReturn(List.of());
         when(passwordEncoder.encode("password")).thenReturn("encoded_password");
 
         // Act
