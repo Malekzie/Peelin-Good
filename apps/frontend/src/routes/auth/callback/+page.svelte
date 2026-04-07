@@ -4,6 +4,16 @@
 	import { resolve } from '$app/paths';
 	import { setAuth } from '$lib/stores/authStore.js';
 
+	function getDefaultPostAuthRoute(role) {
+		const normalizedRole = (role ?? '').toLowerCase();
+		return normalizedRole === 'admin' ||
+			normalizedRole === 'employee' ||
+			normalizedRole.endsWith('_admin') ||
+			normalizedRole.endsWith('_employee')
+			? '/staff/dashboard'
+			: '/profile';
+	}
+
 	onMount(() => {
 		const params = new URLSearchParams(window.location.search);
 		const username = params.get('username');
@@ -12,7 +22,7 @@
 
 		if (username && role && userId) {
 			setAuth({ username, role, userId });
-			goto(resolve('/profile'));
+			goto(resolve(getDefaultPostAuthRoute(role)));
 		} else {
 			goto(resolve('/login?error=oauth_failed'));
 		}

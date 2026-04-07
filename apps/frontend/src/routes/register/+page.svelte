@@ -1,6 +1,9 @@
 <script>
 	import { registerUser } from '$lib/services/auth.js';
+	import { updateProfile } from '$lib/services/profile.js';
 	import { resolve } from '$app/paths';
+	import { goto } from '$app/navigation';
+	import { user } from '$lib/stores/authStore';
 	import { Eye, EyeOff } from '@lucide/svelte';
 
 	let fields = {
@@ -50,6 +53,7 @@
 
 	const stepOneFields = ['firstName', 'lastName', 'email', 'username', 'password'];
 	const stepTwoFields = ['phone', 'addressLine1', 'city', 'province', 'postalCode'];
+	let submitError = '';
 
 	function validateField(name, value) {
 		switch (name) {
@@ -135,8 +139,19 @@
 		return parts.join('');
 	}
 
+	function getDefaultPostAuthRoute(role) {
+		const normalizedRole = (role ?? '').toLowerCase();
+		return normalizedRole === 'admin' ||
+			normalizedRole === 'employee' ||
+			normalizedRole.endsWith('_admin') ||
+			normalizedRole.endsWith('_employee')
+			? '/staff/dashboard'
+			: '/profile';
+	}
+
 	async function handleRegister(event) {
 		event.preventDefault();
+		submitError = '';
 
 		const requiredFields = [...stepOneFields, ...stepTwoFields];
 
@@ -164,14 +179,44 @@
 			postalCode: fields.postalCode.trim().toUpperCase()
 		};
 
-		const { ok, message } = await registerUser(payload);
+		const registrationPayload = {
+			username: payload.username,
+			email: payload.email,
+			password: payload.password,
+			phone: payload.phone
+		};
+
+		const { ok, message } = await registerUser(registrationPayload);
 
 		if (!ok) {
 			errors.email = message ?? 'Registration failed.';
 			return;
 		}
 
-		window.location.href = '/profile';
+		try {
+			await updateProfile({
+				firstName: payload.firstName,
+				middleInitial: payload.middleInitial,
+				lastName: payload.lastName,
+				phone: payload.phone,
+				businessPhone: payload.businessPhone,
+				email: payload.email,
+				username: payload.username,
+				address: {
+					line1: payload.addressLine1,
+					line2: payload.addressLine2,
+					city: payload.city,
+					province: payload.province,
+					postalCode: payload.postalCode
+				}
+			});
+		} catch (error) {
+			submitError =
+				'Account created, but profile setup failed. Please sign in and complete your profile.';
+			return;
+		}
+
+		goto(resolve(getDefaultPostAuthRoute($user?.role)));
 	}
 </script>
 
@@ -194,6 +239,14 @@
 			</div>
 
 			<form class="space-y-6" onsubmit={handleRegister}>
+				{#if submitError}
+					<p
+						class="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+					>
+						{submitError}
+					</p>
+				{/if}
+
 				{#if step === 1}
 					<div class="grid gap-5 md:grid-cols-2">
 						<div class="space-y-1.5">

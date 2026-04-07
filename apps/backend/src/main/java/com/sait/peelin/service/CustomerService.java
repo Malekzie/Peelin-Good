@@ -16,6 +16,7 @@ import com.sait.peelin.repository.CustomerRepository;
 import com.sait.peelin.repository.RewardTierRepository;
 import com.sait.peelin.repository.UserRepository;
 import com.sait.peelin.support.GuestContactFiller;
+import com.sait.peelin.support.GuestContactFiller;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -68,6 +69,25 @@ public class CustomerService {
         Customer c = customerRepository.findByUser_UserId(u.getUserId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No customer profile"));
         return toDto(c);
+    }
+
+    @Transactional
+    public Customer createRegisteredCustomer(User user, String phone) {
+        Customer existing = customerRepository.findByUser_UserId(user.getUserId()).orElse(null);
+        if (existing != null) {
+            return existing;
+        }
+
+        Customer customer = new Customer();
+        customer.setUser(user);
+        customer.setRewardTier(lowestRewardTier());
+        customer.setCustomerEmail(user.getUserEmail());
+        customer.setCustomerPhone(StringUtils.hasText(phone) ? phone.trim() : GuestContactFiller.allocateSyntheticPhoneDigits());
+        customer.setCustomerRewardBalance(0);
+        customer.setCustomerTierAssignedDate(LocalDate.now());
+        customer.setGuestExpiryDate(null);
+
+        return customerRepository.save(customer);
     }
 
     @Transactional

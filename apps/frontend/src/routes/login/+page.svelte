@@ -4,6 +4,7 @@
 	import { page } from '$app/state';
 	import { Eye, EyeOff } from '@lucide/svelte';
 	import { loginUser } from '$lib/services/auth.js';
+	import { user } from '$lib/stores/authStore';
 
 	let email = '';
 	let password = '';
@@ -27,6 +28,16 @@
 		return '';
 	}
 
+	function getDefaultPostAuthRoute(role) {
+		const normalizedRole = (role ?? '').toLowerCase();
+		return normalizedRole === 'admin' ||
+			normalizedRole === 'employee' ||
+			normalizedRole.endsWith('_admin') ||
+			normalizedRole.endsWith('_employee')
+			? '/staff/dashboard'
+			: '/profile';
+	}
+
 	async function handleSignIn(event) {
 		event.preventDefault();
 
@@ -47,7 +58,7 @@
 		}
 
 		const redirectTo = page.url.searchParams.get('redirectTo');
-		goto(resolve(redirectTo ?? '/profile'));
+		goto(resolve(redirectTo ?? getDefaultPostAuthRoute($user?.role)));
 	}
 </script>
 

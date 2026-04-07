@@ -39,6 +39,24 @@ export async function updateProfile(profileData) {
 	return res.json();
 }
 
+export async function bootstrapCustomerProfile(profileData) {
+	const res = await fetch(`${API}/customers/me`, {
+		method: 'POST',
+		credentials: 'include',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify(profileData)
+	});
+
+	if (!res.ok) {
+		const err = await res.json().catch(() => ({}));
+		const error = new Error(err.message ?? `Failed to create customer profile: ${res.status}`);
+		error.status = res.status;
+		throw error;
+	}
+
+	return res.json();
+}
+
 export async function deleteAccount() {
 	const res = await fetch(`${API}/customers/me`, {
 		method: 'DELETE',

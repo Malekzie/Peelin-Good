@@ -39,6 +39,7 @@ public class AuthService {
     private final JwtService jwtService;
     private final UserRepository userRepository;
     private final CustomerRepository customerRepository;
+    private final CustomerService customerService;
     private final PasswordEncoder passwordEncoder;
     private final CurrentUserService currentUserService;
 
@@ -103,6 +104,8 @@ public class AuthService {
         user.setPhotoApprovalPending(false);
         user.setActive(true);
         userRepository.save(user);
+
+        customerService.createRegisteredCustomer(user, request.getPhone());
 
         UserDetails userDetails = org.springframework.security.core.userdetails.User
                 .withUsername(user.getUsername())
