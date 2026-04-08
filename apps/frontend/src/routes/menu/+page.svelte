@@ -55,6 +55,11 @@
 			if (tagParam && tags.some((t) => String(t.id) === tagParam)) {
 				activeTagId = tags.find((t) => String(t.id) === tagParam)?.id ?? null;
 			}
+
+			const searchParam = $page.url.searchParams.get('search');
+			if (searchParam) {
+				searchQuery = searchParam;
+			}
 		} catch (e) {
 			console.error('Failed to load menu:', e);
 		} finally {

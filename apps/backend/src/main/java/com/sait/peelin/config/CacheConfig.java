@@ -60,6 +60,10 @@ public class CacheConfig implements CachingConfigurer {
         cacheConfigurations.put("reward-tiers",     defaultConfig.entryTtl(Duration.ofHours(6)));
         cacheConfigurations.put("reviews",          defaultConfig.entryTtl(Duration.ofMinutes(30)));
 
+        // AI caching
+        cacheConfigurations.put("reviews",          defaultConfig.entryTtl(Duration.ofMinutes(30)));
+        cacheConfigurations.put("recommendations",  defaultConfig.entryTtl(Duration.ofHours(24)));
+
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(defaultConfig)
                 .withInitialCacheConfigurations(cacheConfigurations)

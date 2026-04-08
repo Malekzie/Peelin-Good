@@ -35,6 +35,7 @@ public class ReviewService {
     private final OrderItemRepository orderItemRepository;
     private final EmployeeRepository employeeRepository;
     private final CurrentUserService currentUserService;
+    private final ReviewModerationService reviewModerationService;
 
     @Transactional(readOnly = true)
     @Cacheable(value = "reviews", key = "'product:' + #productId")
@@ -112,6 +113,12 @@ public class ReviewService {
         r.setReviewStatus(ReviewStatus.pending);
         r.setOrder(null);
         r.setBakery(resolveBakeryForProductReview(customer.getId(), productId));
+
+        if (req.getComment() != null && !req.getComment().isBlank()) {
+            var result = reviewModerationService.moderateReview(req.getComment());
+            r.setReviewStatus(result.approved() ? ReviewStatus.approved : ReviewStatus.pending);
+        }
+
         return toDto(reviewRepository.save(r));
     }
 
@@ -161,6 +168,11 @@ public class ReviewService {
         r.setReviewComment(req.getComment());
         r.setReviewSubmittedDate(OffsetDateTime.now());
         r.setReviewStatus(ReviewStatus.pending);
+
+        if (req.getComment() != null && !req.getComment().isBlank()) {
+            var result = reviewModerationService.moderateReview(req.getComment());
+            r.setReviewStatus(result.approved() ? ReviewStatus.approved : ReviewStatus.pending);
+        }
 
         return toDto(reviewRepository.save(r));
     }

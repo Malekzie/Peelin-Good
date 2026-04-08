@@ -20,6 +20,7 @@ public class CustomerPreferenceService {
     private final CustomerRepository customerRepository;
     private final TagRepository tagRepository;
     private final CurrentUserService currentUserService;
+    private final RecommendationService recommendationService;
 
     @Transactional(readOnly = true)
     public List<CustomerPreferenceDto> getMyPreferences() {
@@ -59,6 +60,8 @@ public class CustomerPreferenceService {
             pref.setPreferenceType(entry.getPreferenceType());
             preferenceRepository.save(pref);
         }
+
+        recommendationService.evictRecommendations(c.getId());
 
         return getMyPreferences();
     }

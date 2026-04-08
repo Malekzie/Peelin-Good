@@ -47,6 +47,7 @@ public class OrderService {
     private final StripePaymentFulfillmentService stripePaymentFulfillmentService;
     private final RewardAccrualService rewardAccrualService;
     private final RewardTierRepository rewardTierRepository;
+    private final RecommendationService recommendationService;
 
     @Transactional(readOnly = true)
     @Cacheable(value = "orders", keyGenerator = "userIdKeyGenerator")
@@ -232,6 +233,10 @@ public class OrderService {
         }
 
         paymentRepository.save(pay);
+
+        if (!guestCheckout && customer.getId() != null) {
+            recommendationService.evictRecommendations(customer.getId());
+        }
 
         return new CheckoutSessionResponse(order.getId(), order.getOrderNumber(), clientSecret, paymentIntentId);
     }
