@@ -85,3 +85,11 @@ export async function deactivateAccount() {
 	if (!res) return;
 	if (!res.ok) throw new Error('Failed to deactivate account: ' + res.status);
 }
+
+export async function getRecommendations() {
+	const res = await apiFetch(`${API}/recommendations`);
+
+	if (!res) return [];
+	if (!res.ok) throw new Error('Failed to fetch recommendations: ' + res.status);
+	return res.json();
+}
