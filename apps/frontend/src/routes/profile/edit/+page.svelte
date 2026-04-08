@@ -17,6 +17,7 @@
 		deactivateAccount
 	} from '$lib/services/profile';
 	import { logoutUser } from '$lib/services/auth';
+	import { changePassword } from '$lib/services/account';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/stores';
@@ -54,7 +55,10 @@
 		addressLine2: '',
 		city: '',
 		province: '',
-		postalCode: ''
+		postalCode: '',
+		currentPassword: '',
+		newPassword: '',
+		confirmPassword: ''
 	});
 
 	let errors = $state({});
@@ -129,6 +133,15 @@
 
 	function validate() {
 		const e = {};
+		if (fields.newPassword || fields.currentPassword) {
+			if (!fields.currentPassword) e.currentPassword = 'Current password is required.';
+			if (!fields.newPassword) e.newPassword = 'New password is required.';
+			else if (fields.newPassword.length < 8) e.newPassword = 'Must be at least 8 characters.';
+			else if (fields.newPassword === fields.currentPassword)
+				e.newPassword = 'New password must be different from your current password.';
+			if (fields.newPassword !== fields.confirmPassword)
+				e.confirmPassword = 'Passwords do not match.';
+		}
 		if (!fields.firstName.trim()) e.firstName = 'First name is required.';
 		if (!fields.lastName.trim()) e.lastName = 'Last name is required.';
 		if (!fields.phone.trim()) e.phone = 'Phone is required.';
@@ -161,6 +174,16 @@
 
 		saving = true;
 		success = false;
+
+		if (fields.currentPassword && fields.newPassword) {
+			try {
+				await changePassword(fields.currentPassword, fields.newPassword);
+			} catch (e) {
+				errors.general = e.message ?? 'Failed to change password.';
+				saving = false;
+				return;
+			}
+		}
 
 		const usernameChanged = fields.username.trim() !== profile.username;
 
@@ -531,6 +554,73 @@
 					</CardContent>
 				</Card>
 
+				<!-- Change Password -->
+				<Card>
+					<CardHeader>
+						<CardTitle>Change Password</CardTitle>
+						<CardDescription>Leave blank to keep your current password</CardDescription>
+					</CardHeader>
+					<CardContent class="space-y-4">
+						<div class="space-y-1.5">
+							<label
+								for="currentPassword"
+								class="text-xs font-semibold tracking-widest text-muted-foreground uppercase"
+							>
+								Current Password
+							</label>
+							<input
+								id="currentPassword"
+								type="password"
+								bind:value={fields.currentPassword}
+								class="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm transition focus:ring-2 focus:ring-primary focus:outline-none
+                    {errors.currentPassword ? 'border-destructive ring-1 ring-destructive' : ''}"
+								placeholder="••••••••"
+							/>
+							{#if errors.currentPassword}<p class="text-xs text-destructive">
+									{errors.currentPassword}
+								</p>{/if}
+						</div>
+						<div class="space-y-1.5">
+							<label
+								for="newPassword"
+								class="text-xs font-semibold tracking-widest text-muted-foreground uppercase"
+							>
+								New Password
+							</label>
+							<input
+								id="newPassword"
+								type="password"
+								bind:value={fields.newPassword}
+								class="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm transition focus:ring-2 focus:ring-primary focus:outline-none
+                    {errors.newPassword ? 'border-destructive ring-1 ring-destructive' : ''}"
+								placeholder="••••••••"
+							/>
+							{#if errors.newPassword}<p class="text-xs text-destructive">
+									{errors.newPassword}
+								</p>{/if}
+						</div>
+						<div class="space-y-1.5">
+							<label
+								for="confirmPassword"
+								class="text-xs font-semibold tracking-widest text-muted-foreground uppercase"
+							>
+								Confirm New Password
+							</label>
+							<input
+								id="confirmPassword"
+								type="password"
+								bind:value={fields.confirmPassword}
+								class="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm transition focus:ring-2 focus:ring-primary focus:outline-none
+                    {errors.confirmPassword ? 'border-destructive ring-1 ring-destructive' : ''}"
+								placeholder="••••••••"
+							/>
+							{#if errors.confirmPassword}<p class="text-xs text-destructive">
+									{errors.confirmPassword}
+								</p>{/if}
+						</div>
+					</CardContent>
+				</Card>
+
 				{#if errors.general}
 					<p class="text-sm text-destructive">{errors.general}</p>
 				{/if}
@@ -574,6 +664,19 @@
 				</div>
 			{/if}
 
+			<div class="mt-5 rounded-xl border border-amber-300/50 p-6">
+				<h2 class="text-sm font-semibold text-amber-600">Deactivate Account</h2>
+				<p class="mt-1 text-sm text-muted-foreground">
+					Temporarily deactivate your account. You can reactivate it by contacting support.
+				</p>
+				<Button
+					class="mt-4 bg-amber-500 text-white hover:cursor-pointer hover:bg-amber-600"
+					onclick={() => (showDeactivateConfirm = true)}
+				>
+					Deactivate Account
+				</Button>
+			</div>
+
 			<div class="mt-5 rounded-xl border border-destructive/30 p-6">
 				<h2 class="text-sm font-semibold text-destructive">Delete Account</h2>
 				<p class="mt-1 text-sm text-muted-foreground">
@@ -611,18 +714,5 @@
 				</div>
 			</div>
 		{/if}
-
-		<div class="mt-5 rounded-xl border border-amber-300/50 p-6">
-			<h2 class="text-sm font-semibold text-amber-600">Deactivate Account</h2>
-			<p class="mt-1 text-sm text-muted-foreground">
-				Temporarily deactivate your account. You can reactivate it by contacting support.
-			</p>
-			<Button
-				class="mt-4 bg-amber-500 text-white hover:cursor-pointer hover:bg-amber-600"
-				onclick={() => (showDeactivateConfirm = true)}
-			>
-				Deactivate Account
-			</Button>
-		</div>
 	</main>
 </div>
