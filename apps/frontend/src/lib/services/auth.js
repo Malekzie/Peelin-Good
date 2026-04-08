@@ -1,27 +1,94 @@
-const BASE_URL = 'http://localhost:8080/api/auth';
+import { clearAuth, setAuth } from '$lib/stores/authStore.js';
+import * as Sentry from '@sentry/sveltekit';
 
-// function to register a new user and return a response
-export async function registerUser(fields) {
-	const response = await fetch(`${BASE_URL}/register`, {
-		method: 'POST',
-		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify(fields)
-	});
+const API_BASE = '/api/v1/auth';
 
-	const data = await response.json();
+// Log in with email and password, returns {ok: boolean, message?: string}
+export async function loginUser(identifier, password) {
+	try {
+		const res = await fetch(`${API_BASE}/login`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ email: identifier, password }),
+			credentials: 'include'
+		});
 
-	return { ok: response.ok, status: response.status, data };
+		if (!res.ok) {
+			const err = await res.json().catch(() => ({}));
+			const message = err.message?.toLowerCase().includes('disabled')
+				? 'Your account has been deactivated.'
+				: 'Invalid email or password.';
+
+			// Spring returns 401 for bad credentials
+			Sentry.withScope((scope) => {
+				scope.setTag('action', 'LOGIN_FAILED');
+				scope.setTag('reason', 'invalid_credentials');
+				scope.setTag('status_code', String(res.status));
+				Sentry.captureMessage('Login failed: invalid credentials', 'warning');
+			});
+			return { ok: false, message };
+		}
+
+		const data = await res.json();
+
+		// saves to store + localStorage
+		setAuth(data);
+		return { ok: true };
+	} catch {
+		Sentry.withScope((scope) => {
+			scope.setTag('action', 'LOGIN_FAILED');
+			scope.setTag('reason', 'network_error');
+			Sentry.captureMessage('Login failed: network error', 'error');
+		});
+		return { ok: false, message: 'Could not reach the server. Try again later.' };
+	}
 }
 
-// function to log in a user and return a response
-export async function loginUser(email, password) {
-	const response = await fetch(`${BASE_URL}/login`, {
-		method: 'POST',
-		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify({ email, password })
-	});
+// logs out the current user, invalidating the token on the server
+export async function logoutUser() {
+	try {
+		await fetch(`${API_BASE}/logout`, {
+			method: 'POST',
+			credentials: 'include'
+		});
+	} catch (e) {
+		Sentry.captureException(e);
+	}
+	clearAuth();
+}
 
-	const data = await response.json();
+// registers a new user
+export async function registerUser(payload) {
+	try {
+		const res = await fetch(`${API_BASE}/register`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify(payload)
+		});
 
-	return { ok: response.ok, status: response.status, data };
+		if (!res.ok) {
+			const err = await res.json().catch(() => ({}));
+			Sentry.withScope((scope) => {
+				scope.setTag('action', 'REGISTER_FAILED');
+				scope.setTag('reason', res.status === 409 ? 'duplicate_account' : 'api_error');
+				scope.setTag('status_code', String(res.status));
+				Sentry.captureMessage(
+					`Registration failed: HTTP ${res.status}`,
+					res.status >= 500 ? 'error' : 'warning'
+				);
+			});
+			return { ok: false, message: err.message ?? 'Registration failed.' };
+		}
+
+		const data = await res.json();
+		setAuth(data);
+		return { ok: true };
+	} catch {
+		Sentry.withScope((scope) => {
+			scope.setTag('action', 'REGISTER_FAILED');
+			scope.setTag('reason', 'network_error');
+			Sentry.captureMessage('Registration failed: network error', 'error');
+		});
+		return { ok: false, message: 'Could not reach the server. Try again later.' };
+	}
 }

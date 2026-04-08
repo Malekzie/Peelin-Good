@@ -6,23 +6,24 @@ import jakarta.validation.constraints.NotNull;
 
 import java.io.Serializable;
 import java.util.Objects;
+import java.util.UUID;
 
 @Embeddable
 public class CustomerPreferenceId implements Serializable {
     private static final long serialVersionUID = -1770638959596292947L;
     @NotNull
     @Column(name = "customer_id", nullable = false)
-    private Integer customerId;
+    private UUID customerId;
 
     @NotNull
     @Column(name = "tag_id", nullable = false)
     private Integer tagId;
 
-    public Integer getCustomerId() {
+    public UUID getCustomerId() {
         return customerId;
     }
 
-    public void setCustomerId(Integer customerId) {
+    public void setCustomerId(UUID customerId) {
         this.customerId = customerId;
     }
 

@@ -6,7 +6,6 @@ import com.sait.peelin.dto.v1.BakeryUpsertRequest;
 import com.sait.peelin.exception.ResourceNotFoundException;
 import com.sait.peelin.model.Address;
 import com.sait.peelin.model.Bakery;
-import com.sait.peelin.model.BakeryHour;
 import com.sait.peelin.model.BakeryStatus;
 import com.sait.peelin.repository.AddressRepository;
 import com.sait.peelin.repository.BakeryHourRepository;
@@ -28,6 +27,10 @@ public class BakeryService {
     private final BakeryHourRepository bakeryHourRepository;
     private final AddressRepository addressRepository;
 
+    /**
+     * Must run in a transaction while mapping: {@link Bakery#getAddress()} is lazy-loaded.
+     * Without this, the list/get endpoints fail with {@code LazyInitializationException} after {@code findAll()}.
+     */
     @Transactional(readOnly = true)
     @Cacheable(value = "bakeries", key = "'all:' + #search")
     public List<BakeryDto> list(String search) {

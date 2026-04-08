@@ -26,7 +26,6 @@ public class RewardQueryService {
     private final CurrentUserService currentUserService;
 
     @Transactional(readOnly = true)
-    @Cacheable(value = "rewards", key = "#customerId.toString() + ':' + T(org.springframework.security.core.context.SecurityContextHolder).getContext().getAuthentication().getName()")
     public List<RewardDto> listForCustomer(UUID customerId) {
         if (!customerRepository.existsById(customerId)) {
             throw new ResourceNotFoundException("Customer not found");
@@ -39,16 +38,19 @@ public class RewardQueryService {
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN);
             }
         }
+        return getCachedRewardsForCustomer(customerId);
+    }
+
+    @Cacheable(value = "rewards", key = "#customerId")
+    public List<RewardDto> getCachedRewardsForCustomer(UUID customerId) {
         return rewardRepository.findByCustomer_IdOrderByRewardTransactionDateDesc(customerId).stream()
                 .map(this::toDto)
                 .toList();
     }
-
-    @Transactional(readOnly = true)
-    @Cacheable(value = "rewards", key = "'all'")
     public List<RewardDto> listAll() {
         return rewardRepository.findAll().stream().map(this::toDto).toList();
     }
+
 
     private RewardDto toDto(Reward r) {
         return new RewardDto(

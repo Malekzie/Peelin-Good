@@ -8,6 +8,8 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,6 +31,10 @@ public class AnalyticsService {
 
     private final CurrentUserService currentUserService;
     private final EmployeeRepository employeeRepository;
+
+    public String currentUsername() {
+        return SecurityContextHolder.getContext().getAuthentication().getName();
+    }
 
     private List<Integer> resolveBakeryScope() {
         User u = currentUserService.requireUser();
@@ -70,8 +76,9 @@ public class AnalyticsService {
     }
 
     private static final String REVENUE_STATUS =
-            "o.order_status::text IN ('completed', 'delivered')";
+            " o.order_status::text IN ('completed', 'delivered')";
 
+    @Cacheable(value = "analytics", key = "#root.target.currentUsername() + ':totalRevenue:' + #start + ':' + #end + ':' + #bakerySelection")
     @Transactional(readOnly = true)
     public BigDecimal totalRevenue(LocalDate start, LocalDate end, String bakerySelection) {
         List<Integer> scope = resolveBakeryScope();
@@ -88,6 +95,7 @@ public class AnalyticsService {
         return executeSingleBigDecimal(sql.toString(), params);
     }
 
+    @Cacheable(value = "analytics", key = "#root.target.currentUsername() + ':revenueOverTime:' + #start + ':' + #end + ':' + #bakerySelection")
     @Transactional(readOnly = true)
     @SuppressWarnings("unchecked")
     public List<DataPointDto> revenueOverTime(LocalDate start, LocalDate end, String bakerySelection) {
@@ -107,6 +115,7 @@ public class AnalyticsService {
         return queryDataPoints(sql.toString(), params, true);
     }
 
+    @Cacheable(value = "analytics", key = "#root.target.currentUsername() + ':revenueByBakery:' + #start + ':' + #end")
     @Transactional(readOnly = true)
     @SuppressWarnings("unchecked")
     public List<DataPointDto> revenueByBakery(LocalDate start, LocalDate end) {
@@ -125,6 +134,7 @@ public class AnalyticsService {
         return queryDataPoints(sql.toString(), params, false);
     }
 
+    @Cacheable(value = "analytics", key = "#root.target.currentUsername() + ':averageOrderValue:' + #start + ':' + #end + ':' + #bakerySelection")
     @Transactional(readOnly = true)
     public BigDecimal averageOrderValue(LocalDate start, LocalDate end, String bakerySelection) {
         List<Integer> scope = resolveBakeryScope();
@@ -141,6 +151,7 @@ public class AnalyticsService {
         return executeSingleBigDecimal(sql.toString(), params);
     }
 
+    @Cacheable(value = "analytics", key = "#root.target.currentUsername() + ':averageOrderValueOverTime:' + #start + ':' + #end + ':' + #bakerySelection")
     @Transactional(readOnly = true)
     @SuppressWarnings("unchecked")
     public List<DataPointDto> averageOrderValueOverTime(LocalDate start, LocalDate end, String bakerySelection) {
@@ -160,6 +171,7 @@ public class AnalyticsService {
         return queryDataPoints(sql.toString(), params, true);
     }
 
+    @Cacheable(value = "analytics", key = "#root.target.currentUsername() + ':completionRate:' + #start + ':' + #end + ':' + #bakerySelection")
     @Transactional(readOnly = true)
     public BigDecimal completionRate(LocalDate start, LocalDate end, String bakerySelection) {
         List<Integer> scope = resolveBakeryScope();
@@ -179,6 +191,7 @@ public class AnalyticsService {
         return executeSingleBigDecimal(sql.toString(), params);
     }
 
+    @Cacheable(value = "analytics", key = "#root.target.currentUsername() + ':completionRateOverTime:' + #start + ':' + #end + ':' + #bakerySelection")
     @Transactional(readOnly = true)
     @SuppressWarnings("unchecked")
     public List<DataPointDto> completionRateOverTime(LocalDate start, LocalDate end, String bakerySelection) {
@@ -200,6 +213,7 @@ public class AnalyticsService {
         return queryDataPoints(sql.toString(), params, true);
     }
 
+    @Cacheable(value = "analytics", key = "#root.target.currentUsername() + ':topProducts:' + #start + ':' + #end + ':' + #bakerySelection")
     @Transactional(readOnly = true)
     @SuppressWarnings("unchecked")
     public List<DataPointDto> topProducts(LocalDate start, LocalDate end, String bakerySelection) {
@@ -221,6 +235,7 @@ public class AnalyticsService {
         return queryDataPoints(sql.toString(), params, false);
     }
 
+    @Cacheable(value = "analytics", key = "#root.target.currentUsername() + ':totalSalesByEmployee:' + #start + ':' + #end + ':' + #bakerySelection")
     @Transactional(readOnly = true)
     public BigDecimal totalSalesByEmployee(LocalDate start, LocalDate end, String bakerySelection) {
         List<Integer> scope = resolveBakeryScope();
@@ -240,6 +255,7 @@ public class AnalyticsService {
         return executeSingleBigDecimal(sql.toString(), params);
     }
 
+    @Cacheable(value = "analytics", key = "#root.target.currentUsername() + ':salesByEmployee:' + #start + ':' + #end + ':' + #bakerySelection")
     @Transactional(readOnly = true)
     @SuppressWarnings("unchecked")
     public List<DataPointDto> salesByEmployee(LocalDate start, LocalDate end, String bakerySelection) {
@@ -262,6 +278,7 @@ public class AnalyticsService {
         return queryDataPoints(sql.toString(), params, false);
     }
 
+    @Cacheable(value = "analytics", key = "#root.target.currentUsername() + ':bakeryNames'")
     @Transactional(readOnly = true)
     @SuppressWarnings("unchecked")
     public List<String> bakeryNames() {
@@ -293,6 +310,7 @@ public class AnalyticsService {
         return out;
     }
 
+    @Cacheable(value = "analytics", key = "#root.target.currentUsername() + ':orderDatesInRange:' + #start + ':' + #end + ':' + #bakerySelection")
     @Transactional(readOnly = true)
     @SuppressWarnings("unchecked")
     public List<LocalDate> orderDatesInRange(LocalDate start, LocalDate end, String bakerySelection) {

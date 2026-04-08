@@ -23,6 +23,19 @@ public class AuthResponse {
     @Setter
     private UUID userId;
 
+    @Getter
+    @Setter
+    private String email;
+
+    /** True when a guest customer row exists with this email or optional registration phone. */
+    @Getter
+    @Setter
+    private Boolean priorGuestCheckout;
+
+    @Getter
+    @Setter
+    private String guestProfileCompletionMessage;
+
     public AuthResponse() {}
 
     public AuthResponse(String token, String username, String role, UUID userId) {

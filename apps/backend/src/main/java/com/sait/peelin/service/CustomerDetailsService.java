@@ -32,6 +32,10 @@ public class CustomerDetailsService implements UserDetailsService {
         return new org.springframework.security.core.userdetails.User(
                 user.getUsername(),
                 user.getUserPasswordHash(),
+                Boolean.TRUE.equals(user.getActive()),
+                true,
+                true,
+                true,
                 List.of(new SimpleGrantedAuthority("ROLE_" + user.getUserRole().name().toUpperCase()))
         );
     }

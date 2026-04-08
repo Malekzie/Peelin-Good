@@ -20,6 +20,8 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
 
     List<Order> findByBakery_IdOrderByOrderPlacedDatetimeDesc(Integer bakeryId);
 
+    List<Order> findByCustomer_IdOrderByOrderPlacedDatetimeDesc(UUID customerId);
+
     @Query("SELECT o FROM Order o WHERE o.orderPlacedDatetime >= :start AND o.orderPlacedDatetime < :end")
     List<Order> findByPlacedBetween(@Param("start") OffsetDateTime start, @Param("end") OffsetDateTime end);
 

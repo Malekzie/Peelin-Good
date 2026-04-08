@@ -22,6 +22,12 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     boolean existsByUsername(String username);
     boolean existsByUserEmail(String userEmail);
 
+    boolean existsByUserEmailIgnoreCase(String userEmail);
+
+    boolean existsByUsernameIgnoreCaseAndUserIdNot(String username, UUID userId);
+
+    boolean existsByUserEmailIgnoreCaseAndUserIdNot(String userEmail, UUID userId);
+
     @Modifying
     @Query(value = """
             UPDATE "user"

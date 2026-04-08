@@ -12,9 +12,12 @@ import com.sait.peelin.repository.OrderItemRepository;
 import com.sait.peelin.repository.ProductRepository;
 import com.sait.peelin.repository.ReviewRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.OffsetDateTime;
@@ -34,16 +37,25 @@ public class ReviewService {
     private final CurrentUserService currentUserService;
 
     @Transactional(readOnly = true)
+    @Cacheable(value = "reviews", key = "'product:' + #productId")
     public List<ReviewDto> forProduct(Integer productId) {
-        return reviewRepository.findByProduct_Id(productId).stream().map(this::toDto).toList();
+        return reviewRepository.findByProduct_IdAndReviewStatusAndOrderIsNull(productId, ReviewStatus.approved)
+                .stream()
+                .map(this::toDto)
+                .toList();
     }
 
     @Transactional(readOnly = true)
     public List<ReviewDto> forBakery(Integer bakeryId) {
-        return reviewRepository.findByBakery_Id(bakeryId).stream().map(this::toDto).toList();
+        return reviewRepository
+                .findByBakery_IdAndOrderIsNotNullAndReviewStatus(bakeryId, ReviewStatus.approved)
+                .stream()
+                .map(this::toDto)
+                .toList();
     }
 
     @Transactional(readOnly = true)
+    @Cacheable(value = "reviews", key = "'product-avg:' + #productId")
     public Double averageForProduct(Integer productId) {
         return reviewRepository.averageRatingForProduct(productId).orElse(null);
     }
@@ -84,6 +96,13 @@ public class ReviewService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Customer profile required"));
         Product product = productRepository.findById(productId).orElseThrow(() -> new ResourceNotFoundException("Product not found"));
 
+        if (!orderItemRepository.existsPurchasedByCustomer(customer.getId(), productId)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "You can only review products you have purchased");
+        }
+        if (reviewRepository.existsByCustomer_IdAndProduct_IdAndOrderIsNull(customer.getId(), productId)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "You already submitted a review for this product");
+        }
+
         Review r = new Review();
         r.setCustomer(customer);
         r.setProduct(product);
@@ -91,22 +110,8 @@ public class ReviewService {
         r.setReviewComment(req.getComment());
         r.setReviewSubmittedDate(OffsetDateTime.now());
         r.setReviewStatus(ReviewStatus.pending);
-        if (req.getOrderId() != null) {
-            Order order = orderRepository.findById(req.getOrderId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
-            if (!order.getCustomer().getId().equals(customer.getId())) {
-                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Order does not belong to customer");
-            }
-            boolean hasProduct = orderItemRepository.findByOrder_Id(order.getId()).stream()
-                    .anyMatch(oi -> oi.getProduct() != null && oi.getProduct().getId().equals(productId));
-            if (!hasProduct) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Order does not contain this product");
-            }
-            r.setOrder(order);
-            r.setBakery(order.getBakery());
-        } else {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Order id is required for reviews");
-        }
+        r.setOrder(null);
+        r.setBakery(resolveBakeryForProductReview(customer.getId(), productId));
         return toDto(reviewRepository.save(r));
     }
 
@@ -128,6 +133,13 @@ public class ReviewService {
 
         if (order.getCustomer() == null || !order.getCustomer().getId().equals(customer.getId())) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Order does not belong to customer");
+        }
+        if (reviewRepository.existsByOrder_IdAndCustomer_Id(order.getId(), customer.getId())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "You already submitted a location review for this order");
+        }
+        if (!hasFullName(customer)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "First and last name are required in your profile before leaving a location review.");
         }
 
         List<OrderItem> items = orderItemRepository.findByOrder_Id(order.getId());
@@ -154,6 +166,7 @@ public class ReviewService {
     }
 
     @Transactional
+    @CacheEvict(value = "reviews", allEntries = true)
     public ReviewDto patchStatus(UUID reviewId, ReviewStatusPatchRequest req) {
         User u = currentUserService.requireUser();
         if (u.getUserRole() != UserRole.admin && u.getUserRole() != UserRole.employee) {
@@ -232,5 +245,32 @@ public class ReviewService {
             return "";
         }
         return s.trim();
+    }
+
+    @Transactional(readOnly = true)
+    public List<ReviewDto> topReviews(int limit) {
+        return reviewRepository
+                .findByReviewStatusOrderByReviewRatingDescReviewSubmittedDateDesc(ReviewStatus.approved)
+                .stream()
+                .limit(limit)
+                .map(this::toDto)
+                .toList();
+    }
+
+    private Bakery resolveBakeryForProductReview(UUID customerId, Integer productId) {
+        List<Order> purchasedOrders = orderRepository.findByCustomer_IdOrderByOrderPlacedDatetimeDesc(customerId);
+        for (Order order : purchasedOrders) {
+            boolean hasProduct = orderItemRepository.findByOrder_Id(order.getId()).stream()
+                    .anyMatch(oi -> oi.getProduct() != null && oi.getProduct().getId().equals(productId));
+            if (hasProduct && order.getBakery() != null) {
+                return order.getBakery();
+            }
+        }
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No purchased bakery found for this product");
+    }
+
+    private static boolean hasFullName(Customer customer) {
+        return StringUtils.hasText(customer.getCustomerFirstName())
+                && StringUtils.hasText(customer.getCustomerLastName());
     }
 }

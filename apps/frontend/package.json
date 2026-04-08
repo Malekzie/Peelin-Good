@@ -16,22 +16,29 @@
 	"devDependencies": {
 		"@eslint/compat": "^2.0.2",
 		"@eslint/js": "^9.39.2",
-		"@lucide/svelte": "^0.577.0",
-		"@sveltejs/adapter-node": "^5.0.0",
+		"@fontsource-variable/montserrat": "^5.2.8",
+		"@fontsource-variable/public-sans": "^5.2.7",
+		"@internationalized/date": "^3.12.0",
+		"@lucide/svelte": "^1.7.0",
+		"@sveltejs/adapter-node": "^5.5.4",
 		"@sveltejs/kit": "^2.50.2",
 		"@sveltejs/vite-plugin-svelte": "^6.2.4",
 		"@tailwindcss/forms": "^0.5.11",
 		"@tailwindcss/typography": "^0.5.19",
 		"@tailwindcss/vite": "^4.1.18",
+		"@types/d3-scale": "^4.0.9",
 		"@types/node": "^22",
+		"bits-ui": "^2.11.7",
 		"clsx": "^2.1.1",
 		"eslint": "^9.39.2",
 		"eslint-config-prettier": "^10.1.8",
 		"eslint-plugin-svelte": "^3.14.0",
 		"globals": "^17.3.0",
+		"layerchart": "2.0.0-next.48",
 		"prettier": "^3.8.1",
 		"prettier-plugin-svelte": "^3.4.1",
 		"prettier-plugin-tailwindcss": "^0.7.2",
+		"shadcn-svelte": "^1.2.7",
 		"svelte": "^5.51.0",
 		"svelte-check": "^4.4.2",
 		"tailwind-merge": "^3.5.0",
@@ -44,6 +51,7 @@
 		"vite-plugin-devtools-json": "^1.0.0"
 	},
 	"dependencies": {
+		"@sentry/sveltekit": "^10.47.0",
 		"js-cookie": "^3.0.5"
 	}
 }

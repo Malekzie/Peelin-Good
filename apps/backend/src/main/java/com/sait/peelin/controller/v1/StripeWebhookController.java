@@ -3,6 +3,9 @@ package com.sait.peelin.controller.v1;
 import com.sait.peelin.model.*;
 import com.sait.peelin.repository.*;
 import com.sait.peelin.service.EmailService;
+import com.sait.peelin.service.StripePaymentFulfillmentService;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.stripe.exception.SignatureVerificationException;
 import com.stripe.model.Event;
 import com.stripe.model.PaymentIntent;
@@ -18,9 +21,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.time.OffsetDateTime;
 import java.util.Optional;
 
 @RestController
@@ -33,12 +33,7 @@ public class StripeWebhookController {
     @Value("${stripe.webhook-secret:}")
     private String webhookSecret;
 
-    private final PaymentRepository paymentRepository;
-    private final OrderRepository orderRepository;
-    private final OrderItemRepository orderItemRepository;
-    private final RewardRepository rewardRepository;
-    private final CustomerRepository customerRepository;
-    private final EmailService emailService;
+    private final StripePaymentFulfillmentService stripePaymentFulfillmentService;
 
     @PostMapping("/webhook")
     @Transactional
@@ -46,9 +41,9 @@ public class StripeWebhookController {
             @RequestBody byte[] payload,
             @RequestHeader(value = "Stripe-Signature", required = false) String sigHeader) {
 
+        final String payloadStr = new String(payload, java.nio.charset.StandardCharsets.UTF_8);
         Event event;
         try {
-            String payloadStr = new String(payload, java.nio.charset.StandardCharsets.UTF_8);
             if (StringUtils.hasText(webhookSecret) && StringUtils.hasText(sigHeader)) {
                 event = Webhook.constructEvent(payloadStr, sigHeader, webhookSecret);
             } else {
@@ -64,54 +59,43 @@ public class StripeWebhookController {
         }
 
         if ("payment_intent.succeeded".equals(event.getType())) {
-            Optional<StripeObject> objectOpt = event.getDataObjectDeserializer().getObject();
-            if (objectOpt.isPresent() && objectOpt.get() instanceof PaymentIntent paymentIntent) {
-                fulfillOrder(paymentIntent);
+            String paymentIntentId = extractPaymentIntentId(event, payloadStr);
+            if (paymentIntentId != null) {
+                stripePaymentFulfillmentService.fulfillOrderByPaymentIntentId(paymentIntentId);
+            } else {
+                log.warn("payment_intent.succeeded event {}: could not read PaymentIntent id (deserializer + JSON fallback)",
+                        event.getId());
             }
         }
 
         return ResponseEntity.ok("received");
     }
 
-    private void fulfillOrder(PaymentIntent paymentIntent) {
-        String paymentIntentId = paymentIntent.getId();
-        Optional<Payment> paymentOpt = paymentRepository.findByStripeSessionId(paymentIntentId);
-        if (paymentOpt.isEmpty()) {
-            log.warn("No payment found for Stripe PaymentIntent {}", paymentIntentId);
-            return;
+    /**
+     * Stripe API versions newer than the bundled stripe-java model often leave
+     * {@code Event.getDataObjectDeserializer().getObject()} empty; parse {@code data.object.id} from the raw payload.
+     */
+    private static String extractPaymentIntentId(Event event, String payloadStr) {
+        Optional<StripeObject> objectOpt = event.getDataObjectDeserializer().getObject();
+        if (objectOpt.isPresent() && objectOpt.get() instanceof PaymentIntent pi) {
+            return pi.getId();
         }
-
-        Payment payment = paymentOpt.get();
-        if (payment.getPaymentStatus() == PaymentStatus.completed) {
-            log.info("Payment already fulfilled for PaymentIntent {}", paymentIntentId);
-            return;
+        try {
+            JsonObject root = JsonParser.parseString(payloadStr).getAsJsonObject();
+            JsonObject data = root.getAsJsonObject("data");
+            if (data == null) {
+                return null;
+            }
+            JsonObject obj = data.getAsJsonObject("object");
+            if (obj == null || !obj.has("object") || !obj.has("id")) {
+                return null;
+            }
+            if (!"payment_intent".equals(obj.get("object").getAsString())) {
+                return null;
+            }
+            return obj.get("id").getAsString();
+        } catch (Exception e) {
+            return null;
         }
-
-        payment.setPaymentStatus(PaymentStatus.completed);
-        payment.setPaymentPaidAt(OffsetDateTime.now());
-        payment.setPaymentTransactionId(paymentIntentId);
-        paymentRepository.save(payment);
-
-        Order order = payment.getOrder();
-        order.setOrderStatus(OrderStatus.paid);
-        orderRepository.save(order);
-
-        Customer customer = order.getCustomer();
-        BigDecimal total = order.getOrderTotal();
-        int points = total.setScale(0, RoundingMode.DOWN).intValue();
-
-        Reward reward = new Reward();
-        reward.setCustomer(customer);
-        reward.setOrder(order);
-        reward.setRewardPointsEarned(Math.max(points, 1));
-        reward.setRewardTransactionDate(OffsetDateTime.now());
-        rewardRepository.save(reward);
-
-        customer.setCustomerRewardBalance(customer.getCustomerRewardBalance() + reward.getRewardPointsEarned());
-        customerRepository.save(customer);
-
-        log.info("Order {} fulfilled via PaymentIntent {}", order.getId(), paymentIntentId);
-
-        emailService.sendOrderConfirmation(order, orderItemRepository.findByOrder_Id(order.getId()));
     }
 }

@@ -1,0 +1,29 @@
+# Peelin' Good - Code Owners
+# Replace placeholder names with actual GitHub usernames before committing
+# Format: @github-username
+
+# Rob is required as a secondary reviewer on all PRs
+* @Malekzie
+
+# Backend (Spring Boot)
+/apps/backend/** @Malekzie @massongga @pricewowen
+
+# Frontend (SvelteKit)
+/apps/frontend/** @Malekzie @massongga
+
+# Database migrations (Flyway)
+/apps/backend/src/main/resources/db/migration/** @Malekzie @pricewowen
+
+# CI/CD and deployment config
+/.github/** @Malekzie
+/.do/** @Malekzie
+
+# Infrastructure and scripts
+/infra/** @Malekzie
+/scripts/** @Malekzie
+
+# Documentation
+/docs/** @Malekzie @pricewowen @SamanthaLynne @masongga
+
+# LLM Instructions
+/llm/** @Malekzie @pricewowen @SamanthaLynne @masongga

@@ -89,6 +89,16 @@ public class Order {
     private BigDecimal orderDiscount;
 
     @NotNull
+    @ColumnDefault("0")
+    @Column(name = "order_tax_rate", nullable = false, precision = 5, scale = 3)
+    private BigDecimal orderTaxRate;
+
+    @NotNull
+    @ColumnDefault("0")
+    @Column(name = "order_tax_amount", nullable = false, precision = 10, scale = 2)
+    private BigDecimal orderTaxAmount;
+
+    @NotNull
     @ColumnDefault("'pending_payment'")
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
@@ -213,6 +223,22 @@ public class Order {
 
     public void setOrderDiscount(BigDecimal orderDiscount) {
         this.orderDiscount = orderDiscount;
+    }
+
+    public BigDecimal getOrderTaxRate() {
+        return orderTaxRate;
+    }
+
+    public void setOrderTaxRate(BigDecimal orderTaxRate) {
+        this.orderTaxRate = orderTaxRate;
+    }
+
+    public BigDecimal getOrderTaxAmount() {
+        return orderTaxAmount;
+    }
+
+    public void setOrderTaxAmount(BigDecimal orderTaxAmount) {
+        this.orderTaxAmount = orderTaxAmount;
     }
 
     public OrderStatus getOrderStatus() {

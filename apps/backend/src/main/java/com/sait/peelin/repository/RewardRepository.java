@@ -9,4 +9,8 @@ import java.util.UUID;
 public interface RewardRepository extends JpaRepository<Reward, UUID> {
 
     List<Reward> findByCustomer_IdOrderByRewardTransactionDateDesc(UUID customerId);
+
+    List<Reward> findByOrder_Id(UUID orderId);
+
+    boolean existsByOrder_Id(UUID orderId);
 }

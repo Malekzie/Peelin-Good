@@ -1,8 +1,12 @@
 package com.sait.peelin.security;
 
+import com.sait.peelin.model.User;
+import com.sait.peelin.repository.UserRepository;
 import com.sait.peelin.service.JwtService;
+import com.sait.peelin.service.TokenDenylistService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +25,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
+    private final TokenDenylistService tokenDenylistService;
+    private final UserRepository userRepository;
 
     @Override
     protected void doFilterInternal(
@@ -29,31 +35,78 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             FilterChain filterChain
     ) throws ServletException, IOException {
 
-        final String authHeader = request.getHeader("Authorization");
+        var existingAuth = SecurityContextHolder.getContext().getAuthentication();
 
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            filterChain.doFilter(request, response);
-            return;
-        }
+        if (existingAuth != null && existingAuth.isAuthenticated() && existingAuth.getName() != null) {
+            User sessionUser = userRepository.findByUsernameIgnoreCaseOrUserEmailIgnoreCase(existingAuth.getName(), existingAuth.getName()).orElse(null);
 
-        if (SecurityContextHolder.getContext().getAuthentication() != null) {
-            filterChain.doFilter(request, response);
-            return;
-        }
-
-        final String jwt = authHeader.substring(7);
-        final String username = jwtService.extractUsername(jwt);
-
-        if (username != null) {
-            UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-
-            if (jwtService.isTokenValid(jwt, userDetails)) {
-                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                        userDetails, null, userDetails.getAuthorities());
-                SecurityContextHolder.getContext().setAuthentication(authToken);
+            if (sessionUser != null && !Boolean.TRUE.equals(sessionUser.getActive())) {
+                var session = request.getSession(false);
+                if (session != null) session.invalidate();
+                SecurityContextHolder.clearContext();
+                filterChain.doFilter(request, response);
+                return;
             }
         }
 
+        String jwt = extractToken(request);
+
+        if (jwt == null || tokenDenylistService.isDenied(jwt)) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        try {
+            final String username = jwtService.extractUsername(jwt);
+
+            if (username != null) {
+                UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+
+                if (jwtService.isTokenValid(jwt, userDetails)) {
+                    // check if account is still active
+                    User activeUser = userRepository.findByUsernameIgnoreCaseOrUserEmailIgnoreCase(username, username).orElse(null);
+
+                    if (activeUser == null || !Boolean.TRUE.equals(activeUser.getActive())) {
+                        var session = request.getSession(false);
+
+                        if (session != null) {
+                            session.invalidate();
+                        }
+
+                        SecurityContextHolder.clearContext();
+                        filterChain.doFilter(request, response);
+                        return;
+                    }
+
+                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                            userDetails, null, userDetails.getAuthorities());
+                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                }
+            }
+        } catch (Exception e) {
+            logger.warn("JWT validation failed: " + e.getMessage());
+        }
+
         filterChain.doFilter(request, response);
+    }
+
+    /**
+     * Extracts the JWT from the request.
+     * Checks the HttpOnly cookie first (web app), then falls back to
+     * the Authorization header (mobile/desktop apps).
+     */
+    private String extractToken(HttpServletRequest request) {
+        if (request.getCookies() != null) {
+            for (Cookie cookie : request.getCookies()) {
+                if ("token".equals(cookie.getName())) {
+                    return cookie.getValue();
+                }
+            }
+        }
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            return authHeader.substring(7);
+        }
+        return null;
     }
 }

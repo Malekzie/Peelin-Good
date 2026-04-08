@@ -9,6 +9,7 @@ import com.sait.peelin.repository.OrderItemRepository;
 import com.sait.peelin.repository.OrderRepository;
 import com.sait.peelin.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -26,6 +27,7 @@ public class DashboardService {
     private final ProductRepository productRepository;
     private final OrderItemRepository orderItemRepository;
 
+    @Cacheable(value = "dashboard", key = "'summary'")
     @Transactional(readOnly = true)
     public DashboardSummaryDto summary() {
         BigDecimal revenue = orderRepository.sumRevenueForStatuses(OrderStatus.completed, OrderStatus.delivered);

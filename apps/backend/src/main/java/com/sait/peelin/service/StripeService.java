@@ -17,6 +17,14 @@ public class StripeService {
     @Value("${stripe.secret-key:}")
     private String secretKey;
 
+    /**
+     * When false, checkout skips live Stripe calls so local environments without
+     * {@code STRIPE_SECRET_KEY} can still place orders.
+     */
+    public boolean isConfigured() {
+        return secretKey != null && !secretKey.isBlank();
+    }
+
     public PaymentIntent createPaymentIntent(UUID orderId, BigDecimal total) throws StripeException {
         Stripe.apiKey = secretKey;
 
@@ -37,5 +45,10 @@ public class StripeService {
                 .build();
 
         return PaymentIntent.create(params);
+    }
+
+    public PaymentIntent retrievePaymentIntent(String paymentIntentId) throws StripeException {
+        Stripe.apiKey = secretKey;
+        return PaymentIntent.retrieve(paymentIntentId);
     }
 }
