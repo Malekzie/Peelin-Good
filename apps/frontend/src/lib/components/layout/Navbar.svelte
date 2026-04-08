@@ -67,12 +67,6 @@
 				href={resolve('/about')}
 				class="text-sm font-medium text-foreground transition-colors hover:text-primary">About</a
 			>
-			{#if !isStaffUser}
-				<a
-					href={resolve('/orders')}
-					class="text-sm font-medium text-foreground transition-colors hover:text-primary">Orders</a
-				>
-			{/if}
 		</div>
 
 		<!-- Right icons -->
@@ -121,10 +115,7 @@
 
 			<hr class="border-border" />
 			<a href={resolve('/about')} class="text-sm text-foreground hover:text-primary">About</a>
-			<!-- show order if user is logged in -->
-			{#if $isLoggedIn && !isStaffUser}
-				<a href={resolve('/orders')} class="text-sm text-foreground hover:text-primary">Orders</a>
-			{/if}
+
 			<div class="flex gap-4 pt-2">
 				<button
 					onclick={handleProfileClick}
