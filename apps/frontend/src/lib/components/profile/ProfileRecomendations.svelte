@@ -25,7 +25,7 @@
 <div class="md:col-span-4">
 	<Card class="h-full">
 		<CardHeader>
-			<CardTitle>Recommended for You</CardTitle>
+			<CardTitle>AI Powered Recommendations</CardTitle>
 		</CardHeader>
 		<CardContent class="flex flex-col gap-1">
 			{#if loading}
