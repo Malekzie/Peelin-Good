@@ -48,10 +48,10 @@
 
 		if (emailError || passwordError) return;
 
-		const { ok } = await loginUser(identifier, password);
+		const { ok, message } = await loginUser(identifier, password);
 
 		if (!ok) {
-			emailError = 'Invalid email or password.';
+			emailError = message ?? 'Invalid email or password.';
 			passwordError = ' ';
 			return;
 		}

@@ -14,6 +14,11 @@ export async function loginUser(identifier, password) {
 		});
 
 		if (!res.ok) {
+			const err = await res.json().catch(() => ({}));
+			const message = err.message?.toLowerCase().includes('disabled')
+				? 'Your account has been deactivated.'
+				: 'Invalid email or password.';
+
 			// Spring returns 401 for bad credentials
 			Sentry.withScope((scope) => {
 				scope.setTag('action', 'LOGIN_FAILED');
@@ -21,7 +26,7 @@ export async function loginUser(identifier, password) {
 				scope.setTag('status_code', String(res.status));
 				Sentry.captureMessage('Login failed: invalid credentials', 'warning');
 			});
-			return { ok: false, message: 'Invalid email or password.' };
+			return { ok: false, message };
 		}
 
 		const data = await res.json();

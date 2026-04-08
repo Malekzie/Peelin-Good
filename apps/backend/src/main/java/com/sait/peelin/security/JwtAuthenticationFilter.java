@@ -1,5 +1,7 @@
 package com.sait.peelin.security;
 
+import com.sait.peelin.model.User;
+import com.sait.peelin.repository.UserRepository;
 import com.sait.peelin.service.JwtService;
 import com.sait.peelin.service.TokenDenylistService;
 import jakarta.servlet.FilterChain;
@@ -24,6 +26,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
     private final TokenDenylistService tokenDenylistService;
+    private final UserRepository userRepository;
 
     @Override
     protected void doFilterInternal(
@@ -31,6 +34,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             HttpServletResponse response,
             FilterChain filterChain
     ) throws ServletException, IOException {
+
+        var existingAuth = SecurityContextHolder.getContext().getAuthentication();
+
+        if (existingAuth != null && existingAuth.isAuthenticated() && existingAuth.getName() != null) {
+            User sessionUser = userRepository.findByUsernameIgnoreCaseOrUserEmailIgnoreCase(existingAuth.getName(), existingAuth.getName()).orElse(null);
+
+            if (sessionUser != null && !Boolean.TRUE.equals(sessionUser.getActive())) {
+                var session = request.getSession(false);
+                if (session != null) session.invalidate();
+                SecurityContextHolder.clearContext();
+                filterChain.doFilter(request, response);
+                return;
+            }
+        }
 
         String jwt = extractToken(request);
 
@@ -46,6 +63,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
                 if (jwtService.isTokenValid(jwt, userDetails)) {
+                    // check if account is still active
+                    User activeUser = userRepository.findByUsernameIgnoreCaseOrUserEmailIgnoreCase(username, username).orElse(null);
+
+                    if (activeUser == null || !Boolean.TRUE.equals(activeUser.getActive())) {
+                        var session = request.getSession(false);
+
+                        if (session != null) {
+                            session.invalidate();
+                        }
+
+                        SecurityContextHolder.clearContext();
+                        filterChain.doFilter(request, response);
+                        return;
+                    }
+
                     UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                             userDetails, null, userDetails.getAuthorities());
                     SecurityContextHolder.getContext().setAuthentication(authToken);

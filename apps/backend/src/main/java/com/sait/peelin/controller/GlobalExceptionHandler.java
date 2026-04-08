@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -65,5 +66,11 @@ public class GlobalExceptionHandler {
 
     private static ApiError apiError(HttpStatus status, String message, List<String> details) {
         return new ApiError(status.value(), message, details, OffsetDateTime.now());
+    }
+
+    @ExceptionHandler(DisabledException.class)
+    public ResponseEntity<ApiError> disabled(DisabledException ex) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(apiError(HttpStatus.UNAUTHORIZED, "Account is disabled", List.of()));
     }
 }
