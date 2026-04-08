@@ -2,6 +2,7 @@ package com.sait.peelin.service;
 
 import com.sait.peelin.dto.v1.OrderDto;
 import com.sait.peelin.dto.v1.OrderItemDto;
+import com.sait.peelin.model.Customer;
 import com.sait.peelin.model.Order;
 import com.sait.peelin.model.OrderItem;
 import com.sait.peelin.repository.OrderItemRepository;
@@ -26,6 +27,7 @@ public final class OrderMapper {
                 o.getId(),
                 o.getOrderNumber(),
                 o.getCustomer() != null ? o.getCustomer().getId() : null,
+                buildCustomerName(o.getCustomer()),
                 o.getBakery().getId(),
                 o.getBakery().getBakeryName(),
                 o.getAddress() != null ? o.getAddress().getId() : null,
@@ -42,6 +44,15 @@ public final class OrderMapper {
                 o.getOrderComment(),
                 itemDtos
         );
+    }
+
+    private static String buildCustomerName(Customer c) {
+        if (c == null) return null;
+        String first = c.getCustomerFirstName() != null ? c.getCustomerFirstName() : "";
+        String last = c.getCustomerLastName() != null ? c.getCustomerLastName() : "";
+        String name = (first + " " + last).trim();
+        if (!name.isEmpty()) return name;
+        return c.getCustomerEmail();
     }
 
     private static OrderItemDto itemDto(OrderItem i) {

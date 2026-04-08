@@ -42,6 +42,7 @@ public class OrderService {
     private final CustomerService customerService;
     private final CurrentUserService currentUserService;
     private final StripeService stripeService;
+    private final RewardTierRepository rewardTierRepository;
 
     @Transactional(readOnly = true)
     @Cacheable(value = "orders", keyGenerator = "userIdKeyGenerator")
@@ -250,7 +251,8 @@ public class OrderService {
     }
 
     private static boolean hasProvince(Address address) {
-        return address.getAddressProvince() != null && !address.getAddressProvince().trim().isEmpty();
+        String p = address.getAddressProvince();
+        return p != null && !p.trim().isEmpty() && !p.trim().equalsIgnoreCase("unknown");
     }
 
     private String buildGuestName(String firstName, String lastName) {
@@ -261,9 +263,12 @@ public class OrderService {
         String normalizedProvince = normalizeProvince(provinceRaw);
         return taxRateRepository.findByProvinceNameIgnoreCase(normalizedProvince)
                 .map(TaxRate::getTaxPercent)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.BAD_REQUEST,
-                        "No tax rate configured for province/territory: " + normalizedProvince));
+                .orElseGet(() -> {
+                    log.warn("No tax rate for province '{}'; falling back to Alberta rate", normalizedProvince);
+                    return taxRateRepository.findByProvinceNameIgnoreCase("Alberta")
+                            .map(TaxRate::getTaxPercent)
+                            .orElse(BigDecimal.valueOf(5));
+                });
     }
 
     private String normalizeProvince(String provinceRaw) {
@@ -301,8 +306,13 @@ public class OrderService {
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN);
             }
         }
+        OrderStatus previousStatus = o.getOrderStatus();
         o.setOrderStatus(req.getStatus());
-        return toDto(orderRepository.save(o));
+        Order saved = orderRepository.save(o);
+        if (req.getStatus() == OrderStatus.completed && previousStatus != OrderStatus.completed) {
+            awardRewardPoints(saved);
+        }
+        return toDto(saved);
     }
 
     @Transactional
@@ -319,11 +329,16 @@ public class OrderService {
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN);
             }
         }
+        OrderStatus previousStatus = o.getOrderStatus();
         o.setOrderDeliveredDatetime(req.getDeliveredAt() != null ? req.getDeliveredAt() : OffsetDateTime.now());
         if (o.getOrderStatus() != OrderStatus.cancelled) {
             o.setOrderStatus(OrderStatus.completed);
         }
-        return toDto(orderRepository.save(o));
+        Order saved = orderRepository.save(o);
+        if (saved.getOrderStatus() == OrderStatus.completed && previousStatus != OrderStatus.completed) {
+            awardRewardPoints(saved);
+        }
+        return toDto(saved);
     }
 
     @Transactional
@@ -342,8 +357,40 @@ public class OrderService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "Only delivered or picked_up orders can be accepted");
         }
-        o.setOrderStatus(OrderStatus.completed);
-        return toDto(orderRepository.save(o));
+        Order saved = orderRepository.save(o);
+        awardRewardPoints(saved);
+        return toDto(saved);
+    }
+
+    private void awardRewardPoints(Order order) {
+        if (order.getCustomer() == null) return;
+        if (rewardRepository.existsByOrder_Id(order.getId())) return;
+
+        int points = order.getOrderTotal() != null ? order.getOrderTotal().intValue() : 0;
+        if (points <= 0) return;
+
+        Reward reward = new Reward();
+        reward.setCustomer(order.getCustomer());
+        reward.setOrder(order);
+        reward.setRewardPointsEarned(points);
+        reward.setRewardTransactionDate(OffsetDateTime.now());
+        rewardRepository.save(reward);
+
+        Customer customer = order.getCustomer();
+        int newBalance = (customer.getCustomerRewardBalance() != null ? customer.getCustomerRewardBalance() : 0) + points;
+        customer.setCustomerRewardBalance(newBalance);
+        recalculateCustomerTier(customer);
+        customerRepository.save(customer);
+        log.info("Awarded {} points to customer {} for order {}", points, customer.getId(), order.getId());
+    }
+
+    private void recalculateCustomerTier(Customer customer) {
+        int balance = customer.getCustomerRewardBalance() != null ? customer.getCustomerRewardBalance() : 0;
+        rewardTierRepository.findAll().stream()
+                .filter(t -> balance >= t.getRewardTierMinPoints()
+                        && (t.getRewardTierMaxPoints() == null || balance <= t.getRewardTierMaxPoints()))
+                .findFirst()
+                .ifPresent(customer::setRewardTier);
     }
 
     private void assertCanView(Order o) {
