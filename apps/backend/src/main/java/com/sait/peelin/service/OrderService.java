@@ -43,6 +43,7 @@ public class OrderService {
     private final CustomerService customerService;
     private final CurrentUserService currentUserService;
     private final StripeService stripeService;
+    private final RewardAccrualService rewardAccrualService;
 
     @Transactional(readOnly = true)
     @Cacheable(value = "orders", keyGenerator = "userIdKeyGenerator")
@@ -302,8 +303,13 @@ public class OrderService {
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN);
             }
         }
+        OrderStatus previous = o.getOrderStatus();
         o.setOrderStatus(req.getStatus());
-        return toDto(orderRepository.save(o));
+        Order saved = orderRepository.save(o);
+        if (req.getStatus() == OrderStatus.cancelled && previous != OrderStatus.cancelled) {
+            rewardAccrualService.reverseEarnedPointsForOrder(saved);
+        }
+        return toDto(saved);
     }
 
     @Transactional

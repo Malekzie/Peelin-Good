@@ -1,7 +1,9 @@
 package com.sait.peelin.controller.v1;
 
 import com.sait.peelin.model.*;
-import com.sait.peelin.repository.*;
+import com.sait.peelin.repository.OrderRepository;
+import com.sait.peelin.repository.PaymentRepository;
+import com.sait.peelin.service.RewardAccrualService;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.stripe.exception.SignatureVerificationException;
@@ -19,8 +21,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.OffsetDateTime;
 import java.util.Optional;
 
@@ -36,8 +36,7 @@ public class StripeWebhookController {
 
     private final PaymentRepository paymentRepository;
     private final OrderRepository orderRepository;
-    private final RewardRepository rewardRepository;
-    private final CustomerRepository customerRepository;
+    private final RewardAccrualService rewardAccrualService;
 
     @PostMapping("/webhook")
     @Transactional
@@ -125,19 +124,7 @@ public class StripeWebhookController {
         order.setOrderStatus(OrderStatus.paid);
         orderRepository.save(order);
 
-        Customer customer = order.getCustomer();
-        BigDecimal total = order.getOrderTotal();
-        int points = total.setScale(0, RoundingMode.DOWN).intValue();
-
-        Reward reward = new Reward();
-        reward.setCustomer(customer);
-        reward.setOrder(order);
-        reward.setRewardPointsEarned(Math.max(points, 1));
-        reward.setRewardTransactionDate(OffsetDateTime.now());
-        rewardRepository.save(reward);
-
-        customer.setCustomerRewardBalance(customer.getCustomerRewardBalance() + reward.getRewardPointsEarned());
-        customerRepository.save(customer);
+        rewardAccrualService.grantEarnedPointsForPaidOrder(order);
 
         log.info("Order {} fulfilled via PaymentIntent {}", order.getId(), paymentIntentId);
     }
