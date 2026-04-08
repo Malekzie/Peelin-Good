@@ -16,6 +16,7 @@ import com.sait.peelin.repository.CustomerRepository;
 import com.sait.peelin.repository.RewardTierRepository;
 import com.sait.peelin.repository.UserRepository;
 import com.sait.peelin.support.GuestContactFiller;
+import com.sait.peelin.support.PhoneNumberFormatter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -77,11 +78,27 @@ public class CustomerService {
             return existing;
         }
 
+        Customer reusableGuest = findSingleGuestByContact(user.getUserEmail(), phone);
+        if (reusableGuest != null) {
+            reusableGuest.setUser(user);
+            reusableGuest.setGuestExpiryDate(null);
+            reusableGuest.setCustomerEmail(user.getUserEmail());
+            if (StringUtils.hasText(phone)) {
+                reusableGuest.setCustomerPhone(PhoneNumberFormatter.formatStoredPhone(phone));
+            }
+            if (reusableGuest.getCustomerTierAssignedDate() == null) {
+                reusableGuest.setCustomerTierAssignedDate(LocalDate.now());
+            }
+            return customerRepository.save(reusableGuest);
+        }
+
         Customer customer = new Customer();
         customer.setUser(user);
         customer.setRewardTier(lowestRewardTier());
         customer.setCustomerEmail(user.getUserEmail());
-        customer.setCustomerPhone(StringUtils.hasText(phone) ? phone.trim() : GuestContactFiller.allocateSyntheticPhoneDigits());
+        customer.setCustomerPhone(StringUtils.hasText(phone)
+                ? PhoneNumberFormatter.formatStoredPhone(phone)
+                : GuestContactFiller.allocateSyntheticPhoneDigits());
         customer.setCustomerRewardBalance(0);
         customer.setCustomerTierAssignedDate(LocalDate.now());
         customer.setGuestExpiryDate(null);
@@ -165,6 +182,8 @@ public class CustomerService {
 
     @Transactional
     public Customer resolveOrCreateGuestCustomer(GuestCustomerRequest request) {
+        assertGuestCheckoutEmailNotRegisteredAccount(request.getEmail());
+
         Customer existing = findSingleGuestByContact(request.getEmail(), request.getPhone());
         if (existing == null && hasFullGuestIdentity(request)) {
             existing = findExactGuestCustomer(
@@ -191,7 +210,7 @@ public class CustomerService {
         customer.setAddress(createAddressIfPresent(request));
         applyNewGuestContact(customer, request);
         applyGuestOptionalNames(customer, request);
-        customer.setCustomerBusinessPhone(normalizeOptional(request.getBusinessPhone()));
+        customer.setCustomerBusinessPhone(PhoneNumberFormatter.formatStoredPhoneOrNull(request.getBusinessPhone()));
         customer.setCustomerRewardBalance(0);
         customer.setGuestExpiryDate(LocalDate.now().plusYears(1));
         return customerRepository.save(customer);
@@ -285,8 +304,10 @@ public class CustomerService {
             c.setCustomerMiddleInitial(v.isEmpty() ? null : v);
         }
         if (req.getLastName() != null) c.setCustomerLastName(req.getLastName());
-        if (req.getPhone() != null) c.setCustomerPhone(req.getPhone());
-        if (req.getBusinessPhone() != null) c.setCustomerBusinessPhone(req.getBusinessPhone());
+        if (req.getPhone() != null) c.setCustomerPhone(PhoneNumberFormatter.formatStoredPhone(req.getPhone()));
+        if (req.getBusinessPhone() != null) {
+            c.setCustomerBusinessPhone(PhoneNumberFormatter.formatStoredPhoneOrNull(req.getBusinessPhone()));
+        }
         if (req.getEmail() != null) c.setCustomerEmail(req.getEmail());
         if (req.getAddressId() != null) {
             c.setAddress(addressRepository.findById(req.getAddressId())
@@ -360,6 +381,31 @@ public class CustomerService {
                 && StringUtils.hasText(r.getPostalCode())
                 && StringUtils.hasText(r.getPhone())
                 && StringUtils.hasText(r.getEmail());
+    }
+
+    /**
+     * Guest checkout may not use an email tied to a registered account. Pure guest rows
+     * (customer without user) are allowed.
+     */
+    private void assertGuestCheckoutEmailNotRegisteredAccount(String emailRaw) {
+        if (!StringUtils.hasText(emailRaw)) {
+            return;
+        }
+        String trimmed = emailRaw.trim();
+        if (GuestContactFiller.isSyntheticGuestEmail(trimmed)) {
+            return;
+        }
+        String emailNorm = trimmed.toLowerCase();
+        if (userRepository.existsByUserEmailIgnoreCase(emailNorm)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "This email is already registered. Sign in to complete your order.");
+        }
+        for (Customer c : customerRepository.findByCustomerEmailNormalized(emailNorm)) {
+            if (c.getUser() != null) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT,
+                        "This email is already registered. Sign in to complete your order.");
+            }
+        }
     }
 
     private Customer findSingleGuestByContact(String email, String phoneRaw) {
@@ -438,7 +484,7 @@ public class CustomerService {
             existing.setCustomerMiddleInitial(normalizeOptional(req.getMiddleInitial()));
         }
         if (StringUtils.hasText(req.getBusinessPhone())) {
-            existing.setCustomerBusinessPhone(normalizeOptional(req.getBusinessPhone()));
+            existing.setCustomerBusinessPhone(PhoneNumberFormatter.formatStoredPhoneOrNull(req.getBusinessPhone()));
         }
         if (existing.getAddress() == null && StringUtils.hasText(req.getAddressLine1())) {
             existing.setAddress(createAddress(
@@ -461,8 +507,8 @@ public class CustomerService {
         customer.setCustomerFirstName(normalizeRequired(firstName));
         customer.setCustomerMiddleInitial(normalizeOptional(middleInitial));
         customer.setCustomerLastName(normalizeRequired(lastName));
-        customer.setCustomerPhone(normalizeRequired(phone));
-        customer.setCustomerBusinessPhone(normalizeOptional(businessPhone));
+        customer.setCustomerPhone(PhoneNumberFormatter.formatStoredPhone(phone));
+        customer.setCustomerBusinessPhone(PhoneNumberFormatter.formatStoredPhoneOrNull(businessPhone));
         customer.setCustomerEmail(normalizeRequired(email).toLowerCase());
     }
 

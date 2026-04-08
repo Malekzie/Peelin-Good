@@ -12,6 +12,7 @@ public record OrderDto(
         UUID id,
         String orderNumber,
         UUID customerId,
+        String customerName,
         Integer bakeryId,
         String bakeryName,
         Integer addressId,

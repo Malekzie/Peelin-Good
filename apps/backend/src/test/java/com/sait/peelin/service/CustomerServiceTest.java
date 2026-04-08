@@ -22,9 +22,13 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -127,6 +131,9 @@ class CustomerServiceTest {
         request.setProvince("Ontario");
         request.setPostalCode("M5V2T6");
 
+        when(userRepository.existsByUserEmailIgnoreCase("jamie@example.com")).thenReturn(false);
+        when(customerRepository.findByCustomerEmailNormalized("jamie@example.com"))
+                .thenReturn(List.of(existingCustomer));
         when(customerRepository.findGuestCustomersByEmailNormalized("jamie@example.com"))
                 .thenReturn(List.of(existingCustomer));
         when(customerRepository.save(existingCustomer)).thenReturn(existingCustomer);
@@ -134,5 +141,109 @@ class CustomerServiceTest {
         Customer result = customerService.resolveOrCreateGuestCustomer(request);
 
         assertEquals(existingCustomer, result);
+    }
+
+    @Test
+    void resolveOrCreateGuestCustomer_RejectsWhenEmailMatchesUserAccount() {
+        GuestCustomerRequest request = new GuestCustomerRequest();
+        request.setEmail("member@example.com");
+        request.setPhone("4035559999");
+
+        when(userRepository.existsByUserEmailIgnoreCase("member@example.com")).thenReturn(true);
+
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                () -> customerService.resolveOrCreateGuestCustomer(request));
+        assertEquals(HttpStatus.CONFLICT, ex.getStatusCode());
+    }
+
+    @Test
+    void resolveOrCreateGuestCustomer_RejectsWhenEmailOnRegisteredCustomer() {
+        User u = new User();
+        u.setUserId(UUID.randomUUID());
+
+        Customer registered = new Customer();
+        registered.setUser(u);
+        registered.setCustomerEmail("acct@example.com");
+
+        GuestCustomerRequest request = new GuestCustomerRequest();
+        request.setEmail("acct@example.com");
+        request.setPhone("4035551111");
+
+        when(userRepository.existsByUserEmailIgnoreCase("acct@example.com")).thenReturn(false);
+        when(customerRepository.findByCustomerEmailNormalized("acct@example.com"))
+                .thenReturn(List.of(registered));
+
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                () -> customerService.resolveOrCreateGuestCustomer(request));
+        assertEquals(HttpStatus.CONFLICT, ex.getStatusCode());
+    }
+
+    @Test
+    void createRegisteredCustomer_LinksExistingGuestByEmail() {
+        User user = new User();
+        user.setUserId(UUID.randomUUID());
+        user.setUserEmail("reuse@email.com");
+
+        RewardTier tier = new RewardTier();
+        tier.setId(1);
+
+        Customer guest = new Customer();
+        guest.setId(UUID.randomUUID());
+        guest.setRewardTier(tier);
+        guest.setCustomerEmail("reuse@email.com");
+        guest.setCustomerPhone("4035551111");
+        guest.setCustomerRewardBalance(42);
+        guest.setGuestExpiryDate(LocalDate.now().plusMonths(6));
+        guest.setUser(null);
+
+        when(customerRepository.findByUser_UserId(user.getUserId())).thenReturn(Optional.empty());
+        when(customerRepository.findGuestCustomersByEmailNormalized("reuse@email.com"))
+                .thenReturn(List.of(guest));
+        when(customerRepository.save(guest)).thenReturn(guest);
+
+        Customer result = customerService.createRegisteredCustomer(user, null);
+
+        assertEquals(guest, result);
+        assertEquals(user, guest.getUser());
+        assertNull(guest.getGuestExpiryDate());
+        assertEquals("reuse@email.com", guest.getCustomerEmail());
+        assertEquals("4035551111", guest.getCustomerPhone());
+        assertEquals(42, guest.getCustomerRewardBalance());
+        verify(customerRepository).save(guest);
+    }
+
+    @Test
+    void createRegisteredCustomer_LinksExistingGuestByPhoneWhenEmailSynthetic() {
+        User user = new User();
+        user.setUserId(UUID.randomUUID());
+        user.setUserEmail("newreal@email.com");
+
+        RewardTier tier = new RewardTier();
+        tier.setId(1);
+
+        Customer guest = new Customer();
+        guest.setId(UUID.randomUUID());
+        guest.setRewardTier(tier);
+        guest.setCustomerEmail("guest-synthetic@local");
+        guest.setCustomerPhone("+1 (403) 555-2222");
+        guest.setCustomerRewardBalance(10);
+        guest.setUser(null);
+
+        UUID guestId = guest.getId();
+        when(customerRepository.findByUser_UserId(user.getUserId())).thenReturn(Optional.empty());
+        when(customerRepository.findGuestCustomersByEmailNormalized("newreal@email.com"))
+                .thenReturn(List.of());
+        when(customerRepository.findGuestCustomerIdsByPhoneDigits("14035552222"))
+                .thenReturn(List.of(guestId));
+        when(customerRepository.findByIdIn(List.of(guestId))).thenReturn(List.of(guest));
+        when(customerRepository.save(guest)).thenReturn(guest);
+
+        Customer result = customerService.createRegisteredCustomer(user, "+1 (403) 555-2222");
+
+        assertEquals(guest, result);
+        assertEquals(user, guest.getUser());
+        assertEquals("newreal@email.com", guest.getCustomerEmail());
+        assertEquals("(403) 555-2222", guest.getCustomerPhone());
+        verify(customerRepository).save(guest);
     }
 }

@@ -69,23 +69,27 @@ public interface CustomerRepository extends JpaRepository<Customer, UUID> {
             @Param("postalCode") String postalCode
     );
 
-    @EntityGraph(attributePaths = {"address", "rewardTier", "user"})
-    @Query("""
-            SELECT c FROM Customer c
-            JOIN c.address a
-            WHERE c.user IS NULL
-              AND LOWER(TRIM(c.customerFirstName)) = LOWER(TRIM(:firstName))
-              AND LOWER(COALESCE(TRIM(c.customerMiddleInitial), '')) = LOWER(COALESCE(TRIM(:middleInitial), ''))
-              AND LOWER(TRIM(c.customerLastName)) = LOWER(TRIM(:lastName))
-              AND TRIM(c.customerPhone) = TRIM(:phone)
-              AND COALESCE(TRIM(c.customerBusinessPhone), '') = COALESCE(TRIM(:businessPhone), '')
-              AND LOWER(TRIM(c.customerEmail)) = LOWER(TRIM(:email))
-              AND LOWER(TRIM(a.addressLine1)) = LOWER(TRIM(:addressLine1))
-              AND LOWER(COALESCE(TRIM(a.addressLine2), '')) = LOWER(COALESCE(TRIM(:addressLine2), ''))
-              AND LOWER(TRIM(a.addressCity)) = LOWER(TRIM(:city))
-              AND LOWER(TRIM(a.addressProvince)) = LOWER(TRIM(:province))
-              AND UPPER(REPLACE(TRIM(a.addressPostalCode), ' ', '')) = UPPER(REPLACE(TRIM(:postalCode), ' ', ''))
-            """)
+    /**
+     * Phone fields match on digits only so stored formatting {@code (###) ###-####} aligns with legacy rows.
+     */
+    @Query(value = """
+            SELECT c.* FROM customer c
+            INNER JOIN address a ON c.address_id = a.address_id
+            WHERE c.user_id IS NULL
+              AND lower(trim(c.customer_first_name)) = lower(trim(:firstName))
+              AND lower(trim(coalesce(c.customer_middle_initial, ''))) = lower(trim(coalesce(:middleInitial, '')))
+              AND lower(trim(c.customer_last_name)) = lower(trim(:lastName))
+              AND regexp_replace(btrim(c.customer_phone), '\\D', '', 'g') = regexp_replace(btrim(:phone), '\\D', '', 'g')
+              AND regexp_replace(btrim(coalesce(c.customer_business_phone, '')), '\\D', '', 'g')
+                  = regexp_replace(btrim(coalesce(:businessPhone, '')), '\\D', '', 'g')
+              AND lower(trim(c.customer_email)) = lower(trim(:email))
+              AND lower(trim(a.address_line1)) = lower(trim(:addressLine1))
+              AND lower(trim(coalesce(a.address_line2, ''))) = lower(trim(coalesce(:addressLine2, '')))
+              AND lower(trim(a.address_city)) = lower(trim(:city))
+              AND lower(trim(a.address_province)) = lower(trim(:province))
+              AND upper(replace(trim(a.address_postal_code), ' ', '')) = upper(replace(trim(:postalCode), ' ', ''))
+            ORDER BY c.customer_id
+            """, nativeQuery = true)
     List<Customer> findExactGuestMatches(
             @Param("firstName") String firstName,
             @Param("middleInitial") String middleInitial,
