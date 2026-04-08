@@ -32,7 +32,7 @@ public final class CatalogMapper {
     }
 
     public static TagDto tag(Tag t) {
-        return new TagDto(t.getId(), t.getTagName());
+        return new TagDto(t.getId(), t.getTagName(), t.isDietary());
     }
 
     public static ProductDto product(Product p, ProductTagRepository productTagRepository) {

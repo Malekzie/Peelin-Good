@@ -35,6 +35,7 @@ public class TagService {
     public TagDto create(TagCreateRequest req) {
         Tag t = new Tag();
         t.setTagName(req.getName().trim());
+        t.setDietary(req.isDietary());
         return CatalogMapper.tag(tagRepository.save(t));
     }
 
@@ -43,6 +44,7 @@ public class TagService {
     public TagDto update(Integer id, TagCreateRequest req) {
         Tag t = tagRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Tag not found"));
         t.setTagName(req.getName().trim());
+        t.setDietary(req.isDietary());
         return CatalogMapper.tag(tagRepository.save(t));
     }
 
