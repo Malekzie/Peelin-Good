@@ -11,12 +11,15 @@
 	import { Search, X, ShoppingBag, Plus, Minus, Check } from '@lucide/svelte';
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
+	import { getProductReviews } from '$lib/services/review';
 
 	let activeTagId = $state(null);
 	let searchQuery = $state('');
 	let products = $state([]);
 	let tags = $state([]);
 	let loading = $state(true);
+	let productReviews = $state([]);
+	let reviewsLoading = $state(false);
 
 	// Sheet state
 	let sheetOpen = $state(false);
@@ -24,11 +27,21 @@
 	let sheetQty = $state(1);
 	let sheetAdded = $state(false);
 
-	function openSheet(product) {
+	async function openSheet(product) {
 		selectedProduct = product;
 		sheetQty = 1;
 		sheetAdded = false;
 		sheetOpen = true;
+		productReviews = [];
+		reviewsLoading = true;
+
+		try {
+			productReviews = await getProductReviews(product.id);
+		} catch {
+			productReviews = [];
+		} finally {
+			reviewsLoading = false;
+		}
 	}
 
 	function addSelectedToCart() {
@@ -269,6 +282,34 @@
 				{/if}
 
 				<Separator />
+
+				<!-- Reviews -->
+				{#if reviewsLoading}
+					<div class="space-y-2">
+						<Skeleton class="h-4 w-24 rounded" />
+						<Skeleton class="h-12 w-full rounded" />
+					</div>
+				{:else if productReviews.length > 0}
+					<div class="space-y-3">
+						<p class="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+							Customer Reviews
+						</p>
+						{#each productReviews as review (review.id)}
+							<div class="rounded-lg bg-muted/50 px-3 py-2">
+								<div class="flex items-center justify-between">
+									<p class="text-xs font-semibold text-foreground">{review.reviewerDisplayName}</p>
+									<p class="text-xs text-yellow-500">
+										{'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}
+									</p>
+								</div>
+								{#if review.comment}
+									<p class="mt-1 text-xs text-muted-foreground">{review.comment}</p>
+								{/if}
+							</div>
+						{/each}
+					</div>
+					<Separator />
+				{/if}
 
 				<!-- Quantity -->
 				<div class="flex flex-col gap-2">

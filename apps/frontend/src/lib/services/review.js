@@ -40,3 +40,10 @@ export async function createOrderReview(orderId, rating, comment) {
 	}
 	return res.json();
 }
+
+export async function getProductReviews(productId) {
+	const res = await fetch(`${API}/products/${productId}/reviews`);
+
+	if (!res.ok) throw new Error('Failed to fetch reviews: ' + res.status);
+	return res.json();
+}
