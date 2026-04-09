@@ -15,10 +15,13 @@
 	let error = $state(null);
 
 	// Accept delivery dialog state
-	let acceptDialog = $state(null); // { order }
+	let acceptDialog = $state(null);
+
+	// Review picker state
+	let reviewPicker = $state(null); // { order, items: [{type, id, label, done}] }
 
 	// Review modal state
-	let reviewModal = $state(null); // { type: 'order'|'product', orderId, productId, label }
+	let reviewModal = $state(null);
 	let reviewRating = $state(0);
 	let reviewComment = $state('');
 	let reviewSubmitting = $state(false);
@@ -35,41 +38,48 @@
 		}
 	});
 
-	// Accept delivery without review
 	async function acceptDelivery(orderId) {
 		try {
 			await apiFetch(`${API}/orders/${orderId}/accept-delivery`, { method: 'PATCH' });
 			orders = orders.map((o) => (o.id === orderId ? { ...o, status: 'completed' } : o));
 		} catch {
-			// silently fail — order will still show
+			// silently fail
 		}
 		acceptDialog = null;
 	}
 
-	// Accept delivery and leave a review
 	function acceptAndReview(order) {
 		acceptDialog = null;
-		openOrderReview(order);
+		openReviewPicker(order);
 	}
 
-	function openOrderReview(order) {
-		reviewModal = {
-			type: 'order',
-			orderId: order.id,
-			label: `${order.bakeryName ?? "Peelin' Good"} — Order #${order.orderNumber}`
-		};
-		reviewRating = 0;
-		reviewComment = '';
-		reviewError = null;
-		reviewSuccess = false;
+	function openReviewPicker(order) {
+		// Build list of reviewable things
+		const items = [
+			{
+				type: 'order',
+				id: order.id,
+				label: `Order experience at ${order.bakeryName ?? "Peelin' Good"}`,
+				done: false
+			},
+			...(order.items ?? []).map((i) => ({
+				type: 'product',
+				id: i.productId,
+				label: i.productName,
+				done: false
+			}))
+		];
+		reviewPicker = { order, items };
 	}
 
-	function openProductReview(order, item) {
+	function openReviewFromPicker(pickerItem) {
 		reviewModal = {
-			type: 'product',
-			orderId: order.id,
-			productId: item.productId,
-			label: item.productName
+			type: pickerItem.type,
+			orderId: reviewPicker.order.id,
+			productId: pickerItem.id,
+			label: pickerItem.label,
+			pickerItemId: pickerItem.id,
+			pickerItemType: pickerItem.type
 		};
 		reviewRating = 0;
 		reviewComment = '';
@@ -84,6 +94,10 @@
 		reviewError = null;
 	}
 
+	function closePicker() {
+		reviewPicker = null;
+	}
+
 	async function submitReview() {
 		if (reviewRating === 0) {
 			reviewError = 'Please select a star rating.';
@@ -93,7 +107,6 @@
 		reviewError = null;
 		try {
 			if (reviewModal.type === 'order') {
-				// Accept delivery first if still in delivered/picked_up state
 				const order = orders.find((o) => o.id === reviewModal.orderId);
 				if (order && ['delivered', 'picked_up'].includes(order.status)) {
 					await apiFetch(`${API}/orders/${reviewModal.orderId}/accept-delivery`, {
@@ -106,15 +119,34 @@
 				await createOrderReview(reviewModal.orderId, reviewRating, reviewComment);
 			} else {
 				await createProductReview(reviewModal.productId, reviewRating, reviewComment);
-				orders = orders.map((o) => ({
-					...o,
-					items: o.items?.map((i) =>
-						i.productId === reviewModal.productId ? { ...i, reviewed: true } : i
-					)
-				}));
 			}
+
 			reviewSuccess = true;
-			setTimeout(() => closeModal(), 1500);
+
+			// Mark item as done in picker
+			if (reviewPicker) {
+				reviewPicker = {
+					...reviewPicker,
+					items: reviewPicker.items.map((i) =>
+						i.type === reviewModal.pickerItemType && i.id === reviewModal.pickerItemId
+							? { ...i, done: true }
+							: i
+					)
+				};
+			}
+
+			// If all items reviewed, close everything
+			const allDone = reviewPicker?.items.every((i) => i.done);
+			setTimeout(() => {
+				closeModal();
+				if (allDone) {
+					// Mark order locally so button disappears
+					orders = orders.map((o) =>
+						o.id === reviewModal?.orderId ? { ...o, _allReviewed: true } : o
+					);
+					closePicker();
+				}
+			}, 1500);
 		} catch (e) {
 			reviewError = e.message ?? 'Failed to submit review. Please try again.';
 		} finally {
@@ -215,7 +247,7 @@
 								</div>
 							</div>
 
-							<!-- Accept delivery button for delivered/picked_up -->
+							<!-- Accept delivery button -->
 							{#if ['delivered', 'picked_up'].includes(order.status)}
 								<div class="mt-4 border-t border-border pt-4">
 									<button
@@ -227,23 +259,15 @@
 								</div>
 							{/if}
 
-							<!-- Product reviews for completed orders -->
-							{#if order.status === 'completed' && order.items && order.items.length > 0}
-								<div class="mt-4 space-y-2 border-t border-border pt-4">
-									<p class="text-xs text-muted-foreground">Review products from this order:</p>
-									{#each order.items as item (item.productId)}
-										{#if !item.reviewed}
-											<div class="flex items-center justify-between">
-												<p class="text-xs text-muted-foreground">{item.productName}</p>
-												<button
-													onclick={() => openProductReview(order, item)}
-													class="rounded-full border border-border px-3 py-1 text-xs font-semibold text-foreground hover:bg-muted"
-												>
-													Review
-												</button>
-											</div>
-										{/if}
-									{/each}
+							<!-- Leave a review button for completed orders -->
+							{#if order.status === 'completed' && !order._allReviewed}
+								<div class="mt-4 border-t border-border pt-4">
+									<button
+										onclick={() => openReviewPicker(order)}
+										class="w-full rounded-full border border-border px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted"
+									>
+										Leave a Review
+									</button>
 								</div>
 							{/if}
 						</div>
@@ -292,6 +316,45 @@
 	</div>
 {/if}
 
+<!-- Review Picker -->
+{#if reviewPicker && !reviewModal}
+	<div class="fixed inset-0 z-40 bg-black/50" onclick={closePicker} role="presentation"></div>
+	<div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+		<div class="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-xl">
+			<h2 class="text-lg font-bold text-foreground">What would you like to review?</h2>
+			<p class="mt-1 text-sm text-muted-foreground">
+				Order #{reviewPicker.order.orderNumber}
+			</p>
+			<div class="mt-5 space-y-2">
+				{#each reviewPicker.items as item (item.id + item.type)}
+					{#if !item.done}
+						<button
+							onclick={() => openReviewFromPicker(item)}
+							class="flex w-full items-center justify-between rounded-xl border border-border px-4 py-3 text-left transition-colors hover:bg-muted"
+						>
+							<span class="text-sm font-medium text-foreground">{item.label}</span>
+							<span class="text-xs text-primary">Review →</span>
+						</button>
+					{:else}
+						<div
+							class="flex w-full items-center justify-between rounded-xl border border-border bg-muted px-4 py-3 opacity-50"
+						>
+							<span class="text-sm font-medium text-foreground">{item.label}</span>
+							<span class="text-xs text-green-600">✓ Reviewed</span>
+						</div>
+					{/if}
+				{/each}
+			</div>
+			<button
+				onclick={closePicker}
+				class="mt-4 w-full px-4 py-2 text-sm text-muted-foreground hover:text-foreground"
+			>
+				Done
+			</button>
+		</div>
+	</div>
+{/if}
+
 <!-- Review Modal -->
 {#if reviewModal}
 	<div class="fixed inset-0 z-40 bg-black/50" onclick={closeModal} role="presentation"></div>
@@ -335,7 +398,7 @@
 					onclick={closeModal}
 					class="rounded-full border border-border px-4 py-2 text-sm font-medium hover:bg-muted"
 				>
-					Cancel
+					Back
 				</button>
 				<button
 					onclick={submitReview}
