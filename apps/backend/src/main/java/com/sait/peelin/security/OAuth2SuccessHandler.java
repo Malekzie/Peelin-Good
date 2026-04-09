@@ -11,6 +11,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
@@ -52,29 +53,43 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
         String email = null;
         String name = null;
 
+        String providerId = null;
+        String provider = null;
+
+        if (authentication instanceof OAuth2AuthenticationToken oauthToken) {
+            provider = oauthToken.getAuthorizedClientRegistrationId();
+        }
+
         Object principal = authentication.getPrincipal();
         if (principal instanceof OidcUser oidcUser) {
             email = oidcUser.getEmail();
             name = oidcUser.getFullName();
+            providerId = oidcUser.getSubject();
         } else if (principal instanceof OAuth2User oauth2User) {
             email = oauth2User.getAttribute("email");
             name = oauth2User.getAttribute("name");
+            providerId = oauth2User.getAttribute("oid") != null
+                    ? oauth2User.getAttribute("oid")
+                    : oauth2User.getAttribute("sub");
         }
 
-        if (email == null) {
-            response.sendRedirect(frontendUrl + "/login?error=no_email");
+        if (providerId == null) {
+            response.sendRedirect(frontendUrl + "/login?error=no_provider_id");
             return;
         }
 
         // Find or create the user
         final String finalEmail = email;
-        final String finalName = name != null ? name : email.split("@")[0];
+        final String finalProviderId = providerId;
+        final String finalProvider = provider;
+        final String finalName = name != null ? name : (email != null ? email.split("@")[0] : "user");
 
-        User user = userRepository.findByUserEmail(finalEmail).orElseGet(() -> {
-            // Create a new user for first-time OAuth login
+        User user = userRepository.findByProviderAndProviderId(finalProvider, finalProviderId).orElseGet(() -> {
             User newUser = new User();
-            newUser.setUsername(generateUsername(finalEmail));
-            newUser.setUserEmail(finalEmail);
+            newUser.setProvider(finalProvider);
+            newUser.setProviderId(finalProviderId);
+            newUser.setUsername(generateUsername(finalEmail != null ? finalEmail : finalProviderId));
+            newUser.setUserEmail(finalEmail != null ? finalEmail.toLowerCase() : finalProviderId + "@oauth.placeholder");
             newUser.setUserPasswordHash(""); // no password for OAuth users
             newUser.setUserRole(UserRole.customer);
             newUser.setUserCreatedAt(OffsetDateTime.now());
@@ -93,7 +108,7 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
             customer.setCustomerFirstName(nameParts[0]);
             customer.setCustomerLastName(nameParts.length > 1 ? nameParts[1] : "");
             customer.setCustomerEmail(finalEmail);
-            customer.setCustomerPhone(null);
+            customer.setCustomerPhone("OAUTH-" + finalProviderId.substring(0, Math.min(finalProviderId.length(), 14)));
             customer.setCustomerRewardBalance(0);
             customerRepository.save(customer);
 

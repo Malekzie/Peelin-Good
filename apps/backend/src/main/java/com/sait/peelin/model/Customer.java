@@ -46,7 +46,6 @@ public class Customer {
     private String customerLastName;
 
     @Size(max = 20)
-    @NotNull
     @Column(name = "customer_phone", nullable = false, length = 20)
     private String customerPhone;
 

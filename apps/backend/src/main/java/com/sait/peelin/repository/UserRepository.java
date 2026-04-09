@@ -28,6 +28,8 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     boolean existsByUserEmailIgnoreCaseAndUserIdNot(String userEmail, UUID userId);
 
+    Optional<User> findByProviderAndProviderId(String provider, String providerId);
+
     @Modifying
     @Query(value = """
             UPDATE "user"
