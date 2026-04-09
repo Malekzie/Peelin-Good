@@ -12,7 +12,6 @@
 	import {
 		getProfile,
 		updateProfile,
-		deleteAccount,
 		uploadProfilePhoto,
 		deactivateAccount
 	} from '$lib/services/profile';
@@ -35,8 +34,6 @@
 	let saving = $state(false);
 	let error = $state(null);
 	let success = $state(false);
-	let showDeleteConfirm = $state(false);
-	let deleting = $state(false);
 	let photoFile = $state(null);
 	let photoPreview = $state(null);
 	let uploadingPhoto = $state(false);
@@ -102,20 +99,6 @@
 			loading = false;
 		}
 	});
-
-	async function handleDelete() {
-		deleting = true;
-		try {
-			await deleteAccount();
-			await logoutUser();
-			goto(resolve('/'));
-		} catch {
-			showDeleteConfirm = false;
-			errors.general = 'Failed to delete account. Please try again.';
-		} finally {
-			deleting = false;
-		}
-	}
 
 	async function handleDeactivate() {
 		deactivating = true;
@@ -643,27 +626,6 @@
 				</div>
 			</form>
 
-			<!-- Delete Account -->
-			{#if showDeleteConfirm}
-				<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-					<div
-						class="mx-4 w-full max-w-md rounded-xl border border-destructive bg-card p-6 shadow-xl"
-					>
-						<h2 class="text-lg font-bold text-destructive">Delete Account</h2>
-						<p class="mt-2 text-sm text-muted-foreground">
-							This will permanently delete your account and all associated data. This action cannot
-							be undone.
-						</p>
-						<div class="mt-6 flex justify-end gap-3">
-							<Button variant="outline" onclick={() => (showDeleteConfirm = false)}>Cancel</Button>
-							<Button variant="destructive" disabled={deleting} onclick={handleDelete}>
-								{deleting ? 'Deleting...' : 'Yes, delete my account'}
-							</Button>
-						</div>
-					</div>
-				</div>
-			{/if}
-
 			<div class="mt-5 rounded-xl border border-amber-300/50 p-6">
 				<h2 class="text-sm font-semibold text-amber-600">Deactivate Account</h2>
 				<p class="mt-1 text-sm text-muted-foreground">
@@ -674,20 +636,6 @@
 					onclick={() => (showDeactivateConfirm = true)}
 				>
 					Deactivate Account
-				</Button>
-			</div>
-
-			<div class="mt-5 rounded-xl border border-destructive/30 p-6">
-				<h2 class="text-sm font-semibold text-destructive">Delete Account</h2>
-				<p class="mt-1 text-sm text-muted-foreground">
-					Once you delete your account, there is no going back.
-				</p>
-				<Button
-					variant="destructive"
-					class="mt-4 hover:cursor-pointer"
-					onclick={() => (showDeleteConfirm = true)}
-				>
-					Delete Account
 				</Button>
 			</div>
 		{/if}

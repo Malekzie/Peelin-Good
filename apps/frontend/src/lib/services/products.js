@@ -16,3 +16,12 @@ export async function getProducts() {
 	cache = await res.json();
 	return cache;
 }
+
+/** Single product for e.g. today's special card. */
+export async function getProductById(id) {
+	const res = await fetch(`${API_BASE}/${id}`, {
+		credentials: 'include'
+	});
+	if (!res.ok) throw new Error('Failed to fetch product: ' + res.status);
+	return res.json();
+}

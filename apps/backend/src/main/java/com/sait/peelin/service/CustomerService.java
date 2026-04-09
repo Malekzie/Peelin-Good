@@ -37,6 +37,7 @@ public class CustomerService {
 
     private final CustomerRepository customerRepository;
     private final RewardTierRepository rewardTierRepository;
+    private final RewardTierService rewardTierService;
     private final AddressRepository addressRepository;
     private final UserRepository userRepository;
     private final ProfilePhotoStorageService profilePhotoStorageService;
@@ -320,6 +321,9 @@ public class CustomerService {
             RewardTier rt = rewardTierRepository.findById(req.getRewardTierId())
                     .orElseThrow(() -> new ResourceNotFoundException("Reward tier not found"));
             c.setRewardTier(rt);
+        } else if (req.getRewardBalance() != null) {
+            int b = c.getCustomerRewardBalance() != null ? c.getCustomerRewardBalance() : 0;
+            rewardTierService.tierForBalance(b).ifPresent(c::setRewardTier);
         }
         if (req.getPhotoApprovalPending() != null && c.getUser() != null) {
             c.getUser().setPhotoApprovalPending(req.getPhotoApprovalPending());
@@ -557,11 +561,15 @@ public class CustomerService {
         if (c.getUser() != null && c.getUser().getUserId() != null) {
             dtoUser = userRepository.findById(c.getUser().getUserId()).orElse(c.getUser());
         }
+        int points = c.getCustomerRewardBalance() != null ? c.getCustomerRewardBalance() : 0;
+        RewardTier tier = rewardTierService.tierForBalance(points).orElse(c.getRewardTier());
         return new CustomerDto(
                 c.getId(),
                 dtoUser != null ? dtoUser.getUserId() : null,
                 dtoUser != null ? dtoUser.getUsername() : null,
-                c.getRewardTier().getId(),
+                tier != null ? tier.getId() : null,
+                tier != null ? tier.getRewardTierName() : null,
+                tier != null ? tier.getRewardTierDiscountRate() : null,
                 c.getCustomerFirstName(),
                 c.getCustomerMiddleInitial(),
                 c.getCustomerLastName(),

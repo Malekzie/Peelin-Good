@@ -23,6 +23,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 
 
@@ -152,8 +154,9 @@ public class AuthController {
         request.getSession().removeAttribute("oauth2_pending_token");
         setTokenCookie(response, token);
         AuthResponse auth = authService.getUserInfoFromToken(token);
-        response.sendRedirect(frontendUrl + "/auth/callback?username=" + auth.getUsername()
-                + "&role=" + auth.getRole()
-                + "&userId=" + auth.getUserId());
+        String q = "username=" + URLEncoder.encode(auth.getUsername(), StandardCharsets.UTF_8)
+                + "&role=" + URLEncoder.encode(auth.getRole(), StandardCharsets.UTF_8)
+                + "&userId=" + URLEncoder.encode(String.valueOf(auth.getUserId()), StandardCharsets.UTF_8);
+        response.sendRedirect(frontendUrl + "/auth/callback?" + q);
     }
 }

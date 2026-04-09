@@ -129,13 +129,15 @@
 							</h1>
 							<p class="text-sm text-muted-foreground">{profile.email}</p>
 							<div class="flex flex-wrap gap-2">
-								{#if profile.loyaltyTier}
-									<Badge>{profile.loyaltyTier}</Badge>
+								{#if profile.loyaltyTier ?? profile.rewardTierName}
+									<Badge>{profile.loyaltyTier ?? profile.rewardTierName}</Badge>
 								{:else}
 									<Badge variant="secondary">No loyalty tier</Badge>
 								{/if}
-								{#if profile.rewardBalance != null && profile.rewardBalance > 0}
-									<Badge variant="outline">{profile.rewardBalance.toLocaleString()} pts</Badge>
+								{#if profile.rewardBalance != null}
+									<Badge variant="outline"
+										>{Number(profile.rewardBalance).toLocaleString()} pts</Badge
+									>
 								{/if}
 							</div>
 						</div>

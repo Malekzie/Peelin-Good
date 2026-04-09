@@ -45,6 +45,9 @@ class OrderServiceTest {
     @Mock private StripeService stripeService;
     @Mock private StripePaymentFulfillmentService stripePaymentFulfillmentService;
     @Mock private RewardAccrualService rewardAccrualService;
+    @Mock private RewardTierService rewardTierService;
+    @Mock private RecommendationService recommendationService;
+    @Mock private ReviewRepository reviewRepository;
 
     @InjectMocks
     private OrderService orderService;
@@ -88,6 +91,7 @@ class OrderServiceTest {
         taxRate.setTaxPercent(BigDecimal.valueOf(13));
 
         lenient().when(stripeService.isConfigured()).thenReturn(true);
+        lenient().when(rewardTierService.tierForBalance(100)).thenReturn(Optional.of(rewardTier));
     }
 
     @Test

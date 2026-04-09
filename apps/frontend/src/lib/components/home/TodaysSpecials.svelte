@@ -1,18 +1,43 @@
 <script>
 	import { onMount } from 'svelte';
-	import { resolve } from '$app/paths';
 	import SpecialCard from '$lib/components/product/SpecialCard.svelte';
-	import { getAllSpecials } from '$lib/services/product-specials';
+	import { getTodaySpecial } from '$lib/services/product-specials';
+	import { getProductById } from '$lib/services/products';
 
-	let specials = [];
-	let loading = true;
-	let error = false;
+	let specials = $state([]);
+	let loading = $state(true);
+
+	function localDateIso() {
+		const d = new Date();
+		const y = d.getFullYear();
+		const m = String(d.getMonth() + 1).padStart(2, '0');
+		const day = String(d.getDate()).padStart(2, '0');
+		return `${y}-${m}-${day}`;
+	}
 
 	onMount(async () => {
 		try {
-			specials = await getAllSpecials();
+			const today = await getTodaySpecial(localDateIso());
+			const pid = today?.productId;
+			if (pid == null) {
+				specials = [];
+				return;
+			}
+			const product = await getProductById(pid);
+			const pct = today.discountPercent != null ? Number(today.discountPercent) : null;
+			specials = [
+				{
+					productSpecialId: pid,
+					productId: product.id,
+					productName: product.name,
+					productDescription: product.description,
+					productBasePrice: product.basePrice,
+					discountPercent: pct,
+					productImageUrl: product.imageUrl
+				}
+			];
 		} catch {
-			error = true;
+			specials = [];
 		} finally {
 			loading = false;
 		}
@@ -24,17 +49,13 @@
 		<p class="mb-1 text-[11px] font-semibold tracking-[0.2em] text-[#C4714A] uppercase">
 			Out of the oven
 		</p>
-		<h2 class="mb-2 text-3xl font-black tracking-tight text-[#2C1A0E]">Today's specials</h2>
-		<p class="mb-8 text-sm text-muted-foreground">A curated selection of what's fresh right now.</p>
+		<h2 class="mb-2 text-3xl font-black tracking-tight text-[#2C1A0E]">Today's special</h2>
+		<p class="mb-8 text-sm text-muted-foreground">Our featured product for today's date.</p>
 
 		{#if loading}
-			<p class="text-sm text-muted-foreground">Loading specials...</p>
-		{:else if error}
-			<p class="text-sm text-red-500">Could not load specials. Try again later.</p>
-		{:else if specials.length === 0}
-			<p class="text-sm text-muted-foreground">No specials available right now.</p>
-		{:else}
-			<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+			<p class="text-sm text-muted-foreground">Loading today's special…</p>
+		{:else if specials.length > 0}
+			<div class="mx-auto grid max-w-lg grid-cols-1 gap-4">
 				{#each specials as special (special.productSpecialId)}
 					<SpecialCard
 						name={special.productName}
@@ -46,6 +67,10 @@
 					/>
 				{/each}
 			</div>
+		{:else}
+			<p class="max-w-lg text-sm leading-relaxed text-muted-foreground">
+				No special is available today. Check back another day!
+			</p>
 		{/if}
 	</div>
 </section>

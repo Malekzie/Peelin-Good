@@ -6,13 +6,22 @@
 	import { resolve } from '$app/paths';
 	import { onMount } from 'svelte';
 	import { getRecommendations } from '$lib/services/profile';
+	import { getMyPreferences } from '$lib/services/preferences';
 
+	/** @type {{ productId: number, productName: string }[]} */
 	let recommendations = $state([]);
 	let loading = $state(true);
 	let error = $state(false);
+	let needsPreferences = $state(false);
 
 	onMount(async () => {
 		try {
+			const prefs = await getMyPreferences();
+			if (!prefs?.length) {
+				needsPreferences = true;
+				recommendations = [];
+				return;
+			}
 			recommendations = await getRecommendations();
 		} catch {
 			error = true;
@@ -37,17 +46,26 @@
 						<Separator />
 					{/if}
 				{/each}
-			{:else if error || recommendations.length === 0}
+			{:else if error}
+				<p class="px-3 py-4 text-sm text-muted-foreground">Could not load recommendations.</p>
+			{:else if needsPreferences}
+				<p class="px-3 py-4 text-sm text-muted-foreground">
+					Set your taste preferences first — then we can suggest products tailored to you.
+				</p>
+				<Button variant="secondary" href={resolve('/profile/preferences')} class="mt-1 w-full">
+					Edit preferences
+				</Button>
+			{:else if recommendations.length === 0}
 				<p class="px-3 py-4 text-sm text-muted-foreground">
 					No recommendations yet. Order something to get started!
 				</p>
 			{:else}
-				{#each recommendations as name, i (name)}
+				{#each recommendations as rec, i (rec.productId)}
 					<a
-						href={resolve(`/menu?search=${encodeURIComponent(name)}`)}
+						href={resolve(`/menu?search=${encodeURIComponent(rec.productName ?? '')}`)}
 						class="flex items-center justify-between rounded-lg px-3 py-3 transition-colors hover:bg-muted"
 					>
-						<p class="text-sm font-medium text-foreground">{name}</p>
+						<p class="text-sm font-medium text-foreground">{rec.productName}</p>
 					</a>
 					{#if i < recommendations.length - 1}
 						<Separator />

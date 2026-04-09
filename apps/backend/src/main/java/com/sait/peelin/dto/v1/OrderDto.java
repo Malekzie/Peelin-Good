@@ -27,5 +27,7 @@ public record OrderDto(
         OffsetDateTime scheduledAt,
         OffsetDateTime deliveredAt,
         String comment,
+        /** True if this customer already submitted a location/service review for this order (any status). */
+        boolean locationReviewSubmitted,
         List<OrderItemDto> items
 ) {}

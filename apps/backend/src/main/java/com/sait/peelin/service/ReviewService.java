@@ -14,6 +14,8 @@ import com.sait.peelin.repository.ReviewRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,11 +24,18 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class ReviewService {
+
+    /** Short text for mobile/web toasts; full reason stays in {@code moderation_rejection_reason}. */
+    private static final int MODERATION_MESSAGE_CLIENT_MAX_LEN = 100;
+
+    private static final List<ReviewStatus> BLOCKING_REVIEW_STATUSES =
+            List.of(ReviewStatus.approved, ReviewStatus.pending, ReviewStatus.rejected);
 
     private final ReviewRepository reviewRepository;
     private final ProductRepository productRepository;
@@ -69,25 +78,18 @@ public class ReviewService {
     @Transactional(readOnly = true)
     public List<ReviewDto> pending() {
         User u = currentUserService.requireUser();
-        if (u.getUserRole() != UserRole.admin && u.getUserRole() != UserRole.employee) {
+        if (u.getUserRole() != UserRole.admin) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
-        }
-        if (u.getUserRole() == UserRole.employee) {
-            Employee employee = employeeRepository.findByUser_UserId(u.getUserId())
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "Employee profile required"));
-            return reviewRepository.findByReviewStatusAndBakery_IdOrderByReviewSubmittedDateDesc(
-                            ReviewStatus.pending,
-                            employee.getBakery().getId()
-                    )
-                    .stream()
-                    .map(this::toDto)
-                    .toList();
         }
         return reviewRepository.findByReviewStatusOrderByReviewSubmittedDateDesc(ReviewStatus.pending)
                 .stream().map(this::toDto).toList();
     }
 
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "reviews", allEntries = true),
+            @CacheEvict(value = "orders", allEntries = true)
+    })
     public ReviewDto create(Integer productId, ReviewCreateRequest req) {
         User u = currentUserService.requireUser();
         if (u.getUserRole() != UserRole.customer) {
@@ -100,8 +102,19 @@ public class ReviewService {
         if (!orderItemRepository.existsPurchasedByCustomer(customer.getId(), productId)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "You can only review products you have purchased");
         }
-        if (reviewRepository.existsByCustomer_IdAndProduct_IdAndOrderIsNull(customer.getId(), productId)) {
+        if (reviewRepository.existsByCustomer_IdAndProduct_IdAndOrderIsNullAndReviewStatusIn(
+                customer.getId(), productId, BLOCKING_REVIEW_STATUSES)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "You already submitted a review for this product");
+        }
+
+        Bakery bakery = resolveBakeryForProductReview(customer.getId(), productId);
+        String comment = req.getComment();
+        if (StringUtils.hasText(comment)) {
+            var mod = reviewModerationService.moderateReview(comment, ReviewModerationService.ModerationKind.PRODUCT);
+            if (!mod.approved()) {
+                return persistModerationRejectedReview(
+                        customer, product, bakery, null, req, moderationReasonOrDefault(mod.reason()));
+            }
         }
 
         Review r = new Review();
@@ -110,19 +123,20 @@ public class ReviewService {
         r.setReviewRating(req.getRating());
         r.setReviewComment(req.getComment());
         r.setReviewSubmittedDate(OffsetDateTime.now());
-        r.setReviewStatus(ReviewStatus.pending);
         r.setOrder(null);
-        r.setBakery(resolveBakeryForProductReview(customer.getId(), productId));
+        r.setBakery(bakery);
+        r.setReviewStatus(ReviewStatus.approved);
+        r.setReviewApprovalDate(OffsetDateTime.now());
 
-        if (req.getComment() != null && !req.getComment().isBlank()) {
-            var result = reviewModerationService.moderateReview(req.getComment());
-            r.setReviewStatus(result.approved() ? ReviewStatus.approved : ReviewStatus.pending);
-        }
-
-        return toDto(reviewRepository.save(r));
+        Review saved = saveReviewOrConflict(r, "You already submitted a review for this product");
+        return toDto(saved);
     }
 
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "reviews", allEntries = true),
+            @CacheEvict(value = {"orders", "analytics", "dashboard"}, allEntries = true)
+    })
     public ReviewDto createForOrder(ReviewCreateRequest req) {
         User u = currentUserService.requireUser();
         if (u.getUserRole() != UserRole.customer) {
@@ -141,7 +155,8 @@ public class ReviewService {
         if (order.getCustomer() == null || !order.getCustomer().getId().equals(customer.getId())) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Order does not belong to customer");
         }
-        if (reviewRepository.existsByOrder_IdAndCustomer_Id(order.getId(), customer.getId())) {
+        if (reviewRepository.existsByOrder_IdAndCustomer_IdAndReviewStatusIn(
+                order.getId(), customer.getId(), BLOCKING_REVIEW_STATUSES)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "You already submitted a location review for this order");
         }
         if (!hasFullName(customer)) {
@@ -159,6 +174,15 @@ public class ReviewService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Order item product required");
         }
 
+        String comment = req.getComment();
+        if (StringUtils.hasText(comment)) {
+            var mod = reviewModerationService.moderateReview(comment, ReviewModerationService.ModerationKind.BAKERY_SERVICE);
+            if (!mod.approved()) {
+                return persistModerationRejectedReview(
+                        customer, product, order.getBakery(), order, req, moderationReasonOrDefault(mod.reason()));
+            }
+        }
+
         Review r = new Review();
         r.setCustomer(customer);
         r.setProduct(product);
@@ -167,32 +191,87 @@ public class ReviewService {
         r.setReviewRating(req.getRating());
         r.setReviewComment(req.getComment());
         r.setReviewSubmittedDate(OffsetDateTime.now());
-        r.setReviewStatus(ReviewStatus.pending);
+        r.setReviewStatus(ReviewStatus.approved);
+        r.setReviewApprovalDate(OffsetDateTime.now());
 
-        if (req.getComment() != null && !req.getComment().isBlank()) {
-            var result = reviewModerationService.moderateReview(req.getComment());
-            r.setReviewStatus(result.approved() ? ReviewStatus.approved : ReviewStatus.pending);
+        Review saved = saveReviewOrConflict(r, "You already submitted a location review for this order");
+        completeDeliveredOrderAfterLocationReview(saved.getOrder());
+        return toDto(saved);
+    }
+
+    private static String moderationReasonOrDefault(String reason) {
+        return StringUtils.hasText(reason) ? reason.trim() : "This review does not meet our posting guidelines.";
+    }
+
+    /**
+     * AI rejection is stored so each customer/order gets only one review attempt.
+     * The rejection reason is persisted in {@code moderation_rejection_reason}.
+     */
+    private ReviewDto persistModerationRejectedReview(
+            Customer customer,
+            Product product,
+            Bakery bakery,
+            Order orderOrNull,
+            ReviewCreateRequest req,
+            String moderationReason) {
+        Review rejected = new Review();
+        rejected.setCustomer(customer);
+        rejected.setProduct(product);
+        rejected.setBakery(bakery);
+        rejected.setOrder(orderOrNull);
+        rejected.setReviewRating(req.getRating());
+        rejected.setReviewComment(req.getComment());
+        rejected.setReviewSubmittedDate(OffsetDateTime.now());
+        rejected.setReviewStatus(ReviewStatus.rejected);
+        rejected.setModerationRejectionReason(moderationReason);
+        String conflictMessage = orderOrNull != null
+                ? "You already submitted a location review for this order"
+                : "You already submitted a review for this product";
+        Review saved = saveReviewOrConflict(rejected, conflictMessage);
+        if (orderOrNull != null) {
+            completeDeliveredOrderAfterLocationReview(saved.getOrder());
         }
+        return toDto(saved);
+    }
 
-        return toDto(reviewRepository.save(r));
+    private Review saveReviewOrConflict(Review review, String message) {
+        try {
+            return reviewRepository.save(review);
+        } catch (DataIntegrityViolationException ex) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, message);
+        }
+    }
+
+    /**
+     * After a location/service review is submitted (approved or rejected), move delivered orders to completed
+     * so the customer cannot keep revisiting the review flow for this order.
+     */
+    private void completeDeliveredOrderAfterLocationReview(Order order) {
+        if (order == null) {
+            return;
+        }
+        Order fresh = orderRepository.findById(order.getId()).orElse(null);
+        if (fresh == null) {
+            return;
+        }
+        OrderStatus s = fresh.getOrderStatus();
+        if (s == OrderStatus.delivered || s == OrderStatus.picked_up) {
+            fresh.setOrderStatus(OrderStatus.completed);
+            orderRepository.save(fresh);
+        }
     }
 
     @Transactional
     @CacheEvict(value = "reviews", allEntries = true)
-    public ReviewDto patchStatus(UUID reviewId, ReviewStatusPatchRequest req) {
+    public Optional<ReviewDto> patchStatus(UUID reviewId, ReviewStatusPatchRequest req) {
         User u = currentUserService.requireUser();
-        if (u.getUserRole() != UserRole.admin && u.getUserRole() != UserRole.employee) {
+        if (u.getUserRole() != UserRole.admin) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
         Review r = reviewRepository.findById(reviewId).orElseThrow(() -> new ResourceNotFoundException("Review not found"));
-        if (u.getUserRole() == UserRole.employee) {
-            Employee employee = employeeRepository.findByUser_UserId(u.getUserId())
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "Employee profile required"));
-            Integer employeeBakeryId = employee.getBakery() != null ? employee.getBakery().getId() : null;
-            Integer reviewBakeryId = r.getBakery() != null ? r.getBakery().getId() : null;
-            if (employeeBakeryId == null || reviewBakeryId == null || !employeeBakeryId.equals(reviewBakeryId)) {
-                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Cannot moderate reviews from another bakery");
-            }
+        if (req.getStatus() == ReviewStatus.rejected) {
+            reviewRepository.delete(r);
+            return Optional.empty();
         }
         r.setReviewStatus(req.getStatus());
         if (req.getStatus() == ReviewStatus.approved) {
@@ -206,7 +285,7 @@ public class ReviewService {
                 }
             }
         }
-        return toDto(reviewRepository.save(r));
+        return Optional.of(toDto(reviewRepository.save(r)));
     }
 
     private ReviewDto toDto(Review r) {
@@ -216,6 +295,12 @@ public class ReviewService {
             bakeryId = r.getBakery().getId();
             bakeryName = r.getBakery().getBakeryName();
         }
+        String moderationMessage = null;
+        if (r.getReviewStatus() == ReviewStatus.rejected
+                && StringUtils.hasText(r.getModerationRejectionReason())) {
+            moderationMessage = shortenForClientMessage(r.getModerationRejectionReason().trim());
+        }
+
         return new ReviewDto(
                 r.getId(),
                 r.getCustomer().getId(),
@@ -229,7 +314,8 @@ public class ReviewService {
                 r.getReviewStatus(),
                 r.getReviewSubmittedDate(),
                 r.getReviewApprovalDate(),
-                reviewerDisplayName(r.getCustomer())
+                reviewerDisplayName(r.getCustomer()),
+                moderationMessage
         );
     }
 
@@ -284,5 +370,16 @@ public class ReviewService {
     private static boolean hasFullName(Customer customer) {
         return StringUtils.hasText(customer.getCustomerFirstName())
                 && StringUtils.hasText(customer.getCustomerLastName());
+    }
+
+    private static String shortenForClientMessage(String text) {
+        if (!StringUtils.hasText(text)) {
+            return text;
+        }
+        String t = text.trim();
+        if (t.length() <= MODERATION_MESSAGE_CLIENT_MAX_LEN) {
+            return t;
+        }
+        return t.substring(0, MODERATION_MESSAGE_CLIENT_MAX_LEN - 1).trim() + "…";
     }
 }

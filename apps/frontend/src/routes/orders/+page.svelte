@@ -27,6 +27,29 @@
 	let reviewSubmitting = $state(false);
 	let reviewError = $state(null);
 	let reviewSuccess = $state(false);
+	/** @type {'success' | 'rejected' | 'pending'} */
+	let reviewOutcome = $state('success');
+
+	let toastMessage = $state(null);
+	let toastClear = 0;
+
+	function showToast(msg) {
+		if (!msg?.trim()) return;
+		clearTimeout(toastClear);
+		toastMessage = msg.trim();
+		toastClear = setTimeout(() => {
+			toastMessage = null;
+		}, 6500);
+	}
+
+	async function refreshOrdersList() {
+		try {
+			const fresh = await getMyOrders();
+			if (fresh) orders = fresh;
+		} catch {
+			/* keep existing list */
+		}
+	}
 
 	onMount(async () => {
 		try {
@@ -37,6 +60,16 @@
 			loading = false;
 		}
 	});
+
+	/** @param {any} order */
+	function orderHasAnyReviewableSlot(order) {
+		if (!order || order.status !== 'completed') return false;
+		const locDone = order.locationReviewSubmitted === true;
+		const lineItems = order.items ?? [];
+		if (!locDone) return true;
+		if (lineItems.length === 0) return false;
+		return lineItems.some((i) => i.productReviewSubmitted !== true);
+	}
 
 	async function acceptDelivery(orderId) {
 		try {
@@ -54,19 +87,21 @@
 	}
 
 	function openReviewPicker(order) {
-		// Build list of reviewable things
+		// Build list of reviewable things (server tells us what's already used-up)
 		const items = [
 			{
 				type: 'order',
 				id: order.id,
 				label: `Order experience at ${order.bakeryName ?? "Peelin' Good"}`,
-				done: false
+				done: order.locationReviewSubmitted === true,
+				failed: false
 			},
 			...(order.items ?? []).map((i) => ({
 				type: 'product',
 				id: i.productId,
 				label: i.productName,
-				done: false
+				done: i.productReviewSubmitted === true,
+				failed: false
 			}))
 		];
 		reviewPicker = { order, items };
@@ -85,6 +120,7 @@
 		reviewComment = '';
 		reviewError = null;
 		reviewSuccess = false;
+		reviewOutcome = 'success';
 	}
 
 	function closeModal() {
@@ -92,6 +128,7 @@
 		reviewRating = 0;
 		reviewComment = '';
 		reviewError = null;
+		reviewOutcome = 'success';
 	}
 
 	function closePicker() {
@@ -99,56 +136,108 @@
 	}
 
 	async function submitReview() {
+		if (reviewSubmitting) return;
+		const activeModal = reviewModal;
+		if (!activeModal) return;
 		if (reviewRating === 0) {
 			reviewError = 'Please select a star rating.';
 			return;
 		}
 		reviewSubmitting = true;
 		reviewError = null;
+		const pickerType = activeModal.pickerItemType;
+		const pickerId = activeModal.pickerItemId;
+		const modalOrderId = activeModal.orderId;
 		try {
-			if (reviewModal.type === 'order') {
-				const order = orders.find((o) => o.id === reviewModal.orderId);
+			/** @type {{ status?: string; moderationMessage?: string } | undefined} */
+			let submitted;
+			if (activeModal.type === 'order') {
+				const order = orders.find((o) => o.id === activeModal.orderId);
 				if (order && ['delivered', 'picked_up'].includes(order.status)) {
-					await apiFetch(`${API}/orders/${reviewModal.orderId}/accept-delivery`, {
+					await apiFetch(`${API}/orders/${activeModal.orderId}/accept-delivery`, {
 						method: 'PATCH'
 					});
 					orders = orders.map((o) =>
-						o.id === reviewModal.orderId ? { ...o, status: 'completed' } : o
+						o.id === activeModal.orderId ? { ...o, status: 'completed' } : o
 					);
 				}
-				await createOrderReview(reviewModal.orderId, reviewRating, reviewComment);
+				submitted = await createOrderReview(activeModal.orderId, reviewRating, reviewComment);
 			} else {
-				await createProductReview(reviewModal.productId, reviewRating, reviewComment);
+				submitted = await createProductReview(activeModal.productId, reviewRating, reviewComment);
+			}
+
+			const st = (submitted?.status ?? '').toLowerCase();
+			if (st === 'rejected') {
+				const shortReason = submitted.moderationMessage?.trim();
+				showToast(
+					shortReason
+						? `Couldn't post review: ${shortReason}`
+						: "Couldn't post review."
+				);
+				if (reviewPicker) {
+					reviewPicker = {
+						...reviewPicker,
+						items: reviewPicker.items.map((i) =>
+							i.type === pickerType && i.id === pickerId ? { ...i, done: true, failed: true } : i
+						)
+					};
+				}
+				closeModal();
+				closePicker();
+				await refreshOrdersList();
+				return;
 			}
 
 			reviewSuccess = true;
+			if (st === 'pending') {
+				reviewOutcome = 'pending';
+			} else {
+				reviewOutcome = 'success';
+			}
+			showToast(
+				reviewOutcome === 'success'
+					? 'Thanks — your review was posted.'
+					: 'Your review was submitted and is pending approval.'
+			);
 
 			// Mark item as done in picker
 			if (reviewPicker) {
 				reviewPicker = {
 					...reviewPicker,
 					items: reviewPicker.items.map((i) =>
-						i.type === reviewModal.pickerItemType && i.id === reviewModal.pickerItemId
-							? { ...i, done: true }
-							: i
+						i.type === pickerType && i.id === pickerId ? { ...i, done: true } : i
 					)
 				};
 			}
 
 			// If all items reviewed, close everything
 			const allDone = reviewPicker?.items.every((i) => i.done);
-			setTimeout(() => {
+			setTimeout(async () => {
 				closeModal();
 				if (allDone) {
-					// Mark order locally so button disappears
-					orders = orders.map((o) =>
-						o.id === reviewModal?.orderId ? { ...o, _allReviewed: true } : o
-					);
 					closePicker();
 				}
+				await refreshOrdersList();
 			}, 1500);
 		} catch (e) {
-			reviewError = e.message ?? 'Failed to submit review. Please try again.';
+			const msg = e?.message ?? 'Failed to submit review. Please try again.';
+			const status = e?.status;
+			if (status === 409) {
+				showToast(msg.length > 120 ? `${msg.slice(0, 117)}…` : msg);
+				if (reviewPicker) {
+					reviewPicker = {
+						...reviewPicker,
+						items: reviewPicker.items.map((i) =>
+							i.type === pickerType && i.id === pickerId ? { ...i, done: true, failed: true } : i
+						)
+					};
+				}
+				closeModal();
+				closePicker();
+				await refreshOrdersList();
+			} else {
+				reviewError = msg;
+			}
 		} finally {
 			reviewSubmitting = false;
 		}
@@ -190,7 +279,7 @@
 	}
 </script>
 
-<div class="flex min-h-screen bg-background">
+<div class="flex h-[calc(100dvh-var(--app-navbar-height))] overflow-hidden bg-background">
 	<ProfileSidebar />
 
 	<main class="flex-1 overflow-y-auto p-8 lg:p-10">
@@ -259,8 +348,8 @@
 								</div>
 							{/if}
 
-							<!-- Leave a review button for completed orders -->
-							{#if order.status === 'completed' && !order._allReviewed}
+							<!-- Leave a review when something is still reviewable (from API flags) -->
+							{#if orderHasAnyReviewableSlot(order)}
 								<div class="mt-4 border-t border-border pt-4">
 									<button
 										onclick={() => openReviewPicker(order)}
@@ -335,6 +424,13 @@
 							<span class="text-sm font-medium text-foreground">{item.label}</span>
 							<span class="text-xs text-primary">Review →</span>
 						</button>
+					{:else if item.failed}
+						<div
+							class="flex w-full items-center justify-between rounded-xl border border-amber-200 bg-amber-50/80 px-4 py-3"
+						>
+							<span class="text-sm font-medium text-foreground">{item.label}</span>
+							<span class="text-xs font-medium text-amber-800">Not posted</span>
+						</div>
 					{:else}
 						<div
 							class="flex w-full items-center justify-between rounded-xl border border-border bg-muted px-4 py-3 opacity-50"
@@ -352,6 +448,15 @@
 				Done
 			</button>
 		</div>
+	</div>
+{/if}
+
+{#if toastMessage}
+	<div
+		class="fixed bottom-6 left-1/2 z-[100] max-w-md -translate-x-1/2 rounded-xl border border-border bg-card px-4 py-3 text-sm text-foreground shadow-lg"
+		role="status"
+	>
+		{toastMessage}
 	</div>
 {/if}
 
@@ -382,21 +487,47 @@
 				bind:value={reviewComment}
 				placeholder="Leave a comment (optional)"
 				rows="3"
+				disabled={reviewSubmitting}
 				class="mt-4 w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
 			></textarea>
+
+			{#if reviewSubmitting}
+				<div class="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
+					<span
+						class="inline-block size-3 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-primary"
+						aria-hidden="true"
+					></span>
+					<span>Moderating your review... this can take a few seconds.</span>
+				</div>
+			{/if}
 
 			{#if reviewError}
 				<p class="mt-2 text-xs text-destructive">{reviewError}</p>
 			{/if}
 
 			{#if reviewSuccess}
-				<p class="mt-2 text-xs text-green-600">✓ Review submitted! It will appear once approved.</p>
+				<p
+					class="mt-2 text-xs {reviewOutcome === 'success'
+						? 'text-green-600'
+						: reviewOutcome === 'rejected'
+							? 'text-destructive'
+							: 'text-muted-foreground'}"
+				>
+					{#if reviewOutcome === 'success'}
+						✓ Thanks! Your review was posted.
+					{:else if reviewOutcome === 'rejected'}
+						We couldn’t post that review. Try different wording.
+					{:else}
+						Your review is being checked and will appear if approved.
+					{/if}
+				</p>
 			{/if}
 
 			<div class="mt-4 flex justify-end gap-3">
 				<button
 					onclick={closeModal}
-					class="rounded-full border border-border px-4 py-2 text-sm font-medium hover:bg-muted"
+					disabled={reviewSubmitting}
+					class="rounded-full border border-border px-4 py-2 text-sm font-medium hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
 				>
 					Back
 				</button>

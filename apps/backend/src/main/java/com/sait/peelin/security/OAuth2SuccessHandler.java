@@ -100,34 +100,33 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
                     }
 
                     User newUser = new User();
-            newUser.setProvider(finalProvider);
-            newUser.setProviderId(finalProviderId);
-            newUser.setUsername(generateUsername(finalEmail != null ? finalEmail : finalProviderId));
-            newUser.setUserEmail(finalEmail != null ? finalEmail.toLowerCase() : finalProviderId + "@oauth.placeholder");
-            newUser.setUserPasswordHash(""); // no password for OAuth users
-            newUser.setUserRole(UserRole.customer);
-            newUser.setUserCreatedAt(OffsetDateTime.now());
-            newUser.setActive(true);
-            newUser.setPhotoApprovalPending(false);
-            userRepository.save(newUser);
+                    newUser.setProvider(finalProvider);
+                    newUser.setProviderId(finalProviderId);
+                    newUser.setUsername(generateUsername(finalEmail != null ? finalEmail : finalProviderId));
+                    newUser.setUserEmail(finalEmail != null ? finalEmail.toLowerCase() : finalProviderId + "@oauth.placeholder");
+                    newUser.setUserPasswordHash(""); // no password for OAuth users
+                    newUser.setUserRole(UserRole.customer);
+                    newUser.setUserCreatedAt(OffsetDateTime.now());
+                    newUser.setActive(true);
+                    newUser.setPhotoApprovalPending(false);
+                    userRepository.save(newUser);
 
-            // Create customer record
-            RewardTier lowestTier = rewardTierRepository.findFirstByOrderByRewardTierMinPointsAsc()
-                    .orElseThrow(() -> new RuntimeException("No reward tiers configured"));
+                    RewardTier lowestTier = rewardTierRepository.findFirstByOrderByRewardTierMinPointsAsc()
+                            .orElseThrow(() -> new RuntimeException("No reward tiers configured"));
 
-            String[] nameParts = finalName.split(" ", 2);
-            Customer customer = new Customer();
-            customer.setUser(newUser);
-            customer.setRewardTier(lowestTier);
-            customer.setCustomerFirstName(nameParts[0]);
-            customer.setCustomerLastName(nameParts.length > 1 ? nameParts[1] : "");
-            customer.setCustomerEmail(finalEmail);
-            customer.setCustomerPhone("OAUTH-" + finalProviderId.substring(0, Math.min(finalProviderId.length(), 14)));
-            customer.setCustomerRewardBalance(0);
-            customerRepository.save(customer);
+                    String[] nameParts = finalName.split(" ", 2);
+                    Customer customer = new Customer();
+                    customer.setUser(newUser);
+                    customer.setRewardTier(lowestTier);
+                    customer.setCustomerFirstName(nameParts[0]);
+                    customer.setCustomerLastName(nameParts.length > 1 ? nameParts[1] : "");
+                    customer.setCustomerEmail(finalEmail);
+                    customer.setCustomerPhone("OAUTH-" + finalProviderId.substring(0, Math.min(finalProviderId.length(), 14)));
+                    customer.setCustomerRewardBalance(0);
+                    customerRepository.save(customer);
 
-            return newUser;
-        });
+                    return newUser;
+                });
 
         // Generate JWT
         UserDetails userDetails = org.springframework.security.core.userdetails.User

@@ -23,7 +23,7 @@
 	const allNavLinks = [
 		{ label: 'Dashboard', href: '/staff/dashboard', icon: LayoutDashboard, roles: null },
 		{ label: 'Orders', href: '/staff/orders', icon: ShoppingBag, roles: null },
-		{ label: 'Reviews', href: '/staff/reviews', icon: Star, roles: null },
+		{ label: 'Reviews', href: '/staff/reviews', icon: Star, roles: ['admin'] },
 		{ label: 'Customers', href: '/staff/customers', icon: Users, roles: null },
 		{ label: 'Analytics', href: '/staff/analytics', icon: BarChart2, roles: ['admin'] },
 		{ label: 'Products', href: '/staff/products', icon: Package, roles: ['admin'] },

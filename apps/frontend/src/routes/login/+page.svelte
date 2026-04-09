@@ -36,6 +36,18 @@
 			: '/profile';
 	}
 
+	const oauthErrorMessage = $derived.by(() => {
+		const code = page.url.searchParams.get('error');
+		if (!code) return '';
+		if (code === 'no_provider_id') {
+			return "We couldn't verify your account with that provider. Try again or use email sign-in.";
+		}
+		if (code === 'oauth_failed') {
+			return "Social sign-in didn't finish. Try again or use email sign-in.";
+		}
+		return 'Sign-in failed. Try again or use email sign-in.';
+	});
+
 	async function handleSignIn(event) {
 		event.preventDefault();
 
@@ -92,6 +104,15 @@
 				<h3 class="text-2xl font-bold">Welcome back</h3>
 				<p class="text-sm text-muted-foreground">Sign in to your account</p>
 			</div>
+
+			{#if oauthErrorMessage}
+				<div
+					class="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800"
+					role="alert"
+				>
+					{oauthErrorMessage}
+				</div>
+			{/if}
 
 			<!-- OAuth -->
 			<div class="grid gap-3 sm:grid-cols-2">

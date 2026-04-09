@@ -67,6 +67,11 @@ public class Review {
     @Column(name = "review_approval_date")
     private OffsetDateTime reviewApprovalDate;
 
+    /** When {@link #reviewStatus} is rejected (e.g. AI moderation), optional reason shown once to the customer. */
+    @Size(max = 500)
+    @Column(name = "moderation_rejection_reason", length = 500)
+    private String moderationRejectionReason;
+
     public UUID getId() {
         return id;
     }
@@ -153,6 +158,14 @@ public class Review {
 
     public void setReviewApprovalDate(OffsetDateTime reviewApprovalDate) {
         this.reviewApprovalDate = reviewApprovalDate;
+    }
+
+    public String getModerationRejectionReason() {
+        return moderationRejectionReason;
+    }
+
+    public void setModerationRejectionReason(String moderationRejectionReason) {
+        this.moderationRejectionReason = moderationRejectionReason;
     }
 
 }

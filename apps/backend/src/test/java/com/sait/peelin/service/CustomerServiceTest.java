@@ -30,6 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -42,6 +43,7 @@ class CustomerServiceTest {
     @Mock private UserRepository userRepository;
     @Mock private ProfilePhotoStorageService profilePhotoStorageService;
     @Mock private CurrentUserService currentUserService;
+    @Mock private RewardTierService rewardTierService;
 
     @InjectMocks
     private CustomerService customerService;
@@ -84,6 +86,7 @@ class CustomerServiceTest {
         request.setPostalCode("T5J0A1");
 
         when(currentUserService.requireUser()).thenReturn(user);
+        when(rewardTierService.tierForBalance(anyInt())).thenReturn(Optional.of(tier));
         when(customerRepository.findByUser_UserId(user.getUserId())).thenReturn(Optional.empty());
         when(customerRepository.findGuestCustomersByEmailNormalized("jamie@example.com"))
                 .thenReturn(List.of(guestCustomer));

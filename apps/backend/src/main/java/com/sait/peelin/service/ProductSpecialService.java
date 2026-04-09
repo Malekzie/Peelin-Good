@@ -21,7 +21,7 @@ public class ProductSpecialService {
     private final ProductRepository productRepository;
 
     @Transactional(readOnly = true)
-    @Cacheable(value = "product-specials-v2", key = "#date")
+    @Cacheable(value = "product-specials", key = "#date")
     public ProductSpecialTodayDto findFirstForDate(LocalDate date) {
         return productSpecialRepository.findFirstByFeaturedOnOrderByProductSpecialIdAsc(date)
                 .map(ps -> new ProductSpecialTodayDto(ps.getProductId(), ps.getDiscountPercent()))

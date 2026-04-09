@@ -47,8 +47,9 @@ public class OrderService {
     private final StripeService stripeService;
     private final StripePaymentFulfillmentService stripePaymentFulfillmentService;
     private final RewardAccrualService rewardAccrualService;
-    private final RewardTierRepository rewardTierRepository;
+    private final RewardTierService rewardTierService;
     private final RecommendationService recommendationService;
+    private final ReviewRepository reviewRepository;
 
     @Transactional(readOnly = true)
     @Cacheable(value = "orders", keyGenerator = "userIdKeyGenerator")
@@ -138,11 +139,13 @@ public class OrderService {
         BigDecimal discount = BigDecimal.ZERO;
         if (req.getManualDiscount() != null) {
             discount = req.getManualDiscount().max(BigDecimal.ZERO);
-        } else if (!guestCheckout
-                && customer.getRewardTier() != null
-                && customer.getRewardTier().getRewardTierDiscountRate() != null) {
-            discount = subtotal.multiply(customer.getRewardTier().getRewardTierDiscountRate())
-                    .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+        } else if (!guestCheckout) {
+            int pts = customer.getCustomerRewardBalance() != null ? customer.getCustomerRewardBalance() : 0;
+            RewardTier tierForDiscount = rewardTierService.tierForBalance(pts).orElse(customer.getRewardTier());
+            if (tierForDiscount != null && tierForDiscount.getRewardTierDiscountRate() != null) {
+                discount = subtotal.multiply(tierForDiscount.getRewardTierDiscountRate())
+                        .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+            }
         }
         if (discount.compareTo(subtotal) > 0) {
             discount = subtotal;
@@ -508,6 +511,7 @@ public class OrderService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "Only delivered or picked_up orders can be accepted");
         }
+        o.setOrderStatus(OrderStatus.completed);
         Order saved = orderRepository.save(o);
         awardRewardPoints(saved);
         return toDto(saved);
@@ -537,11 +541,7 @@ public class OrderService {
 
     private void recalculateCustomerTier(Customer customer) {
         int balance = customer.getCustomerRewardBalance() != null ? customer.getCustomerRewardBalance() : 0;
-        rewardTierRepository.findAll().stream()
-                .filter(t -> balance >= t.getRewardTierMinPoints()
-                        && (t.getRewardTierMaxPoints() == null || balance <= t.getRewardTierMaxPoints()))
-                .findFirst()
-                .ifPresent(customer::setRewardTier);
+        rewardTierService.tierForBalance(balance).ifPresent(customer::setRewardTier);
     }
 
     private void assertCanView(Order o) {
@@ -564,6 +564,6 @@ public class OrderService {
     }
 
     private OrderDto toDto(Order o) {
-        return OrderMapper.toDto(o, orderItemRepository);
+        return OrderMapper.toDto(o, orderItemRepository, reviewRepository);
     }
 }
