@@ -12,7 +12,6 @@ import com.sait.peelin.model.UserRole;
 import com.sait.peelin.repository.ChatMessageRepository;
 import com.sait.peelin.repository.ChatThreadRepository;
 import com.sait.peelin.repository.CustomerRepository;
-import com.sait.peelin.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -20,135 +19,240 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class ChatService {
 
+    private static final int MAX_MESSAGE_LENGTH = 2000;
+    private static final String STATUS_OPEN = "open";
+
     private final ChatThreadRepository chatThreadRepository;
     private final ChatMessageRepository chatMessageRepository;
     private final CustomerRepository customerRepository;
-    private final UserRepository userRepository;
     private final CurrentUserService currentUserService;
 
     @Transactional(readOnly = true)
     public List<ChatThreadDto> openThreads() {
-        return chatThreadRepository.findByStatusOrderByUpdatedAtDesc("open").stream().map(this::threadDto).toList();
+        return chatThreadRepository.findByStatusOrderByUpdatedAtDesc(STATUS_OPEN)
+                .stream()
+                .map(this::threadDto)
+                .toList();
     }
 
     @Transactional
     public ChatThreadDto getOrCreateOpenThreadForCustomer() {
-        User u = currentUserService.requireUser();
-        if (u.getUserRole() != UserRole.customer) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
-        }
+        User user = currentUserService.requireUser();
+        assertCustomer(user);
+
         return chatThreadRepository
-                .findFirstByCustomerUser_UserIdAndStatusOrderByUpdatedAtDesc(u.getUserId(), "open")
+                .findFirstByCustomerUser_UserIdAndStatusOrderByUpdatedAtDesc(user.getUserId(), STATUS_OPEN)
                 .map(this::threadDto)
-                .orElseGet(() -> threadDto(createThread(u)));
+                .orElseGet(() -> threadDto(createThreadEntity(user)));
     }
 
     @Transactional
     public ChatThreadDto createThread() {
-        User u = currentUserService.requireUser();
-        if (u.getUserRole() != UserRole.customer) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
-        }
-        return threadDto(createThread(u));
-    }
-
-    private ChatThread createThread(User customer) {
-        ChatThread t = new ChatThread();
-        t.setCustomerUser(customer);
-        t.setStatus("open");
-        t.setCreatedAt(OffsetDateTime.now());
-        t.setUpdatedAt(OffsetDateTime.now());
-        return chatThreadRepository.save(t);
+        User user = currentUserService.requireUser();
+        assertCustomer(user);
+        return threadDto(createThreadEntity(user));
     }
 
     @Transactional(readOnly = true)
     public List<ChatMessageDto> messages(Integer threadId) {
-        ChatThread t = chatThreadRepository.findById(threadId).orElseThrow(() -> new ResourceNotFoundException("Thread not found"));
-        assertCanAccessThread(t);
-        return chatMessageRepository.findByThread_IdOrderBySentAtAsc(threadId).stream().map(this::msgDto).toList();
+        ChatThread thread = requireThread(threadId);
+        User user = currentUserService.requireUser();
+        assertUserCanAccessThread(thread, user);
+
+        return chatMessageRepository.findByThread_IdOrderBySentAtAsc(threadId)
+                .stream()
+                .map(this::msgDto)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<ChatMessageDto> messages(Integer threadId, User user) {
+        ChatThread thread = requireThread(threadId);
+        assertUserCanAccessThread(thread, user);
+
+        return chatMessageRepository.findByThread_IdOrderBySentAtAsc(threadId)
+                .stream()
+                .map(this::msgDto)
+                .toList();
     }
 
     @Transactional
     public ChatMessageDto postMessage(Integer threadId, PostChatMessageRequest req) {
-        ChatThread t = chatThreadRepository.findById(threadId).orElseThrow(() -> new ResourceNotFoundException("Thread not found"));
-        assertCanAccessThread(t);
         User sender = currentUserService.requireUser();
-        ChatMessage m = new ChatMessage();
-        m.setThread(t);
-        m.setSender(sender);
-        m.setMessageText(req.getText());
-        m.setSentAt(OffsetDateTime.now());
-        m.setIsRead(false);
-        t.setUpdatedAt(OffsetDateTime.now());
-        chatThreadRepository.save(t);
-        return msgDto(chatMessageRepository.save(m));
+        return postMessage(threadId, req.getText(), sender);
+    }
+
+    @Transactional
+    public ChatMessageDto postMessage(Integer threadId, String rawText, User sender) {
+        ChatThread thread = requireThread(threadId);
+        assertUserCanAccessThread(thread, sender);
+        assertThreadOpen(thread);
+
+        String text = normalizeAndValidateMessageText(rawText);
+
+        if ((sender.getUserRole() == UserRole.employee || sender.getUserRole() == UserRole.admin)
+                && thread.getEmployeeUser() == null) {
+            thread.setEmployeeUser(sender);
+        }
+
+        thread.setUpdatedAt(OffsetDateTime.now());
+        chatThreadRepository.save(thread);
+
+        ChatMessage message = new ChatMessage();
+        message.setThread(thread);
+        message.setSender(sender);
+        message.setMessageText(text);
+        message.setSentAt(OffsetDateTime.now());
+        message.setIsRead(false);
+
+        return msgDto(chatMessageRepository.save(message));
     }
 
     @Transactional
     public ChatThreadDto assignEmployee(Integer threadId) {
         User staff = currentUserService.requireUser();
-        if (staff.getUserRole() != UserRole.employee && staff.getUserRole() != UserRole.admin) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        assertStaff(staff);
+
+        ChatThread thread = requireThread(threadId);
+        if (thread.getEmployeeUser() == null) {
+            thread.setEmployeeUser(staff);
+            thread.setUpdatedAt(OffsetDateTime.now());
         }
-        ChatThread t = chatThreadRepository.findById(threadId).orElseThrow(() -> new ResourceNotFoundException("Thread not found"));
-        if (t.getEmployeeUser() == null) {
-            t.setEmployeeUser(staff);
-            t.setUpdatedAt(OffsetDateTime.now());
-        }
-        return threadDto(chatThreadRepository.save(t));
+
+        return threadDto(chatThreadRepository.save(thread));
     }
 
     @Transactional
-    public void markRead(Integer threadId) {
-        ChatThread t = chatThreadRepository.findById(threadId).orElseThrow(() -> new ResourceNotFoundException("Thread not found"));
+    public boolean markRead(Integer threadId) {
         User viewer = currentUserService.requireUser();
-        List<ChatMessage> msgs = chatMessageRepository.findByThread_IdOrderBySentAtAsc(threadId);
-        for (ChatMessage m : msgs) {
-            if (!m.getSender().getUserId().equals(viewer.getUserId())) {
-                m.setIsRead(true);
-                chatMessageRepository.save(m);
+        return markRead(threadId, viewer);
+    }
+
+    @Transactional
+    public boolean markRead(Integer threadId, User viewer) {
+        ChatThread thread = requireThread(threadId);
+        assertUserCanAccessThread(thread, viewer);
+
+        List<ChatMessage> messages = chatMessageRepository.findByThread_IdOrderBySentAtAsc(threadId);
+        List<ChatMessage> dirty = new ArrayList<>();
+
+        for (ChatMessage message : messages) {
+            if (!message.getSender().getUserId().equals(viewer.getUserId())
+                    && !Boolean.TRUE.equals(message.getIsRead())) {
+                message.setIsRead(true);
+                dirty.add(message);
             }
+        }
+
+        if (dirty.isEmpty()) {
+            return false;
+        }
+
+        chatMessageRepository.saveAll(dirty);
+        thread.setUpdatedAt(OffsetDateTime.now());
+        chatThreadRepository.save(thread);
+        return true;
+    }
+
+    @Transactional(readOnly = true)
+    public void assertUserCanAccessThread(Integer threadId, User user) {
+        ChatThread thread = requireThread(threadId);
+        assertUserCanAccessThread(thread, user);
+    }
+
+    private ChatThread requireThread(Integer threadId) {
+        return chatThreadRepository.findById(threadId)
+                .orElseThrow(() -> new ResourceNotFoundException("Thread not found"));
+    }
+
+    private ChatThread createThreadEntity(User customer) {
+        ChatThread thread = new ChatThread();
+        thread.setCustomerUser(customer);
+        thread.setStatus(STATUS_OPEN);
+        thread.setCreatedAt(OffsetDateTime.now());
+        thread.setUpdatedAt(OffsetDateTime.now());
+        return chatThreadRepository.save(thread);
+    }
+
+    private void assertCustomer(User user) {
+        if (user.getUserRole() != UserRole.customer) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
     }
 
-    private void assertCanAccessThread(ChatThread t) {
-        User u = currentUserService.requireUser();
-        if (u.getUserRole() == UserRole.admin) return;
-        if (u.getUserRole() == UserRole.customer) {
-            if (!t.getCustomerUser().getUserId().equals(u.getUserId())) {
+    private void assertStaff(User user) {
+        if (user.getUserRole() != UserRole.employee && user.getUserRole() != UserRole.admin) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+    }
+
+    private void assertThreadOpen(ChatThread thread) {
+        if (!STATUS_OPEN.equalsIgnoreCase(thread.getStatus())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Thread is not open");
+        }
+    }
+
+    private String normalizeAndValidateMessageText(String rawText) {
+        String text = rawText == null ? "" : rawText.trim();
+
+        if (text.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Message text must not be blank");
+        }
+
+        if (text.length() > MAX_MESSAGE_LENGTH) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Message text exceeds max length of " + MAX_MESSAGE_LENGTH
+            );
+        }
+
+        return text;
+    }
+
+    private void assertUserCanAccessThread(ChatThread thread, User user) {
+        if (user.getUserRole() == UserRole.admin) {
+            return;
+        }
+
+        if (user.getUserRole() == UserRole.customer) {
+            if (!thread.getCustomerUser().getUserId().equals(user.getUserId())) {
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN);
             }
             return;
         }
-        if (u.getUserRole() == UserRole.employee) {
-            if (t.getEmployeeUser() != null && !t.getEmployeeUser().getUserId().equals(u.getUserId())) {
+
+        if (user.getUserRole() == UserRole.employee) {
+            if (thread.getEmployeeUser() != null
+                    && !thread.getEmployeeUser().getUserId().equals(user.getUserId())) {
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN);
             }
             return;
         }
+
         throw new ResponseStatusException(HttpStatus.FORBIDDEN);
     }
 
-    private ChatThreadDto threadDto(ChatThread t) {
-        User customerUser = t.getCustomerUser();
+    private ChatThreadDto threadDto(ChatThread thread) {
+        User customerUser = thread.getCustomerUser();
         Customer customer = customerRepository.findByUser_UserId(customerUser.getUserId()).orElse(null);
+
         return new ChatThreadDto(
-                t.getId(),
+                thread.getId(),
                 customerUser.getUserId(),
                 resolveCustomerDisplayName(customer, customerUser),
                 customerUser.getUsername(),
                 resolveCustomerEmail(customer, customerUser),
-                t.getEmployeeUser() != null ? t.getEmployeeUser().getUserId() : null,
-                t.getStatus(),
-                t.getCreatedAt(),
-                t.getUpdatedAt()
+                thread.getEmployeeUser() != null ? thread.getEmployeeUser().getUserId() : null,
+                thread.getStatus(),
+                thread.getCreatedAt(),
+                thread.getUpdatedAt()
         );
     }
 
@@ -161,25 +265,32 @@ public class ChatService {
                 return full;
             }
         }
+
         String username = customerUser.getUsername();
         return username != null && !username.trim().isEmpty() ? username : null;
     }
 
     private String resolveCustomerEmail(Customer customer, User customerUser) {
-        if (customer != null && customer.getCustomerEmail() != null && !customer.getCustomerEmail().trim().isEmpty()) {
+        if (customer != null
+                && customer.getCustomerEmail() != null
+                && !customer.getCustomerEmail().trim().isEmpty()) {
             return customer.getCustomerEmail();
         }
         return customerUser.getUserEmail();
     }
 
-    private ChatMessageDto msgDto(ChatMessage m) {
+    private ChatMessageDto msgDto(ChatMessage message) {
+        User sender = message.getSender();
+
         return new ChatMessageDto(
-                m.getId(),
-                m.getThread().getId(),
-                m.getSender().getUserId(),
-                m.getMessageText(),
-                m.getSentAt(),
-                Boolean.TRUE.equals(m.getIsRead())
+                message.getId(),
+                message.getThread().getId(),
+                sender.getUserId(),
+                sender.getUsername(),
+                sender.getUserRole() != null ? sender.getUserRole().name() : null,
+                message.getMessageText(),
+                message.getSentAt(),
+                Boolean.TRUE.equals(message.getIsRead())
         );
     }
 }

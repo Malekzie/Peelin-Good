@@ -74,7 +74,8 @@ public class ChatRestController {
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Message sent"),
             @ApiResponse(responseCode = "400", description = "Validation error", content = @Content),
-            @ApiResponse(responseCode = "404", description = "Thread not found", content = @Content)
+            @ApiResponse(responseCode = "404", description = "Thread not found", content = @Content),
+            @ApiResponse(responseCode = "409", description = "Thread is not open", content = @Content)
     })
     @PostMapping("/threads/{threadId}/messages")
     @ResponseStatus(HttpStatus.CREATED)
