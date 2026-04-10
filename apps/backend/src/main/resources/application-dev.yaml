@@ -5,9 +5,10 @@ spring:
     password: ${SPRING_DATASOURCE_PASSWORD:Password1}
     # Small DO tiers have very few connections for non-superuser roles; keep pool tiny so Flyway + JPA can start.
     hikari:
-      maximum-pool-size: 2
-      minimum-idle: 0
-      connection-timeout: 60000
+      maximum-pool-size: 3
+      minimum-idle: 1
+      idle-timeout: 300000
+      connection-timeout: 30000
   data:
     redis:
       # Dev defaults to local Valkey; override with SPRING_DATA_REDIS_URL when needed.

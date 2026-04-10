@@ -11,8 +11,6 @@ import com.sait.peelin.model.User;
 import com.sait.peelin.model.UserRole;
 import com.sait.peelin.repository.ChatMessageRepository;
 import com.sait.peelin.repository.ChatThreadRepository;
-import com.sait.peelin.repository.CustomerRepository;
-import com.sait.peelin.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -21,7 +19,6 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.OffsetDateTime;
 import java.util.List;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -29,13 +26,23 @@ public class ChatService {
 
     private final ChatThreadRepository chatThreadRepository;
     private final ChatMessageRepository chatMessageRepository;
-    private final CustomerRepository customerRepository;
-    private final UserRepository userRepository;
+    private final CustomerLookupCacheService customerLookupCacheService;
     private final CurrentUserService currentUserService;
 
     @Transactional(readOnly = true)
     public List<ChatThreadDto> openThreads() {
-        return chatThreadRepository.findByStatusOrderByUpdatedAtDesc("open").stream().map(this::threadDto).toList();
+        User u = currentUserService.requireUser();
+        if (u.getUserRole() == UserRole.admin || u.getUserRole() == UserRole.employee) {
+            return chatThreadRepository.findByStatusOrderByUpdatedAtDesc("open").stream().map(this::threadDto).toList();
+        }
+        if (u.getUserRole() == UserRole.customer) {
+            return chatThreadRepository
+                    .findFirstByCustomerUser_UserIdAndStatusOrderByUpdatedAtDesc(u.getUserId(), "open")
+                    .map(this::threadDto)
+                    .stream()
+                    .toList();
+        }
+        throw new ResponseStatusException(HttpStatus.FORBIDDEN);
     }
 
     @Transactional
@@ -107,7 +114,7 @@ public class ChatService {
 
     @Transactional
     public void markRead(Integer threadId) {
-        ChatThread t = chatThreadRepository.findById(threadId).orElseThrow(() -> new ResourceNotFoundException("Thread not found"));
+        chatThreadRepository.findById(threadId).orElseThrow(() -> new ResourceNotFoundException("Thread not found"));
         User viewer = currentUserService.requireUser();
         List<ChatMessage> msgs = chatMessageRepository.findByThread_IdOrderBySentAtAsc(threadId);
         for (ChatMessage m : msgs) {
@@ -138,7 +145,7 @@ public class ChatService {
 
     private ChatThreadDto threadDto(ChatThread t) {
         User customerUser = t.getCustomerUser();
-        Customer customer = customerRepository.findByUser_UserId(customerUser.getUserId()).orElse(null);
+        Customer customer = customerLookupCacheService.findByUserId(customerUser.getUserId());
         return new ChatThreadDto(
                 t.getId(),
                 customerUser.getUserId(),

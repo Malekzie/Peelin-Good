@@ -1,6 +1,7 @@
 package com.sait.peelin.repository;
 
 import com.sait.peelin.model.ChatThread;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
@@ -9,7 +10,12 @@ import java.util.UUID;
 
 public interface ChatThreadRepository extends JpaRepository<ChatThread, Integer> {
 
+    @EntityGraph(attributePaths = {"customerUser", "employeeUser"})
     List<ChatThread> findByStatusOrderByUpdatedAtDesc(String status);
 
+    @EntityGraph(attributePaths = {"customerUser", "employeeUser"})
+    Optional<ChatThread> findById(Integer id);
+
+    @EntityGraph(attributePaths = {"customerUser", "employeeUser"})
     Optional<ChatThread> findFirstByCustomerUser_UserIdAndStatusOrderByUpdatedAtDesc(UUID customerUserId, String status);
 }

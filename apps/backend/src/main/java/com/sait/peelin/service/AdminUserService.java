@@ -20,6 +20,7 @@ public class AdminUserService {
 
     private final UserRepository userRepository;
     private final CurrentUserService currentUserService;
+    private final UserLookupCacheService userLookupCacheService;
 
     public List<UserSummaryDto> list() {
         User actor = currentUserService.requireUser();
@@ -69,7 +70,10 @@ public class AdminUserService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Forbidden");
         }
         u.setActive(active);
-        return toDto(userRepository.save(u));
+        User saved = userRepository.save(u);
+        userLookupCacheService.evictByIdentifier(saved.getUsername());
+        userLookupCacheService.evictByIdentifier(saved.getUserEmail());
+        return toDto(saved);
     }
 
     private UserSummaryDto toDto(User u) {

@@ -42,6 +42,7 @@ public class OrderService {
     private final TaxRateRepository taxRateRepository;
     private final CustomerService customerService;
     private final CurrentUserService currentUserService;
+    private final CustomerLookupCacheService customerLookupCacheService;
     private final StripeService stripeService;
     private final RewardAccrualService rewardAccrualService;
     private final RewardTierRepository rewardTierRepository;
@@ -87,8 +88,10 @@ public class OrderService {
             customer = customerService.resolveOrCreateGuestCustomer(req.getGuest());
             guestCheckout = true;
         } else if (user.getUserRole() == UserRole.customer) {
-            customer = customerRepository.findByUser_UserId(user.getUserId())
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Customer profile not found"));
+            customer = customerLookupCacheService.findByUserId(user.getUserId());
+            if (customer == null) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Customer profile not found");
+            }
         } else if (user.getUserRole() == UserRole.admin || user.getUserRole() == UserRole.employee) {
             if (req.getCustomerId() == null) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "customerId is required for staff checkout");
@@ -383,6 +386,9 @@ public class OrderService {
         customer.setCustomerRewardBalance(newBalance);
         recalculateCustomerTier(customer);
         customerRepository.save(customer);
+        if (customer.getUser() != null && customer.getUser().getUserId() != null) {
+            customerLookupCacheService.evictByUserId(customer.getUser().getUserId());
+        }
         log.info("Awarded {} points to customer {} for order {}", points, customer.getId(), order.getId());
     }
 

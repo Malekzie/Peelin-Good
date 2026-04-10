@@ -3,7 +3,8 @@ package com.sait.peelin.service;
 import com.sait.peelin.dto.v1.CustomerPreferenceDto;
 import com.sait.peelin.dto.v1.CustomerPreferenceSaveRequest;
 import com.sait.peelin.model.*;
-import com.sait.peelin.repository.*;
+import com.sait.peelin.repository.CustomerPreferenceRepository;
+import com.sait.peelin.repository.TagRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -17,14 +18,14 @@ import java.util.List;
 public class CustomerPreferenceService {
 
     private final CustomerPreferenceRepository preferenceRepository;
-    private final CustomerRepository customerRepository;
     private final TagRepository tagRepository;
     private final CurrentUserService currentUserService;
+    private final CustomerLookupCacheService customerLookupCacheService;
 
     @Transactional(readOnly = true)
     public List<CustomerPreferenceDto> getMyPreferences() {
         User u = currentUserService.requireUser();
-        Customer c = customerRepository.findByUser_UserId(u.getUserId()).orElse(null);
+        Customer c = customerLookupCacheService.findByUserId(u.getUserId());
         if (c == null) return List.of();
         return preferenceRepository.findByCustomer_Id(c.getId())
                 .stream()
@@ -40,8 +41,10 @@ public class CustomerPreferenceService {
     @Transactional
     public List<CustomerPreferenceDto> saveMyPreferences(CustomerPreferenceSaveRequest request) {
         User u = currentUserService.requireUser();
-        Customer c = customerRepository.findByUser_UserId(u.getUserId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No customer profile"));
+        Customer c = customerLookupCacheService.findByUserId(u.getUserId());
+        if (c == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No customer profile");
+        }
 
         preferenceRepository.deleteByCustomer_Id(c.getId());
 

@@ -41,6 +41,8 @@ public class CustomerService {
     private final UserRepository userRepository;
     private final ProfilePhotoStorageService profilePhotoStorageService;
     private final CurrentUserService currentUserService;
+    private final CustomerLookupCacheService customerLookupCacheService;
+    private final UserLookupCacheService userLookupCacheService;
 
     @Transactional(readOnly = true)
     public List<CustomerDto> listAdmin(String search) {
@@ -66,8 +68,10 @@ public class CustomerService {
     @Cacheable(value = "customers", keyGenerator = "userIdKeyGenerator")
     public CustomerDto me() {
         User u = currentUserService.requireUser();
-        Customer c = customerRepository.findByUser_UserId(u.getUserId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No customer profile"));
+        Customer c = customerLookupCacheService.findByUserId(u.getUserId());
+        if (c == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No customer profile");
+        }
         return toDto(c);
     }
 
@@ -89,7 +93,9 @@ public class CustomerService {
             if (reusableGuest.getCustomerTierAssignedDate() == null) {
                 reusableGuest.setCustomerTierAssignedDate(LocalDate.now());
             }
-            return customerRepository.save(reusableGuest);
+            Customer saved = customerRepository.save(reusableGuest);
+            customerLookupCacheService.evictByUserId(user.getUserId());
+            return saved;
         }
 
         Customer customer = new Customer();
@@ -103,7 +109,9 @@ public class CustomerService {
         customer.setCustomerTierAssignedDate(LocalDate.now());
         customer.setGuestExpiryDate(null);
 
-        return customerRepository.save(customer);
+        Customer saved = customerRepository.save(customer);
+        customerLookupCacheService.evictByUserId(user.getUserId());
+        return saved;
     }
 
     @Transactional
@@ -149,6 +157,7 @@ public class CustomerService {
             );
             reusableGuest.setAddress(linkedAddress);
             customerRepository.save(reusableGuest);
+            customerLookupCacheService.evictByUserId(u.getUserId());
             return toDto(reusableGuest);
         }
 
@@ -177,6 +186,7 @@ public class CustomerService {
         customer.setCustomerRewardBalance(0);
         customer.setGuestExpiryDate(null);
         customerRepository.save(customer);
+        customerLookupCacheService.evictByUserId(u.getUserId());
         return toDto(customer);
     }
 
@@ -223,7 +233,9 @@ public class CustomerService {
         Customer c = customerRepository.findByUser_UserId(u.getUserId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No customer profile"));
         applyPatch(c, req);
-        return toDto(customerRepository.save(c));
+        Customer saved = customerRepository.save(c);
+        customerLookupCacheService.evictByUserId(u.getUserId());
+        return toDto(saved);
     }
 
     @Transactional
@@ -231,7 +243,11 @@ public class CustomerService {
     public CustomerDto patch(UUID id, CustomerPatchRequest req) {
         Customer c = customerRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Customer not found"));
         applyPatch(c, req);
-        return toDto(customerRepository.save(c));
+        Customer saved = customerRepository.save(c);
+        if (saved.getUser() != null && saved.getUser().getUserId() != null) {
+            customerLookupCacheService.evictByUserId(saved.getUser().getUserId());
+        }
+        return toDto(saved);
     }
 
     @Transactional
@@ -247,6 +263,7 @@ public class CustomerService {
             if (updated != 1) {
                 throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to approve photo");
             }
+            customerLookupCacheService.evictByUserId(freshUser.getUserId());
         }
     }
 
@@ -260,6 +277,7 @@ public class CustomerService {
             if (updated != 1) {
                 throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to reject photo");
             }
+            customerLookupCacheService.evictByUserId(freshUser.getUserId());
             profilePhotoStorageService.deleteCustomerProfilePhoto(existingPhotoPath);
         }
     }
@@ -275,6 +293,7 @@ public class CustomerService {
         if (updated != 1) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to persist profile photo");
         }
+        customerLookupCacheService.evictByUserId(u.getUserId());
         u.setProfilePhotoPath(uploadedUrl);
         u.setPhotoApprovalPending(true);
         if (previousPhotoPath != null && !previousPhotoPath.isBlank() && !previousPhotoPath.equals(uploadedUrl)) {
@@ -323,11 +342,19 @@ public class CustomerService {
         }
         if (req.getPhotoApprovalPending() != null && c.getUser() != null) {
             c.getUser().setPhotoApprovalPending(req.getPhotoApprovalPending());
-            userRepository.save(c.getUser());
+            User savedUser = userRepository.save(c.getUser());
+            userLookupCacheService.evictByIdentifier(savedUser.getUsername());
+            userLookupCacheService.evictByIdentifier(savedUser.getUserEmail());
         }
         if (req.getUsername() != null && c.getUser() != null) {
+            String oldUsername = c.getUser().getUsername();
             c.getUser().setUsername(req.getUsername());
-            userRepository.save(c.getUser());
+            User savedUser = userRepository.save(c.getUser());
+            if (oldUsername != null) {
+                userLookupCacheService.evictByIdentifier(oldUsername);
+            }
+            userLookupCacheService.evictByIdentifier(savedUser.getUsername());
+            userLookupCacheService.evictByIdentifier(savedUser.getUserEmail());
         }
     }
 
@@ -553,10 +580,7 @@ public class CustomerService {
 
     private CustomerDto toDto(Customer c) {
         Address addr = c.getAddress();
-        User dtoUser = null;
-        if (c.getUser() != null && c.getUser().getUserId() != null) {
-            dtoUser = userRepository.findById(c.getUser().getUserId()).orElse(c.getUser());
-        }
+        User dtoUser = c.getUser();
         return new CustomerDto(
                 c.getId(),
                 dtoUser != null ? dtoUser.getUserId() : null,
@@ -582,6 +606,7 @@ public class CustomerService {
         Customer c = customerRepository.findByUser_UserId(u.getUserId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No customer profile"));
 
+        customerLookupCacheService.evictByUserId(u.getUserId());
         customerRepository.delete(c);
         userRepository.delete(u);
     }

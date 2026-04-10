@@ -57,4 +57,4 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 
 # Agents
-.claude
+.claude+
