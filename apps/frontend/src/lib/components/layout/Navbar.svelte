@@ -111,7 +111,10 @@
 	<!-- Mobile menu -->
 	{#if menuOpen}
 		<div class="flex flex-col gap-4 border-t border-border bg-background px-6 py-4 md:hidden">
-			<p class="text-xs font-semibold tracking-widest text-muted-foreground uppercase">Menu</p>
+			<a
+				href={resolve('/menu')}
+				class="text-xs font-semibold tracking-widest text-foreground uppercase">Menu</a
+			>
 
 			<hr class="border-border" />
 			<a href={resolve('/about')} class="text-sm text-foreground hover:text-primary">About</a>
@@ -123,6 +126,7 @@
 					class="text-foreground hover:text-primary"><User size={20} /></button
 				>
 				<button
+					onclick={handleCartClick}
 					aria-label="Cart ({cartCount} items)"
 					class="relative text-foreground hover:text-primary"
 				>
