@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -33,7 +34,15 @@ public class StripeWebhookController {
     @Value("${stripe.webhook-secret:}")
     private String webhookSecret;
 
+    @Value("${stripe.publishable-key:}")
+    private String publishableKey;
+
     private final StripePaymentFulfillmentService stripePaymentFulfillmentService;
+
+    @GetMapping("/config")
+    public ResponseEntity<Map<String, String>> config() {
+        return ResponseEntity.ok(Map.of("publishableKey", publishableKey != null ? publishableKey : ""));
+    }
 
     @PostMapping("/webhook")
     @Transactional

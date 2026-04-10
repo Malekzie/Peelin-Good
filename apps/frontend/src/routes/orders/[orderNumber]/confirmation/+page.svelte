@@ -1,8 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
-
-	const API = 'http://localhost:8080';
+	import { api } from '$lib/api';
 
 	interface OrderItem {
 		productName: string;
@@ -12,13 +11,11 @@
 
 	interface Order {
 		orderNumber: string;
-		orderStatus: string;
+		status: string;
 		orderMethod: string;
-		orderPlacedDatetime: string;
-		subtotal: number;
-		discount: number;
-		total: number;
-		paymentStatus: string;
+		placedAt: string;
+		orderTotal: number;
+		orderDiscount: number;
 		items: OrderItem[];
 	}
 
@@ -30,9 +27,7 @@
 
 	async function fetchOrder() {
 		try {
-			const res = await fetch(`${API}/api/v1/orders/${orderNumber}`);
-			if (!res.ok) throw new Error(`Order not found (${res.status})`);
-			order = await res.json();
+			order = await api.get<Order>(`/orders/by-number/${orderNumber}`);
 		} catch (err: unknown) {
 			error = err instanceof Error ? err.message : 'Could not load order.';
 		} finally {
@@ -57,7 +52,8 @@
 		<div class="mb-10 flex flex-col items-center gap-2 text-center">
 			<h1 class="font-serif text-4xl font-bold text-foreground">Order Confirmed!</h1>
 			<p class="text-muted-foreground">
-				Your order <span class="font-semibold text-foreground">#{order.orderNumber}</span> has been placed.
+				Your order <span class="font-semibold text-foreground">#{order.orderNumber}</span> has been
+				placed.
 			</p>
 		</div>
 
@@ -67,9 +63,7 @@
 					<p class="mb-1 text-xs font-semibold tracking-widest text-muted-foreground uppercase">
 						Status
 					</p>
-					<p class="font-medium text-foreground capitalize">
-						{order.orderStatus.replace('_', ' ')}
-					</p>
+					<p class="font-medium text-foreground capitalize">{order.status.replace(/_/g, ' ')}</p>
 				</div>
 				<div>
 					<p class="mb-1 text-xs font-semibold tracking-widest text-muted-foreground uppercase">
@@ -77,18 +71,12 @@
 					</p>
 					<p class="font-medium text-foreground capitalize">{order.orderMethod}</p>
 				</div>
-				<div>
-					<p class="mb-1 text-xs font-semibold tracking-widest text-muted-foreground uppercase">
-						Payment
-					</p>
-					<p class="font-medium text-foreground capitalize">{order.paymentStatus}</p>
-				</div>
-				<div>
+				<div class="col-span-2">
 					<p class="mb-1 text-xs font-semibold tracking-widest text-muted-foreground uppercase">
 						Placed
 					</p>
 					<p class="font-medium text-foreground">
-						{new Date(order.orderPlacedDatetime).toLocaleString()}
+						{new Date(order.placedAt).toLocaleString()}
 					</p>
 				</div>
 			</div>
@@ -99,22 +87,22 @@
 				{#each order.items as item (item.productName)}
 					<div class="flex justify-between text-sm">
 						<span class="text-muted-foreground">{item.productName} × {item.quantity}</span>
-						<span class="text-foreground">${item.lineTotal.toFixed(2)}</span>
+						<span class="text-foreground">${Number(item.lineTotal).toFixed(2)}</span>
 					</div>
 				{/each}
 			</div>
 
 			<hr class="border-border" />
 
-			{#if order.discount > 0}
+			{#if Number(order.orderDiscount) > 0}
 				<div class="flex justify-between text-sm text-accent">
 					<span>Discount</span>
-					<span>−${order.discount.toFixed(2)}</span>
+					<span>−${Number(order.orderDiscount).toFixed(2)}</span>
 				</div>
 			{/if}
 			<div class="flex justify-between font-bold text-foreground">
 				<span>Total</span>
-				<span>${order.total.toFixed(2)}</span>
+				<span>${Number(order.orderTotal).toFixed(2)}</span>
 			</div>
 		</div>
 

@@ -1,8 +1,9 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
-
-	const API = 'http://localhost:8080';
+	import { api } from '$lib/api';
+	import { getProducts } from '$lib/services/products';
+	import { ShoppingBag } from '@lucide/svelte';
 
 	const STATUS_STEPS = [
 		'placed',
@@ -16,6 +17,7 @@
 	];
 
 	interface OrderItem {
+		productId: number;
 		productName: string;
 		quantity: number;
 		lineTotal: number;
@@ -23,17 +25,16 @@
 
 	interface Order {
 		orderNumber: string;
-		orderStatus: string;
+		status: string;
 		orderMethod: string;
-		orderPlacedDatetime: string;
-		subtotal: number;
-		discount: number;
-		total: number;
-		paymentStatus: string;
+		placedAt: string;
+		orderTotal: number;
+		orderDiscount: number;
 		items: OrderItem[];
 	}
 
 	let order = $state<Order | null>(null);
+	let productImages = $state<Record<number, string | null>>({});
 	let loading = $state(true);
 	let error = $state('');
 
@@ -43,9 +44,16 @@
 		loading = true;
 		error = '';
 		try {
-			const res = await fetch(`${API}/api/v1/orders/${orderNumber}`);
-			if (!res.ok) throw new Error(`Order not found (${res.status})`);
-			order = await res.json();
+			const [orderData, productsData] = await Promise.all([
+				api.get<Order>(`/orders/by-number/${orderNumber}`),
+				getProducts()
+			]);
+			order = orderData;
+			const map: Record<number, string | null> = {};
+			for (const p of productsData ?? []) {
+				map[p.id] = p.imageUrl ?? null;
+			}
+			productImages = map;
 		} catch (err: unknown) {
 			error = err instanceof Error ? err.message : 'Could not load order.';
 		} finally {
@@ -91,17 +99,15 @@
 					</p>
 					<p class="font-semibold text-foreground">#{order.orderNumber}</p>
 				</div>
-				<span
-					class="rounded-full bg-muted px-3 py-1 text-xs font-semibold text-foreground capitalize"
-				>
-					{statusLabel(order.orderStatus)}
+				<span class="rounded-full bg-muted px-3 py-1 text-xs font-semibold text-foreground capitalize">
+					{statusLabel(order.status)}
 				</span>
 			</div>
 
-			{#if !isCancelled(order.orderStatus)}
+			{#if !isCancelled(order.status)}
 				<div class="flex items-center gap-0 overflow-x-auto pb-2">
 					{#each STATUS_STEPS as step, i (i)}
-						{@const active = i <= statusIndex(order.orderStatus)}
+						{@const active = i <= statusIndex(order.status)}
 						<div class="flex flex-shrink-0 flex-col items-center">
 							<div
 								class="flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold transition-colors {active
@@ -116,8 +122,7 @@
 						</div>
 						{#if i < STATUS_STEPS.length - 1}
 							<div
-								class="mb-5 h-0.5 min-w-4 flex-1 transition-colors {i <
-								statusIndex(order.orderStatus)
+								class="mb-5 h-0.5 min-w-4 flex-1 transition-colors {i < statusIndex(order.status)
 									? 'bg-primary'
 									: 'bg-border'}"
 							></div>
@@ -125,9 +130,7 @@
 					{/each}
 				</div>
 			{:else}
-				<p class="text-sm font-semibold text-destructive capitalize">
-					{statusLabel(order.orderStatus)}
-				</p>
+				<p class="text-sm font-semibold text-destructive capitalize">{statusLabel(order.status)}</p>
 			{/if}
 		</div>
 
@@ -140,40 +143,51 @@
 					</p>
 					<p class="text-foreground capitalize">{order.orderMethod}</p>
 				</div>
-				<div>
-					<p class="mb-1 text-xs font-semibold tracking-widest text-muted-foreground uppercase">
-						Payment
-					</p>
-					<p class="text-foreground capitalize">{order.paymentStatus}</p>
-				</div>
 				<div class="col-span-2">
 					<p class="mb-1 text-xs font-semibold tracking-widest text-muted-foreground uppercase">
 						Placed
 					</p>
-					<p class="text-foreground">{new Date(order.orderPlacedDatetime).toLocaleString()}</p>
+					<p class="text-foreground">{new Date(order.placedAt).toLocaleString()}</p>
 				</div>
 			</div>
 
 			<hr class="border-border" />
 
 			{#each order.items as item (item.productName)}
-				<div class="flex justify-between text-sm">
-					<span class="text-muted-foreground">{item.productName} × {item.quantity}</span>
-					<span class="text-foreground">${item.lineTotal.toFixed(2)}</span>
-				</div>
+				<a
+					href={resolve(`/menu?product=${item.productId}`)}
+					class="flex items-center gap-3 rounded-lg border border-border bg-background px-3 py-2 transition-colors hover:bg-muted/60"
+				>
+					{#if productImages[item.productId]}
+						<img
+							src={productImages[item.productId]}
+							alt={item.productName}
+							class="h-12 w-12 shrink-0 rounded-md object-cover"
+						/>
+					{:else}
+						<div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-[#F5EFE6]">
+							<ShoppingBag class="h-5 w-5 text-[#C4714A]/40" />
+						</div>
+					{/if}
+					<div class="min-w-0 flex-1">
+						<p class="truncate text-sm font-medium text-foreground">{item.productName}</p>
+						<p class="text-xs text-muted-foreground">Qty {item.quantity}</p>
+					</div>
+					<span class="shrink-0 text-sm font-semibold text-foreground">${Number(item.lineTotal).toFixed(2)}</span>
+				</a>
 			{/each}
 
 			<hr class="border-border" />
 
-			{#if order.discount > 0}
+			{#if Number(order.orderDiscount) > 0}
 				<div class="flex justify-between text-sm text-accent">
 					<span>Discount</span>
-					<span>−${order.discount.toFixed(2)}</span>
+					<span>−${Number(order.orderDiscount).toFixed(2)}</span>
 				</div>
 			{/if}
 			<div class="flex justify-between font-bold text-foreground">
 				<span>Total</span>
-				<span>${order.total.toFixed(2)}</span>
+				<span>${Number(order.orderTotal).toFixed(2)}</span>
 			</div>
 		</div>
 

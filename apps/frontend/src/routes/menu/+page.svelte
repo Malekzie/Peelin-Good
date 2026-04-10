@@ -60,6 +60,12 @@
 			if (searchParam) {
 				searchQuery = searchParam;
 			}
+
+			const productParam = $page.url.searchParams.get('product');
+			if (productParam) {
+				const target = products.find((p) => String(p.id) === productParam);
+				if (target) openSheet(target);
+			}
 		} catch (e) {
 			console.error('Failed to load menu:', e);
 		} finally {

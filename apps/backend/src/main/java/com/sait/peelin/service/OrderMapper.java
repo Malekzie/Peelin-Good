@@ -60,6 +60,7 @@ public final class OrderMapper {
                 i.getId(),
                 i.getProduct().getId(),
                 i.getProduct().getProductName(),
+                i.getProduct().getProductImageUrl(),
                 i.getBatch() != null ? i.getBatch().getId() : null,
                 i.getOrderItemQuantity(),
                 i.getOrderItemUnitPriceAtTime(),

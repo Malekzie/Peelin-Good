@@ -74,6 +74,21 @@ public class OrderService {
         return toDto(o);
     }
 
+    @Transactional(readOnly = true)
+    public OrderDto getByOrderNumber(String orderNumber) {
+        Order o = orderRepository.findByOrderNumber(orderNumber)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
+        // Logged-in customers may only view their own order; guests identify by knowing the order number
+        User u = currentUserService.currentUserOrNull();
+        if (u != null && u.getUserRole() == UserRole.customer) {
+            if (o.getCustomer() == null || o.getCustomer().getUser() == null
+                    || !o.getCustomer().getUser().getUserId().equals(u.getUserId())) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Not your order");
+            }
+        }
+        return toDto(o);
+    }
+
     @Transactional
     @CacheEvict(value = {"orders", "analytics", "dashboard"}, allEntries = true)
     public CheckoutSessionResponse checkout(CheckoutRequest req) {
@@ -114,6 +129,7 @@ public class OrderService {
 
         if (req.getOrderMethod() == OrderMethod.delivery
                 && req.getAddressId() == null
+                && req.getDeliveryAddress() == null
                 && customer.getAddress() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Delivery requires address information");
         }
@@ -121,6 +137,14 @@ public class OrderService {
         if (req.getAddressId() != null) {
             address = addressRepository.findById(req.getAddressId())
                     .orElseThrow(() -> new ResourceNotFoundException("Address not found"));
+        } else if (req.getDeliveryAddress() != null) {
+            Address a = new Address();
+            a.setAddressLine1(req.getDeliveryAddress().getLine1());
+            a.setAddressLine2(req.getDeliveryAddress().getLine2());
+            a.setAddressCity(req.getDeliveryAddress().getCity());
+            a.setAddressProvince(req.getDeliveryAddress().getProvince());
+            a.setAddressPostalCode(req.getDeliveryAddress().getPostalCode());
+            address = addressRepository.save(a);
         } else if (req.getOrderMethod() == OrderMethod.delivery) {
             address = customer.getAddress();
         }
