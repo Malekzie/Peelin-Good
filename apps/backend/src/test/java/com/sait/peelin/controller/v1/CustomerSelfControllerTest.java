@@ -21,6 +21,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 import static org.mockito.Mockito.when;
@@ -61,14 +62,18 @@ class CustomerSelfControllerTest {
     @Test
     void me_ShouldReturnOk() throws Exception {
         CustomerDto dto = new CustomerDto(
-                UUID.randomUUID(), UUID.randomUUID(), "testuser", 1, "First", 
-                "M", "Last", "phone", "business", "email", 
-                0, null, null, null, false);
+                UUID.randomUUID(), UUID.randomUUID(), "testuser", 1, "Gold", new BigDecimal("10"),
+                "First", "M", "Last", "phone", "business", "email",
+                0, null, null, null, false, false);
         when(customerService.me()).thenReturn(dto);
 
         mockMvc.perform(get("/api/v1/customers/me"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.firstName").value("First"))
-                .andExpect(jsonPath("$.lastName").value("Last"));
+                .andExpect(jsonPath("$.lastName").value("Last"))
+                .andExpect(jsonPath("$.rewardTierName").value("Gold"))
+                .andExpect(jsonPath("$.rewardTierDiscountPercent").value(10))
+                .andExpect(jsonPath("$.rewardBalance").value(0))
+                .andExpect(jsonPath("$.employeeDiscountEligible").value(false));
     }
 }

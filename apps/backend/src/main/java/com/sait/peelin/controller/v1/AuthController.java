@@ -1,10 +1,12 @@
 package com.sait.peelin.controller.v1;
 
 import com.sait.peelin.dto.v1.auth.*;
+import com.sait.peelin.model.User;
 import com.sait.peelin.service.AuthService;
 import com.sait.peelin.service.JwtService;
 import com.sait.peelin.service.PasswordResetService;
 import com.sait.peelin.service.TokenDenylistService;
+import com.sait.peelin.service.WelcomeEmailService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -23,7 +25,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.Optional;
 
 
 @RestController
@@ -36,6 +41,7 @@ public class AuthController {
     private final TokenDenylistService tokenDenylistService;
     private final PasswordResetService passwordResetService;
     private final JwtService jwtService;
+    private final WelcomeEmailService welcomeEmailService;
 
     @Value("${app.frontend.url:http://localhost:5173}")
     private String frontendUrl;
@@ -152,8 +158,19 @@ public class AuthController {
         request.getSession().removeAttribute("oauth2_pending_token");
         setTokenCookie(response, token);
         AuthResponse auth = authService.getUserInfoFromToken(token);
-        response.sendRedirect(frontendUrl + "/auth/callback?username=" + auth.getUsername()
-                + "&role=" + auth.getRole()
-                + "&userId=" + auth.getUserId());
+        String q = "username=" + URLEncoder.encode(auth.getUsername(), StandardCharsets.UTF_8)
+                + "&role=" + URLEncoder.encode(auth.getRole(), StandardCharsets.UTF_8)
+                + "&userId=" + URLEncoder.encode(String.valueOf(auth.getUserId()), StandardCharsets.UTF_8);
+        response.sendRedirect(frontendUrl + "/auth/callback?" + q);
+    }
+
+    // TEMP
+    @GetMapping("/test-welcome-email")
+    public ResponseEntity<String> testWelcomeEmail() {
+        User fakeUser = new User();
+        fakeUser.setUsername("testuser");
+        fakeUser.setUserEmail("auckmason@gmail.com");
+        welcomeEmailService.sendWelcomeEmail(fakeUser);
+        return ResponseEntity.ok("Email sent");
     }
 }

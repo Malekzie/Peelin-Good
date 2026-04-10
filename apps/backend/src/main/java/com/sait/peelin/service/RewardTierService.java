@@ -11,7 +11,9 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -27,6 +29,21 @@ public class RewardTierService {
     @Cacheable(value = "reward-tiers", key = "#id")
     public RewardTierDto get(Integer id) {
         return toDto(rewardTierRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Reward tier not found")));
+    }
+
+    /**
+     * Resolves the loyalty tier for a point balance from configured min/max ranges.
+     * If multiple tiers match (bad data), the one with the highest {@code minPoints} wins.
+     */
+    @Transactional(readOnly = true)
+    public Optional<RewardTier> tierForBalance(int balance) {
+        return rewardTierRepository.findAll().stream()
+                .filter(t -> {
+                    int min = t.getRewardTierMinPoints() != null ? t.getRewardTierMinPoints() : 0;
+                    Integer max = t.getRewardTierMaxPoints();
+                    return balance >= min && (max == null || balance <= max);
+                })
+                .max(Comparator.comparing(t -> t.getRewardTierMinPoints() != null ? t.getRewardTierMinPoints() : 0));
     }
 
     @Transactional

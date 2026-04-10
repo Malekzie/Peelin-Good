@@ -1,8 +1,11 @@
 <script>
+	import { forgotPassword } from '$lib/services/auth';
+
 	let email = '';
 	let error = '';
 	let touched = false;
 	let success = false;
+	let loading = false;
 
 	function validateEmail(value) {
 		if (!value.trim()) return 'Email is required.';
@@ -21,17 +24,19 @@
 
 	async function handleSubmit(event) {
 		event.preventDefault();
-
 		touched = true;
 		error = validateEmail(email);
-
 		if (error) return;
 
-		// MOCK backend call
-		await new Promise((resolve) => setTimeout(resolve, 500));
-
-		// Always show success message, even if email doesn't exist
-		success = true;
+		loading = true;
+		try {
+			await forgotPassword(email);
+		} catch {
+			//
+		} finally {
+			loading = false;
+			success = true;
+		}
 	}
 </script>
 
@@ -54,18 +59,18 @@
 					If an account exists with that email, a recovery link has been sent.
 				</p>
 			{:else}
-				<form class="space-y-6" on:submit={handleSubmit}>
+				<form class="space-y-6" onsubmit={handleSubmit}>
 					<div class="space-y-1.5">
-						<label for="recoveryEmailInput" class="text-on-surface-variant px-1 text-sm font-bold"
-							>Email Address</label
-						>
+						<label for="recoveryEmailInput" class="text-on-surface-variant px-1 text-sm font-bold">
+							Email Address
+						</label>
 						<input
 							id="recoveryEmailInput"
 							type="email"
 							placeholder="email@example.com"
 							bind:value={email}
-							on:blur={handleBlur}
-							on:input={handleInput}
+							onblur={handleBlur}
+							oninput={handleInput}
 							class="bg-surface-container-highest mt-1 w-full rounded-xl px-6 py-3 font-medium ring-1 ring-border transition
 								{error && touched ? 'ring-2 ring-red-400' : ''}"
 						/>
@@ -76,9 +81,10 @@
 
 					<button
 						type="submit"
-						class="text-on-primary mt-4 w-full rounded-full bg-primary py-3.5 text-base font-bold transition hover:cursor-pointer hover:opacity-90"
+						disabled={loading}
+						class="text-on-primary mt-4 w-full rounded-full bg-primary py-3.5 text-base font-bold transition hover:cursor-pointer hover:opacity-90 disabled:opacity-60"
 					>
-						Send Recovery Email
+						{loading ? 'Sending...' : 'Send Recovery Email'}
 					</button>
 				</form>
 			{/if}

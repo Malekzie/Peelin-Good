@@ -63,7 +63,8 @@ export async function registerUser(payload) {
 		const res = await fetch(`${API_BASE}/register`, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify(payload)
+			body: JSON.stringify(payload),
+			credentials: 'include'
 		});
 
 		if (!res.ok) {
@@ -82,7 +83,14 @@ export async function registerUser(payload) {
 
 		const data = await res.json();
 		setAuth(data);
-		return { ok: true };
+		return {
+			ok: true,
+			employeeDiscountLinkEstablished: data.employeeDiscountLinkEstablished === true,
+			employeeDiscountLinkMessage:
+				typeof data.employeeDiscountLinkMessage === 'string'
+					? data.employeeDiscountLinkMessage
+					: null
+		};
 	} catch {
 		Sentry.withScope((scope) => {
 			scope.setTag('action', 'REGISTER_FAILED');
@@ -90,5 +98,17 @@ export async function registerUser(payload) {
 			Sentry.captureMessage('Registration failed: network error', 'error');
 		});
 		return { ok: false, message: 'Could not reach the server. Try again later.' };
+	}
+}
+
+export async function forgotPassword(email) {
+	try {
+		await fetch(`${API_BASE}/forgot-password`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ email })
+		});
+	} catch {
+		Sentry.captureMessage("Failed to reach endpoint for 'forgot-password'", 'warning');
 	}
 }

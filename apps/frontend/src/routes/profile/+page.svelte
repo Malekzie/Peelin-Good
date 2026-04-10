@@ -21,8 +21,13 @@
 	onMount(async () => {
 		try {
 			profile = await getProfile();
-		} catch {
-			error = true;
+		} catch (e) {
+			if (e.status === 404) {
+				goto(resolve('/profile'));
+				return;
+			} else {
+				error = true;
+			}
 		} finally {
 			loading = false;
 		}
@@ -129,13 +134,15 @@
 							</h1>
 							<p class="text-sm text-muted-foreground">{profile.email}</p>
 							<div class="flex flex-wrap gap-2">
-								{#if profile.loyaltyTier}
-									<Badge>{profile.loyaltyTier}</Badge>
+								{#if profile.loyaltyTier ?? profile.rewardTierName}
+									<Badge>{profile.loyaltyTier ?? profile.rewardTierName}</Badge>
 								{:else}
 									<Badge variant="secondary">No loyalty tier</Badge>
 								{/if}
-								{#if profile.rewardBalance != null && profile.rewardBalance > 0}
-									<Badge variant="outline">{profile.rewardBalance.toLocaleString()} pts</Badge>
+								{#if profile.rewardBalance != null}
+									<Badge variant="outline"
+										>{Number(profile.rewardBalance).toLocaleString()} pts</Badge
+									>
 								{/if}
 							</div>
 						</div>

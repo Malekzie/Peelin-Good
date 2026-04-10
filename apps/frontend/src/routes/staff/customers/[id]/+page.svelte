@@ -139,6 +139,12 @@
 						</div>
 						<div>
 							<dt class="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
+								Reward tier
+							</dt>
+							<dd class="mt-1 text-foreground">{customer.rewardTierName ?? '—'}</dd>
+						</div>
+						<div>
+							<dt class="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
 								Reward Balance
 							</dt>
 							<dd class="mt-1 text-foreground">{customer.rewardBalance ?? 0} pts</dd>

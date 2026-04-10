@@ -1,11 +1,13 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import { goto } from '$app/navigation';
+	import { get } from 'svelte/store';
 	import { cart } from '$lib/stores/cart';
 	import { onMount } from 'svelte';
 	import { get } from 'svelte/store';
 	import { isLoggedIn } from '$lib/stores/authStore';
 	import { api } from '$lib/api';
+	import { formatCanadianPostalInput } from '$lib/canadianPostalCode';
 
 	// ── Types ────────────────────────────────────────────────────────────────────
 
@@ -49,6 +51,8 @@
 		phone: string | null;
 		addressId: number | null;
 		address: SavedAddress | null;
+		employeeDiscountEligible?: boolean;
+		rewardTierDiscountPercent?: number | null;
 	}
 
 	// ── Session ──────────────────────────────────────────────────────────────────
@@ -875,11 +879,13 @@
 							<input
 								id="dPostal"
 								type="text"
-								bind:value={deliveryPostal}
+								value={deliveryPostal}
 								maxlength={7}
-								onblur={() => handleBlur('deliveryPostal')}
-								oninput={() => handleInput('deliveryPostal')}
+								inputmode="text"
+								autocomplete="postal-code"
 								placeholder="T2X 1Y4"
+								onblur={() => handleBlur('deliveryPostal')}
+								oninput={(e) => { deliveryPostal = formatCanadianPostalInput((e.target as HTMLInputElement).value); handleInput('deliveryPostal'); }}
 								class="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:ring-2 focus:ring-ring focus:outline-none {errors.deliveryPostal && touched.deliveryPostal ? 'ring-2 ring-red-400' : ''}"
 							/>
 							{#if errors.deliveryPostal && touched.deliveryPostal}
@@ -955,6 +961,14 @@
 			<!-- ── Summary ─────────────────────────────────────────────────── -->
 			<section class="rounded-xl border border-border bg-card p-6 shadow-sm">
 				<h2 class="mb-4 text-lg font-semibold text-foreground">Summary</h2>
+				{#if customer?.employeeDiscountEligible}
+					<div
+						class="mb-4 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 text-sm font-medium text-primary"
+					>
+						20% employee discount applies to your order after today&apos;s specials and your loyalty tier
+						discount. Final amounts are calculated when you place the order.
+					</div>
+				{/if}
 				{#each $cart.items as item (item.productId)}
 					<div class="flex justify-between py-1 text-sm text-muted-foreground">
 						<span>{item.productName} × {item.quantity}</span>
@@ -962,15 +976,13 @@
 					</div>
 				{/each}
 				<hr class="my-3 border-border" />
-				{#if $cart.discount > 0}
-					<div class="flex justify-between text-sm text-accent">
-						<span>Discount</span>
-						<span>−${$cart.discount.toFixed(2)}</span>
-					</div>
-				{/if}
-				<div class="mt-1 flex justify-between font-bold text-foreground">
-					<span>Total</span>
-					<span>${$cart.total.toFixed(2)}</span>
+				<p class="text-xs text-muted-foreground">
+					Line totals use menu prices. Today&apos;s specials, loyalty tier, tax, and any employee discount are
+					applied on the server when you confirm.
+				</p>
+				<div class="mt-3 flex justify-between text-sm text-muted-foreground">
+					<span>Cart subtotal (list prices)</span>
+					<span>${$cart.subtotal.toFixed(2)}</span>
 				</div>
 				<p class="mt-2 text-xs text-muted-foreground">* Tax will be calculated at payment</p>
 			</section>

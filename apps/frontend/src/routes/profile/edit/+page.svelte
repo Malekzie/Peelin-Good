@@ -12,15 +12,16 @@
 	import {
 		getProfile,
 		updateProfile,
-		deleteAccount,
 		uploadProfilePhoto,
-		deactivateAccount
+		deactivateAccount,
+		deleteAccount
 	} from '$lib/services/profile';
 	import { logoutUser } from '$lib/services/auth';
 	import { changePassword } from '$lib/services/account';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/stores';
+	import { formatCanadianPostalInput } from '$lib/canadianPostalCode';
 
 	const reason = $derived($page.url.searchParams.get('reason'));
 
@@ -35,13 +36,13 @@
 	let saving = $state(false);
 	let error = $state(null);
 	let success = $state(false);
-	let showDeleteConfirm = $state(false);
-	let deleting = $state(false);
 	let photoFile = $state(null);
 	let photoPreview = $state(null);
 	let uploadingPhoto = $state(false);
 	let showDeactivateConfirm = $state(false);
 	let deactivating = $state(false);
+	let showDeleteConfirm = $state(false);
+	let deleting = $state(false);
 
 	let fields = $state({
 		username: '',
@@ -92,7 +93,7 @@
 				addressLine2: profile.address?.line2 ?? '',
 				city: profile.address?.city ?? '',
 				province: profile.address?.province ?? 'AB',
-				postalCode: profile.address?.postalCode ?? '',
+				postalCode: formatCanadianPostalInput(profile.address?.postalCode ?? ''),
 				username: profile.username ?? '',
 				email: profile.email ?? ''
 			};
@@ -102,20 +103,6 @@
 			loading = false;
 		}
 	});
-
-	async function handleDelete() {
-		deleting = true;
-		try {
-			await deleteAccount();
-			await logoutUser();
-			goto(resolve('/'));
-		} catch {
-			showDeleteConfirm = false;
-			errors.general = 'Failed to delete account. Please try again.';
-		} finally {
-			deleting = false;
-		}
-	}
 
 	async function handleDeactivate() {
 		deactivating = true;
@@ -128,6 +115,20 @@
 			errors.general = 'Failed to deactivate account. Please try again.';
 		} finally {
 			deactivating = false;
+		}
+	}
+
+	async function handleDelete() {
+		deleting = true;
+		try {
+			await deleteAccount();
+			await logoutUser();
+			goto(resolve('/login'));
+		} catch {
+			showDeleteConfirm = false;
+			errors.general = 'Failed to delete account. Please try again.';
+		} finally {
+			deleting = false;
 		}
 	}
 
@@ -541,8 +542,14 @@
 								<input
 									id="postalCodeInput"
 									type="text"
+									inputmode="text"
+									autocomplete="postal-code"
+									placeholder="A1A 1A1"
 									maxlength="7"
-									bind:value={fields.postalCode}
+									value={fields.postalCode}
+									oninput={(e) => {
+										fields.postalCode = formatCanadianPostalInput(e.currentTarget.value);
+									}}
 									class="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm transition focus:ring-2 focus:ring-primary focus:outline-none
 										{errors.postalCode ? 'border-destructive ring-1 ring-destructive' : ''}"
 								/>
@@ -643,27 +650,6 @@
 				</div>
 			</form>
 
-			<!-- Delete Account -->
-			{#if showDeleteConfirm}
-				<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-					<div
-						class="mx-4 w-full max-w-md rounded-xl border border-destructive bg-card p-6 shadow-xl"
-					>
-						<h2 class="text-lg font-bold text-destructive">Delete Account</h2>
-						<p class="mt-2 text-sm text-muted-foreground">
-							This will permanently delete your account and all associated data. This action cannot
-							be undone.
-						</p>
-						<div class="mt-6 flex justify-end gap-3">
-							<Button variant="outline" onclick={() => (showDeleteConfirm = false)}>Cancel</Button>
-							<Button variant="destructive" disabled={deleting} onclick={handleDelete}>
-								{deleting ? 'Deleting...' : 'Yes, delete my account'}
-							</Button>
-						</div>
-					</div>
-				</div>
-			{/if}
-
 			<div class="mt-5 rounded-xl border border-amber-300/50 p-6">
 				<h2 class="text-sm font-semibold text-amber-600">Deactivate Account</h2>
 				<p class="mt-1 text-sm text-muted-foreground">
@@ -677,19 +663,18 @@
 				</Button>
 			</div>
 
-			<div class="mt-5 rounded-xl border border-destructive/30 p-6">
-				<h2 class="text-sm font-semibold text-destructive">Delete Account</h2>
+			<!-- <div class="mt-5 rounded-xl border border-red-300/50 p-6">
+				<h2 class="text-sm font-semibold text-red-600">Delete Account</h2>
 				<p class="mt-1 text-sm text-muted-foreground">
-					Once you delete your account, there is no going back.
+					Permanently delete your account and all associated data. This action cannot be undone.
 				</p>
 				<Button
-					variant="destructive"
-					class="mt-4 hover:cursor-pointer"
+					class="mt-4 bg-red-500 text-white hover:cursor-pointer hover:bg-red-600"
 					onclick={() => (showDeleteConfirm = true)}
 				>
 					Delete Account
 				</Button>
-			</div>
+			</div> -->
 		{/if}
 
 		{#if showDeactivateConfirm}
@@ -709,6 +694,28 @@
 							onclick={handleDeactivate}
 						>
 							{deactivating ? 'Deactivating...' : 'Yes, deactivate my account'}
+						</Button>
+					</div>
+				</div>
+			</div>
+		{/if}
+
+		{#if showDeleteConfirm}
+			<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+				<div class="mx-4 w-full max-w-md rounded-xl border border-red-500 bg-card p-6 shadow-xl">
+					<h2 class="text-lg font-bold text-red-600">Delete Account</h2>
+					<p class="mt-2 text-sm text-muted-foreground">
+						This will permanently delete your account and all associated data. This cannot be
+						undone.
+					</p>
+					<div class="mt-6 flex justify-end gap-3">
+						<Button variant="outline" onclick={() => (showDeleteConfirm = false)}>Cancel</Button>
+						<Button
+							class="bg-red-500 text-white hover:bg-red-600"
+							disabled={deleting}
+							onclick={handleDelete}
+						>
+							{deleting ? 'Deleting...' : 'Yes, delete my account'}
 						</Button>
 					</div>
 				</div>

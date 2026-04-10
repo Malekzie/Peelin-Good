@@ -36,6 +36,15 @@ public class AuthResponse {
     @Setter
     private String guestProfileCompletionMessage;
 
+    /** True only when registration just created an employee↔customer link and both accounts are active. */
+    @Getter
+    @Setter
+    private Boolean employeeDiscountLinkEstablished;
+
+    @Getter
+    @Setter
+    private String employeeDiscountLinkMessage;
+
     public AuthResponse() {}
 
     public AuthResponse(String token, String username, String role, UUID userId) {

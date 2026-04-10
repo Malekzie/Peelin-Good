@@ -7,13 +7,16 @@
 	let reviews = $state([]);
 	let loading = $state(true);
 	let error = $state(null);
+	/** @type {'forbidden' | 'generic' | null} */
+	let errorKind = $state(null);
 	let actioning = $state({});
 
 	onMount(async () => {
 		try {
 			reviews = await getPendingReviews();
-		} catch {
+		} catch (e) {
 			error = true;
+			errorKind = e?.status === 403 ? 'forbidden' : 'generic';
 		} finally {
 			loading = false;
 		}
@@ -66,7 +69,11 @@
 				{/each}
 			</div>
 		{:else if error}
-			<p class="text-sm text-destructive">Failed to load reviews.</p>
+			<p class="text-sm text-destructive">
+				{errorKind === 'forbidden'
+					? 'You do not have access. Only administrators can open the pending review queue.'
+					: 'Failed to load reviews.'}
+			</p>
 		{:else if reviews.length === 0}
 			<div class="rounded-xl border border-border bg-card p-10 text-center">
 				<p class="text-sm text-muted-foreground">No pending reviews</p>

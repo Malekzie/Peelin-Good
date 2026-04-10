@@ -19,9 +19,12 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -46,8 +49,13 @@ public class OrderService {
     private final StripeService stripeService;
     private final StripePaymentFulfillmentService stripePaymentFulfillmentService;
     private final RewardAccrualService rewardAccrualService;
-    private final RewardTierRepository rewardTierRepository;
+    private final RewardTierService rewardTierService;
     private final RecommendationService recommendationService;
+    private final ReviewRepository reviewRepository;
+    private final ProductSpecialService productSpecialService;
+    private final EmployeeCustomerLinkService employeeCustomerLinkService;
+
+    private static final ZoneId DEFAULT_PRICING_ZONE = ZoneId.of("America/Edmonton");
 
     @Transactional(readOnly = true)
     @Cacheable(value = "orders", keyGenerator = "userIdKeyGenerator")
@@ -149,31 +157,74 @@ public class OrderService {
             address = customer.getAddress();
         }
 
-        BigDecimal subtotal = BigDecimal.ZERO;
+        LocalDate pricingDate = req.getPricingLocalDate() != null
+                ? req.getPricingLocalDate()
+                : LocalDate.now(DEFAULT_PRICING_ZONE);
+
+        BigDecimal listSubtotal = BigDecimal.ZERO;
         for (CheckoutRequest.CheckoutLineRequest line : req.getItems()) {
             Product p = productRepository.findById(line.getProductId())
                     .orElseThrow(() -> new ResourceNotFoundException("Product not found: " + line.getProductId()));
             BigDecimal unit = p.getProductBasePrice();
-            BigDecimal lineTotal = unit.multiply(BigDecimal.valueOf(line.getQuantity()));
-            subtotal = subtotal.add(lineTotal);
+            listSubtotal = listSubtotal.add(unit.multiply(BigDecimal.valueOf(line.getQuantity())));
         }
 
-        BigDecimal discount = BigDecimal.ZERO;
+        BigDecimal specialDiscount = BigDecimal.ZERO;
+        BigDecimal tierDiscount = BigDecimal.ZERO;
+        BigDecimal employeeDiscount = BigDecimal.ZERO;
+        BigDecimal total;
+
         if (req.getManualDiscount() != null) {
-            discount = req.getManualDiscount().max(BigDecimal.ZERO);
-        } else if (!guestCheckout
-                && customer.getRewardTier() != null
-                && customer.getRewardTier().getRewardTierDiscountRate() != null) {
-            discount = subtotal.multiply(customer.getRewardTier().getRewardTierDiscountRate())
-                    .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+            BigDecimal manual = req.getManualDiscount().max(BigDecimal.ZERO).min(listSubtotal);
+            total = listSubtotal.subtract(manual).max(BigDecimal.ZERO);
+            tierDiscount = manual;
+        } else {
+            var todaySpecial = productSpecialService.findFirstForDate(pricingDate);
+            Integer specialPid = todaySpecial != null ? todaySpecial.productId() : null;
+            BigDecimal specialPct = todaySpecial != null && todaySpecial.discountPercent() != null
+                    ? todaySpecial.discountPercent()
+                    : null;
+
+            BigDecimal afterSpecial = BigDecimal.ZERO;
+            for (CheckoutRequest.CheckoutLineRequest line : req.getItems()) {
+                Product p = productRepository.findById(line.getProductId()).orElseThrow();
+                BigDecimal unitList = p.getProductBasePrice();
+                BigDecimal lineList = unitList.multiply(BigDecimal.valueOf(line.getQuantity()));
+                BigDecimal lineAfter = lineList;
+                if (specialPid != null && specialPid.equals(p.getId())
+                        && specialPct != null && specialPct.compareTo(BigDecimal.ZERO) > 0) {
+                    BigDecimal factor = BigDecimal.ONE.subtract(
+                            specialPct.divide(BigDecimal.valueOf(100), 10, RoundingMode.HALF_UP));
+                    lineAfter = lineList.multiply(factor).setScale(2, RoundingMode.HALF_UP);
+                    specialDiscount = specialDiscount.add(lineList.subtract(lineAfter));
+                }
+                afterSpecial = afterSpecial.add(lineAfter);
+            }
+
+            if (!guestCheckout) {
+                int pts = customer.getCustomerRewardBalance() != null ? customer.getCustomerRewardBalance() : 0;
+                RewardTier tierForDiscount = rewardTierService.tierForBalance(pts).orElse(customer.getRewardTier());
+                if (tierForDiscount != null && tierForDiscount.getRewardTierDiscountRate() != null) {
+                    tierDiscount = afterSpecial.multiply(tierForDiscount.getRewardTierDiscountRate())
+                            .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+                }
+            }
+            if (tierDiscount.compareTo(afterSpecial) > 0) {
+                tierDiscount = afterSpecial;
+            }
+            BigDecimal afterTier = afterSpecial.subtract(tierDiscount).max(BigDecimal.ZERO);
+
+            if (!guestCheckout && employeeCustomerLinkService.isEligibleForEmployeeDiscount(customer.getId())) {
+                employeeDiscount = afterTier.multiply(EmployeeCustomerLinkService.EMPLOYEE_DISCOUNT_PERCENT)
+                        .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+            }
+            if (employeeDiscount.compareTo(afterTier) > 0) {
+                employeeDiscount = afterTier;
+            }
+            total = afterTier.subtract(employeeDiscount).max(BigDecimal.ZERO);
         }
-        if (discount.compareTo(subtotal) > 0) {
-            discount = subtotal;
-        }
-        BigDecimal total = subtotal.subtract(discount);
-        if (total.compareTo(BigDecimal.ZERO) < 0) {
-            total = BigDecimal.ZERO;
-        }
+
+        BigDecimal discount = tierDiscount.add(employeeDiscount);
         BigDecimal taxRatePercent = resolveTaxRatePercent(
                 resolveTaxProvinceForCheckout(customer, address, bakery));
         BigDecimal taxAmount = total.multiply(taxRatePercent)
@@ -191,6 +242,9 @@ public class OrderService {
         order.setOrderPlacedDatetime(OffsetDateTime.now());
         order.setOrderTotal(total);
         order.setOrderDiscount(discount);
+        order.setOrderSpecialDiscountAmount(specialDiscount);
+        order.setOrderTierDiscountAmount(tierDiscount);
+        order.setOrderEmployeeDiscountAmount(employeeDiscount);
         order.setOrderTaxRate(taxRatePercent);
         order.setOrderTaxAmount(taxAmount);
         if (guestCheckout && req.getGuest() != null) {
@@ -531,6 +585,7 @@ public class OrderService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "Only delivered or picked_up orders can be accepted");
         }
+        o.setOrderStatus(OrderStatus.completed);
         Order saved = orderRepository.save(o);
         awardRewardPoints(saved);
         return toDto(saved);
@@ -560,11 +615,7 @@ public class OrderService {
 
     private void recalculateCustomerTier(Customer customer) {
         int balance = customer.getCustomerRewardBalance() != null ? customer.getCustomerRewardBalance() : 0;
-        rewardTierRepository.findAll().stream()
-                .filter(t -> balance >= t.getRewardTierMinPoints()
-                        && (t.getRewardTierMaxPoints() == null || balance <= t.getRewardTierMaxPoints()))
-                .findFirst()
-                .ifPresent(customer::setRewardTier);
+        rewardTierService.tierForBalance(balance).ifPresent(customer::setRewardTier);
     }
 
     private void assertCanView(Order o) {
@@ -587,6 +638,6 @@ public class OrderService {
     }
 
     private OrderDto toDto(Order o) {
-        return OrderMapper.toDto(o, orderItemRepository);
+        return OrderMapper.toDto(o, orderItemRepository, reviewRepository);
     }
 }

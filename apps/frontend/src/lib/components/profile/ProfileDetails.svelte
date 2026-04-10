@@ -7,10 +7,21 @@
 		CardDescription
 	} from '$lib/components/ui/card';
 	import { Separator } from '$lib/components/ui/separator';
-	import { Button } from '$lib/components/ui/button';
 	import { Star } from '@lucide/svelte';
 
 	let { profile } = $props();
+
+	const tierLabel = $derived(profile.loyaltyTier ?? profile.rewardTierName ?? null);
+
+	/** API: rewardTierDiscountPercent — whole percent e.g. 5 for 5% */
+	const tierDiscountLabel = $derived.by(() => {
+		const raw = profile.rewardTierDiscountPercent;
+		if (raw == null || raw === '') return null;
+		const n = Number(raw);
+		if (!Number.isFinite(n) || n <= 0) return null;
+		const rounded = Number.isInteger(n) ? String(n) : n.toFixed(1).replace(/\.0$/, '');
+		return `${rounded}% off eligible orders`;
+	});
 
 	const fields = $derived([
 		{
@@ -50,30 +61,55 @@
 		</CardContent>
 	</Card>
 
-	<!-- Loyalty Points -->
-	{#if profile.rewardBalance != null}
+	{#if profile.employeeDiscountEligible}
+		<Card class="border-primary/30 bg-primary/5">
+			<CardContent class="pt-6">
+				<p class="text-sm font-semibold text-primary">
+					20% employee discount — You are eligible at checkout. Applied after today&apos;s specials and your
+					loyalty tier discount.
+				</p>
+			</CardContent>
+		</Card>
+	{/if}
+
+	<!-- Loyalty -->
+	{#if profile.rewardBalance != null || tierLabel}
 		<Card class="bg-[#FAF7F2]">
 			<CardContent class="pt-6">
-				<div class="flex items-center justify-between">
-					<div class="flex items-center gap-3">
-						<div class="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+				<div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+					<div class="flex items-start gap-3">
+						<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10">
 							<Star class="h-5 w-5 text-primary" />
 						</div>
 						<div>
-							<p class="text-sm font-semibold text-foreground">Loyalty Points</p>
+							{#if tierLabel}
+								<p class="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+									Reward tier
+								</p>
+								<p class="text-lg font-bold text-foreground">{tierLabel}</p>
+							{/if}
+							{#if tierDiscountLabel}
+								<p class="mt-1 text-sm font-medium text-primary">{tierDiscountLabel}</p>
+							{:else if tierLabel}
+								<p class="mt-1 text-sm text-muted-foreground">No order discount configured for this tier.</p>
+							{/if}
+							<p
+								class="text-sm font-semibold text-foreground {tierLabel ? 'mt-3' : ''}"
+							>
+								Loyalty points
+							</p>
 							<p class="text-2xl font-bold text-primary">
-								{profile.rewardBalance.toLocaleString()}
+								{Number(profile.rewardBalance ?? 0).toLocaleString()}
 								<span class="text-sm font-normal text-muted-foreground">pts</span>
 							</p>
 						</div>
 					</div>
-					<Button variant="outline" size="sm">View rewards</Button>
 				</div>
 
 				<Separator class="my-4" />
 
 				<p class="text-xs text-muted-foreground">
-					Earn points with every order and redeem them for discounts on future purchases.
+					Earn points with every order; your tier discount applies automatically at checkout when available.
 				</p>
 			</CardContent>
 		</Card>

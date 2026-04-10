@@ -6,23 +6,41 @@ import com.sait.peelin.model.Customer;
 import com.sait.peelin.model.Order;
 import com.sait.peelin.model.OrderItem;
 import com.sait.peelin.repository.OrderItemRepository;
+import com.sait.peelin.repository.ReviewRepository;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.UUID;
 
 public final class OrderMapper {
 
     private OrderMapper() {}
 
     public static OrderDto toDto(Order o, OrderItemRepository orderItemRepository) {
+        return toDto(o, orderItemRepository, null);
+    }
+
+    /**
+     * When {@code reviewRepository} is non-null and the order has a customer, line items include
+     * {@link OrderItemDto#productReviewSubmitted} and the order includes {@link OrderDto#locationReviewSubmitted}.
+     */
+    public static OrderDto toDto(Order o, OrderItemRepository orderItemRepository, ReviewRepository reviewRepository) {
         List<OrderItem> items = orderItemRepository.findByOrder_Id(o.getId());
-        List<OrderItemDto> itemDtos = items.stream().map(OrderMapper::itemDto).toList();
+        UUID customerId = o.getCustomer() != null ? o.getCustomer().getId() : null;
+        boolean locationReviewSubmitted = false;
+        if (customerId != null && reviewRepository != null) {
+            locationReviewSubmitted = reviewRepository.existsByOrder_IdAndCustomer_Id(o.getId(), customerId);
+        }
+        List<OrderItemDto> itemDtos = items.stream()
+                .map(i -> itemDto(i, customerId, reviewRepository))
+                .toList();
         BigDecimal subtotal = o.getOrderTotal();
         BigDecimal taxAmount = o.getOrderTaxAmount();
         BigDecimal grandTotal = subtotal;
         if (subtotal != null && taxAmount != null) {
             grandTotal = subtotal.add(taxAmount);
         }
+
         return new OrderDto(
                 o.getId(),
                 o.getOrderNumber(),
@@ -42,29 +60,43 @@ public final class OrderMapper {
                 o.getOrderScheduledDatetime(),
                 o.getOrderDeliveredDatetime(),
                 o.getOrderComment(),
+                locationReviewSubmitted,
+                o.getOrderSpecialDiscountAmount(),
+                o.getOrderTierDiscountAmount(),
+                o.getOrderEmployeeDiscountAmount(),
                 itemDtos
         );
     }
 
     private static String buildCustomerName(Customer c) {
-        if (c == null) return null;
+        if (c == null) {
+            return null;
+        }
         String first = c.getCustomerFirstName() != null ? c.getCustomerFirstName() : "";
         String last = c.getCustomerLastName() != null ? c.getCustomerLastName() : "";
         String name = (first + " " + last).trim();
-        if (!name.isEmpty()) return name;
+        if (!name.isEmpty()) {
+            return name;
+        }
         return c.getCustomerEmail();
     }
 
-    private static OrderItemDto itemDto(OrderItem i) {
+    private static OrderItemDto itemDto(OrderItem i, UUID customerId, ReviewRepository reviewRepository) {
+        boolean productReviewSubmitted = false;
+        Integer productId = i.getProduct() != null ? i.getProduct().getId() : null;
+        if (customerId != null && productId != null && reviewRepository != null) {
+            productReviewSubmitted = reviewRepository.existsByCustomer_IdAndProduct_IdAndOrderIsNull(customerId, productId);
+        }
         return new OrderItemDto(
                 i.getId(),
-                i.getProduct().getId(),
-                i.getProduct().getProductName(),
-                i.getProduct().getProductImageUrl(),
+                productId,
+                i.getProduct() != null ? i.getProduct().getProductName() : null,
+                i.getProduct() != null ? i.getProduct().getProductImageUrl() : null,
                 i.getBatch() != null ? i.getBatch().getId() : null,
                 i.getOrderItemQuantity(),
                 i.getOrderItemUnitPriceAtTime(),
-                i.getOrderItemLineTotal()
+                i.getOrderItemLineTotal(),
+                productReviewSubmitted
         );
     }
 }

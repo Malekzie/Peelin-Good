@@ -6,9 +6,11 @@ import com.sait.peelin.dto.v1.auth.ChangePasswordRequest;
 import com.sait.peelin.dto.v1.auth.LoginRequest;
 import com.sait.peelin.dto.v1.auth.RegisterRequest;
 import com.sait.peelin.model.Customer;
+import com.sait.peelin.model.Employee;
 import com.sait.peelin.model.User;
 import com.sait.peelin.model.UserRole;
 import com.sait.peelin.repository.CustomerRepository;
+import com.sait.peelin.repository.EmployeeRepository;
 import com.sait.peelin.repository.UserRepository;
 import com.sait.peelin.support.GuestContactFiller;
 import lombok.RequiredArgsConstructor;
@@ -39,9 +41,13 @@ public class AuthService {
     private final JwtService jwtService;
     private final UserRepository userRepository;
     private final CustomerRepository customerRepository;
+    private final EmployeeRepository employeeRepository;
     private final CustomerService customerService;
     private final PasswordEncoder passwordEncoder;
     private final CurrentUserService currentUserService;
+    private final WelcomeEmailService welcomeEmailService;
+    private final LinkedProfileSyncService linkedProfileSyncService;
+    private final EmployeeCustomerLinkService employeeCustomerLinkService;
 
     public AuthResponse login(LoginRequest request) {
         String email = Optional.ofNullable(request.getEmail())
@@ -120,6 +126,17 @@ public class AuthService {
             res.setGuestProfileCompletionMessage(
                     "You have previously checked out as a guest. Please complete the remaining information to finish your registration.");
         }
+
+        welcomeEmailService.sendWelcomeEmail(user);
+
+        customerRepository.findByUser_UserId(user.getUserId()).ifPresent(cust -> {
+            boolean linked = employeeCustomerLinkService.tryAutoLinkForCustomer(cust);
+            if (linked && employeeCustomerLinkService.isEligibleForEmployeeDiscount(cust.getId())) {
+                res.setEmployeeDiscountLinkEstablished(true);
+                res.setEmployeeDiscountLinkMessage(
+                        "Your customer account is linked to your employee profile. You are eligible for the 20% employee discount on orders.");
+            }
+        });
         return res;
     }
 
@@ -172,6 +189,13 @@ public class AuthService {
                     c.setCustomerEmail(ne);
                     customerRepository.save(c);
                 }
+                Optional<Employee> emp = employeeRepository.findByUser_UserId(u.getUserId());
+                if (emp.isPresent()) {
+                    Employee e = emp.get();
+                    e.setEmployeeWorkEmail(ne);
+                    employeeRepository.save(e);
+                }
+                linkedProfileSyncService.afterLinkedUserSignInEmailChanged(u.getUserId(), ne);
             }
         }
 
@@ -206,9 +230,11 @@ public class AuthService {
         User user = userRepository.findByUsername(username).orElseThrow();
 
         AuthResponse res = new AuthResponse();
+        res.setToken(token);
         res.setUsername(user.getUsername());
         res.setRole(user.getUserRole().name());
         res.setUserId(user.getUserId());
+        res.setEmail(user.getUserEmail());
         return res;
     }
 

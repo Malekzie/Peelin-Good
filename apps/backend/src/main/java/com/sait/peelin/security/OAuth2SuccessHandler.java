@@ -7,10 +7,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.ResponseCookie;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
@@ -18,24 +17,17 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
-import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.Optional;
-import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
 public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
+
     private final UserRepository userRepository;
     private final CustomerRepository customerRepository;
     private final RewardTierRepository rewardTierRepository;
     private final JwtService jwtService;
-
-    @Value("${app.jwt.expiration:864000000}")
-    private long jwtExpiration;
-
-    @Value("${app.cookie.secure:false}")
-    private boolean cookieSecure;
 
     @Value("${app.frontend.url:http://localhost:5173}")
     private String frontendUrl;
@@ -52,53 +44,100 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
         String email = null;
         String name = null;
 
+        String providerId = null;
+        String provider = null;
+
+        if (authentication instanceof OAuth2AuthenticationToken oauthToken) {
+            provider = oauthToken.getAuthorizedClientRegistrationId();
+        }
+
         Object principal = authentication.getPrincipal();
         if (principal instanceof OidcUser oidcUser) {
             email = oidcUser.getEmail();
             name = oidcUser.getFullName();
+            providerId = oidcUser.getSubject();
         } else if (principal instanceof OAuth2User oauth2User) {
             email = oauth2User.getAttribute("email");
             name = oauth2User.getAttribute("name");
+            providerId = oauth2User.getAttribute("oid") != null
+                    ? oauth2User.getAttribute("oid")
+                    : oauth2User.getAttribute("sub");
         }
 
-        if (email == null) {
-            response.sendRedirect(frontendUrl + "/login?error=no_email");
+        if (providerId == null) {
+            response.sendRedirect(frontendUrl + "/login?error=no_provider_id");
             return;
         }
 
         // Find or create the user
         final String finalEmail = email;
-        final String finalName = name != null ? name : email.split("@")[0];
+        final String finalProviderId = providerId;
+        final String finalProvider = provider;
+        final String finalName = name != null ? name : (email != null ? email.split("@")[0] : "user");
 
-        User user = userRepository.findByUserEmail(finalEmail).orElseGet(() -> {
-            // Create a new user for first-time OAuth login
-            User newUser = new User();
-            newUser.setUsername(generateUsername(finalEmail));
-            newUser.setUserEmail(finalEmail);
-            newUser.setUserPasswordHash(""); // no password for OAuth users
-            newUser.setUserRole(UserRole.customer);
-            newUser.setUserCreatedAt(OffsetDateTime.now());
-            newUser.setActive(true);
-            newUser.setPhotoApprovalPending(false);
-            userRepository.save(newUser);
+        User user = userRepository.findByProviderAndProviderId(finalProvider, finalProviderId)
+                .orElseGet(() -> {
+                    // Check if a user already exists with this email (e.g. signed up via different provider)
+                    Optional<User> existingByEmail = finalEmail != null
+                            ? userRepository.findByUserEmail(finalEmail.toLowerCase())
+                            : Optional.empty();
 
-            // Create customer record
-            RewardTier lowestTier = rewardTierRepository.findFirstByOrderByRewardTierMinPointsAsc()
+                    if (existingByEmail.isPresent()) {
+                        // Link this provider to the existing account
+                        User existing = existingByEmail.get();
+                        existing.setProvider(finalProvider);
+                        existing.setProviderId(finalProviderId);
+                        return userRepository.save(existing);
+                    }
+
+                    User newUser = new User();
+                    newUser.setProvider(finalProvider);
+                    newUser.setProviderId(finalProviderId);
+                    newUser.setUsername(generateUsername(finalEmail != null ? finalEmail : finalProviderId));
+                    newUser.setUserEmail(finalEmail != null ? finalEmail.toLowerCase() : finalProviderId + "@oauth.placeholder");
+                    newUser.setUserPasswordHash(""); // no password for OAuth users
+                    newUser.setUserRole(UserRole.customer);
+                    newUser.setUserCreatedAt(OffsetDateTime.now());
+                    newUser.setActive(true);
+                    newUser.setPhotoApprovalPending(false);
+                    userRepository.save(newUser);
+
+                    RewardTier lowestTier = rewardTierRepository.findFirstByOrderByRewardTierMinPointsAsc()
+                            .orElseThrow(() -> new RuntimeException("No reward tiers configured"));
+
+                    String[] nameParts = finalName.split(" ", 2);
+                    Customer customer = new Customer();
+                    customer.setUser(newUser);
+                    customer.setRewardTier(lowestTier);
+                    customer.setCustomerFirstName(nameParts[0]);
+                    customer.setCustomerLastName(nameParts.length > 1 ? nameParts[1] : "");
+                    customer.setCustomerEmail(finalEmail);
+                    customer.setCustomerPhone("OAUTH-" + finalProviderId.substring(0, Math.min(finalProviderId.length(), 14)));
+                    customer.setCustomerRewardBalance(0);
+                    customerRepository.save(customer);
+                    customerRepository.flush();
+
+                    return newUser;
+                });
+
+        // Ensure customer record exists (e.g. after account deletion and re-login)
+        if (!customerRepository.existsByUser_UserId(user.getUserId())) {
+            RewardTier lowestTier = rewardTierRepository
+                    .findFirstByOrderByRewardTierMinPointsAsc()
                     .orElseThrow(() -> new RuntimeException("No reward tiers configured"));
 
             String[] nameParts = finalName.split(" ", 2);
             Customer customer = new Customer();
-            customer.setUser(newUser);
+            customer.setUser(user);
             customer.setRewardTier(lowestTier);
             customer.setCustomerFirstName(nameParts[0]);
             customer.setCustomerLastName(nameParts.length > 1 ? nameParts[1] : "");
             customer.setCustomerEmail(finalEmail);
-            customer.setCustomerPhone(null);
+            customer.setCustomerPhone("OAUTH-" + finalProviderId.substring(0, Math.min(finalProviderId.length(), 14)));
             customer.setCustomerRewardBalance(0);
             customerRepository.save(customer);
-
-            return newUser;
-        });
+            customerRepository.flush();
+        }
 
         // Generate JWT
         UserDetails userDetails = org.springframework.security.core.userdetails.User

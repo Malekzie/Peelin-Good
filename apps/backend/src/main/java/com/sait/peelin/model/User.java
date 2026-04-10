@@ -62,6 +62,16 @@ public class User {
     @Column(name = "photo_approval_pending", nullable = false)
     private Boolean photoApprovalPending;
 
+    /** OAuth2 registration id (e.g. google, microsoft). Null for password-based accounts. */
+    @Size(max = 50)
+    @Column(name = "provider", length = 50)
+    private String provider;
+
+    /** Stable subject id from the OAuth2 provider. Null for password-based accounts. */
+    @Size(max = 255)
+    @Column(name = "provider_id", length = 255)
+    private String providerId;
+
     public UUID getUserId() {
         return userId;
     }
@@ -132,5 +142,21 @@ public class User {
 
     public void setPhotoApprovalPending(Boolean photoApprovalPending) {
         this.photoApprovalPending = photoApprovalPending;
+    }
+
+    public String getProvider() {
+        return provider;
+    }
+
+    public void setProvider(String provider) {
+        this.provider = provider;
+    }
+
+    public String getProviderId() {
+        return providerId;
+    }
+
+    public void setProviderId(String providerId) {
+        this.providerId = providerId;
     }
 }

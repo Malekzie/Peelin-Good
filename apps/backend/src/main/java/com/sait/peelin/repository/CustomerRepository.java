@@ -16,6 +16,8 @@ public interface CustomerRepository extends JpaRepository<Customer, UUID> {
     @EntityGraph(attributePaths = {"address", "rewardTier", "user"})
     Optional<Customer> findByUser_UserId(UUID userId);
 
+    boolean existsByUser_UserId(UUID userId);
+
     @EntityGraph(attributePaths = {"address", "rewardTier", "user"})
     @Query("SELECT c FROM Customer c WHERE c.user IS NOT NULL AND c.user.photoApprovalPending = true")
     List<Customer> findByUserPhotoApprovalPendingTrue();

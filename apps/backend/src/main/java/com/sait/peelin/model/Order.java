@@ -90,6 +90,21 @@ public class Order {
 
     @NotNull
     @ColumnDefault("0")
+    @Column(name = "order_special_discount_amount", nullable = false, precision = 10, scale = 2)
+    private BigDecimal orderSpecialDiscountAmount = BigDecimal.ZERO;
+
+    @NotNull
+    @ColumnDefault("0")
+    @Column(name = "order_tier_discount_amount", nullable = false, precision = 10, scale = 2)
+    private BigDecimal orderTierDiscountAmount = BigDecimal.ZERO;
+
+    @NotNull
+    @ColumnDefault("0")
+    @Column(name = "order_employee_discount_amount", nullable = false, precision = 10, scale = 2)
+    private BigDecimal orderEmployeeDiscountAmount = BigDecimal.ZERO;
+
+    @NotNull
+    @ColumnDefault("0")
     @Column(name = "order_tax_rate", nullable = false, precision = 5, scale = 3)
     private BigDecimal orderTaxRate;
 
@@ -223,6 +238,30 @@ public class Order {
 
     public void setOrderDiscount(BigDecimal orderDiscount) {
         this.orderDiscount = orderDiscount;
+    }
+
+    public BigDecimal getOrderSpecialDiscountAmount() {
+        return orderSpecialDiscountAmount;
+    }
+
+    public void setOrderSpecialDiscountAmount(BigDecimal orderSpecialDiscountAmount) {
+        this.orderSpecialDiscountAmount = orderSpecialDiscountAmount;
+    }
+
+    public BigDecimal getOrderTierDiscountAmount() {
+        return orderTierDiscountAmount;
+    }
+
+    public void setOrderTierDiscountAmount(BigDecimal orderTierDiscountAmount) {
+        this.orderTierDiscountAmount = orderTierDiscountAmount;
+    }
+
+    public BigDecimal getOrderEmployeeDiscountAmount() {
+        return orderEmployeeDiscountAmount;
+    }
+
+    public void setOrderEmployeeDiscountAmount(BigDecimal orderEmployeeDiscountAmount) {
+        this.orderEmployeeDiscountAmount = orderEmployeeDiscountAmount;
     }
 
     public BigDecimal getOrderTaxRate() {

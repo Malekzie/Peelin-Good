@@ -17,7 +17,10 @@ spring:
     locations: classpath:db/migration
     default-schema: public
     schemas: public
-    ignore-migration-patterns: "*:ignored"
+    # *:missing — DB history may list a version no longer in the repo (e.g. old V28); Flyway 9+ requires this pattern (not ignore-missing-migrations).
+    ignore-migration-patterns:
+      - "*:ignored"
+      - "*:missing"
   spaces:
     endpoint: ${DO_SPACES_ENDPOINT:}
     bucket: ${DO_SPACES_BUCKET:}

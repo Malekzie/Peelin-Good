@@ -5,11 +5,3 @@ export async function listStaff() {
 	if (!res.ok) throw new Error('Failed to fetch staff');
 	return res.json();
 }
-
-export async function deleteEmployee(id) {
-	const res = await fetch(`${API}/admin/employees/${id}`, {
-		method: 'DELETE',
-		credentials: 'include'
-	});
-	if (!res.ok) throw new Error('Failed to delete employee');
-}

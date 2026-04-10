@@ -18,6 +18,13 @@ public class Tag {
     @Column(name = "tag_name", nullable = false, length = 50)
     private String tagName;
 
+    @Column(name = "is_dietary", nullable = false)
+    private boolean dietary;
+
+    public boolean isDietary() { return dietary; }
+
+    public void setDietary(boolean dietary) { this.dietary = dietary; }
+
     public Integer getId() {
         return id;
     }

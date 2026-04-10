@@ -4,14 +4,12 @@
 	import { resolve } from '$app/paths';
 	import { user } from '$lib/stores/authStore';
 	import { Skeleton } from '$lib/components/ui/skeleton';
-	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';
-	import { listStaff, deleteEmployee } from '$lib/services/staff-employees.js';
+	import { listStaff } from '$lib/services/staff-employees.js';
 
 	let employees = $state([]);
 	let loading = $state(true);
 	let error = $state(null);
-	let deleting = $state({});
 
 	onMount(async () => {
 		if ($user?.role !== 'admin') {
@@ -26,19 +24,6 @@
 			loading = false;
 		}
 	});
-
-	async function handleDelete(id) {
-		if (!confirm('Remove this employee? This cannot be undone.')) return;
-		deleting[id] = true;
-		try {
-			await deleteEmployee(id);
-			employees = employees.filter((e) => e.id !== id);
-		} catch {
-			// leave in list on failure
-		} finally {
-			deleting[id] = false;
-		}
-	}
 </script>
 
 <main class="flex-1 overflow-y-auto p-8 lg:p-10">
@@ -77,14 +62,6 @@
 								{#if emp.position}
 									<Badge variant="outline">{emp.position}</Badge>
 								{/if}
-								<Button
-									size="sm"
-									variant="destructive"
-									onclick={() => handleDelete(emp.id)}
-									disabled={!!deleting[emp.id]}
-								>
-									{deleting[emp.id] ? '...' : 'Remove'}
-								</Button>
 							</div>
 						</div>
 					{/each}

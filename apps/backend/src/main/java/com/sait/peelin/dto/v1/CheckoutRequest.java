@@ -9,7 +9,10 @@ import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -21,6 +24,13 @@ public class CheckoutRequest {
 
     /** Optional manual discount (e.g. staff override); otherwise reward-tier discount applies. */
     private BigDecimal manualDiscount;
+
+    /**
+     * Client-local calendar date for today’s product special (ISO yyyy-MM-dd). Defaults to America/Edmonton
+     * when omitted so server pricing aligns with bakery operations.
+     */
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private LocalDate pricingLocalDate;
 
     /** Required for unauthenticated guest checkout. */
     @Valid

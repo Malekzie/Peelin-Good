@@ -4,6 +4,7 @@ import com.sait.peelin.dto.v1.auth.RegisterRequest;
 import com.sait.peelin.model.User;
 import com.sait.peelin.model.UserRole;
 import com.sait.peelin.repository.CustomerRepository;
+import com.sait.peelin.repository.EmployeeRepository;
 import com.sait.peelin.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -15,6 +16,8 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -44,6 +47,15 @@ class AuthServiceTest {
     @Mock
     private CustomerService customerService;
 
+    @Mock
+    private EmployeeRepository employeeRepository;
+
+    @Mock
+    private LinkedProfileSyncService linkedProfileSyncService;
+
+    @Mock
+    private EmployeeCustomerLinkService employeeCustomerLinkService;
+
     @InjectMocks
     private AuthService authService;
 
@@ -58,6 +70,7 @@ class AuthServiceTest {
         when(userRepository.existsByUserEmail("test@example.com")).thenReturn(false);
         when(customerRepository.findGuestCustomersByEmailNormalized("test@example.com")).thenReturn(List.of());
         when(passwordEncoder.encode("password")).thenReturn("encoded_password");
+        when(customerRepository.findByUser_UserId(any(UUID.class))).thenReturn(Optional.empty());
 
         // Act
         authService.register(request);

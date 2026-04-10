@@ -1,49 +1,47 @@
-<script lang="ts">
+<script>
+	import { onMount } from 'svelte';
 	import SpecialCard from '$lib/components/product/SpecialCard.svelte';
+	import { getTodaySpecial } from '$lib/services/product-specials';
+	import { getProductById } from '$lib/services/products';
 
-	const specials = [
-		{
-			name: 'Sourdough Boule',
-			description:
-				'Tangy, open-crumb sourdough with a blistered crust. Made with our 3-year-old starter.',
-			price: 8.5,
-			emoji: '🍞',
-			badge: "Today's Pick"
-		},
-		{
-			name: 'Butter Croissant',
-			description: '72-hour lamination, French-style butter. Flaky layers from edge to edge.',
-			price: 3.75,
-			emoji: '🥐'
-		},
-		{
-			name: 'Lemon Tart',
-			description:
-				'Silky curd in a crisp pastry shell. Bright, just-tart-enough, and gone by noon.',
-			price: 5.25,
-			emoji: '🍋',
-			badge: 'Seasonal'
-		},
-		{
-			name: 'Cinnamon Roll',
-			description: 'Brown sugar swirl, pillowy pull-apart texture, cream cheese glaze.',
-			price: 4.5,
-			emoji: '🥐'
-		},
-		{
-			name: 'Carrot Cake Slice',
-			description: 'Walnuts, warm spice, and whipped cream cheese frosting. A proper slice.',
-			price: 6.0,
-			emoji: '🎂'
-		},
-		{
-			name: 'Almond Danish',
-			description: 'Buttery pastry, almond cream centre, sliced almonds on top.',
-			price: 4.25,
-			emoji: '🥜',
-			badge: 'New'
+	let specials = $state([]);
+	let loading = $state(true);
+
+	function localDateIso() {
+		const d = new Date();
+		const y = d.getFullYear();
+		const m = String(d.getMonth() + 1).padStart(2, '0');
+		const day = String(d.getDate()).padStart(2, '0');
+		return `${y}-${m}-${day}`;
+	}
+
+	onMount(async () => {
+		try {
+			const today = await getTodaySpecial(localDateIso());
+			const pid = today?.productId;
+			if (pid == null) {
+				specials = [];
+				return;
+			}
+			const product = await getProductById(pid);
+			const pct = today.discountPercent != null ? Number(today.discountPercent) : null;
+			specials = [
+				{
+					productSpecialId: pid,
+					productId: product.id,
+					productName: product.name,
+					productDescription: product.description,
+					productBasePrice: product.basePrice,
+					discountPercent: pct,
+					productImageUrl: product.imageUrl
+				}
+			];
+		} catch {
+			specials = [];
+		} finally {
+			loading = false;
 		}
-	];
+	});
 </script>
 
 <section class="bg-[#F5EFE6] px-6 py-16">
@@ -51,15 +49,28 @@
 		<p class="mb-1 text-[11px] font-semibold tracking-[0.2em] text-[#C4714A] uppercase">
 			Out of the oven
 		</p>
-		<h2 class="mb-2 text-3xl font-black tracking-tight text-[#2C1A0E]">Today's specials</h2>
-		<p class="mb-8 text-sm text-muted-foreground">A curated selection of what's fresh right now.</p>
+		<h2 class="mb-2 text-3xl font-black tracking-tight text-[#2C1A0E]">Today's special</h2>
+		<p class="mb-8 text-sm text-muted-foreground">Our featured product for today's date.</p>
 
-		<div class="rounded-xl">
-			<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-				{#each specials as special (special.name)}
-					<SpecialCard {...special} />
+		{#if loading}
+			<p class="text-sm text-muted-foreground">Loading today's special…</p>
+		{:else if specials.length > 0}
+			<div class="mx-auto grid max-w-lg grid-cols-1 gap-4">
+				{#each specials as special (special.productSpecialId)}
+					<SpecialCard
+						name={special.productName}
+						description={special.productDescription}
+						price={special.productBasePrice}
+						discountPercent={special.discountPercent}
+						imageUrl={special.productImageUrl}
+						productId={special.productId}
+					/>
 				{/each}
 			</div>
-		</div>
+		{:else}
+			<p class="max-w-lg text-sm leading-relaxed text-muted-foreground">
+				No special is available today. Check back another day!
+			</p>
+		{/if}
 	</div>
 </section>

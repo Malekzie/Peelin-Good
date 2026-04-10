@@ -12,12 +12,17 @@ import com.sait.peelin.model.Customer;
 import com.sait.peelin.model.RewardTier;
 import com.sait.peelin.model.User;
 import com.sait.peelin.repository.AddressRepository;
+import com.sait.peelin.repository.CustomerPreferenceRepository;
 import com.sait.peelin.repository.CustomerRepository;
 import com.sait.peelin.repository.RewardTierRepository;
 import com.sait.peelin.repository.UserRepository;
 import com.sait.peelin.support.GuestContactFiller;
 import com.sait.peelin.support.PhoneNumberFormatter;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
@@ -37,10 +42,16 @@ public class CustomerService {
 
     private final CustomerRepository customerRepository;
     private final RewardTierRepository rewardTierRepository;
+    private final RewardTierService rewardTierService;
     private final AddressRepository addressRepository;
     private final UserRepository userRepository;
     private final ProfilePhotoStorageService profilePhotoStorageService;
     private final CurrentUserService currentUserService;
+    private final CustomerPreferenceRepository customerPreferenceRepository;
+    private final CacheManager cacheManager;
+    private final EmployeeCustomerLinkService employeeCustomerLinkService;
+    private final LinkedProfileSyncService linkedProfileSyncService;
+    private static final Logger log = LoggerFactory.getLogger(CustomerService.class);
 
     @Transactional(readOnly = true)
     public List<CustomerDto> listAdmin(String search) {
@@ -148,8 +159,9 @@ public class CustomerService {
                     request.getPostalCode()
             );
             reusableGuest.setAddress(linkedAddress);
-            customerRepository.save(reusableGuest);
-            return toDto(reusableGuest);
+            Customer savedGuest = customerRepository.save(reusableGuest);
+            employeeCustomerLinkService.tryAutoLinkForCustomer(savedGuest);
+            return toDto(savedGuest);
         }
 
         RewardTier lowestTier = lowestRewardTier();
@@ -176,8 +188,9 @@ public class CustomerService {
         );
         customer.setCustomerRewardBalance(0);
         customer.setGuestExpiryDate(null);
-        customerRepository.save(customer);
-        return toDto(customer);
+        Customer savedNew = customerRepository.save(customer);
+        employeeCustomerLinkService.tryAutoLinkForCustomer(savedNew);
+        return toDto(savedNew);
     }
 
     @Transactional
@@ -223,7 +236,9 @@ public class CustomerService {
         Customer c = customerRepository.findByUser_UserId(u.getUserId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No customer profile"));
         applyPatch(c, req);
-        return toDto(customerRepository.save(c));
+        Customer saved = customerRepository.save(c);
+        linkedProfileSyncService.afterCustomerProfilePatch(saved);
+        return toDto(saved);
     }
 
     @Transactional
@@ -231,7 +246,9 @@ public class CustomerService {
     public CustomerDto patch(UUID id, CustomerPatchRequest req) {
         Customer c = customerRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Customer not found"));
         applyPatch(c, req);
-        return toDto(customerRepository.save(c));
+        Customer saved = customerRepository.save(c);
+        linkedProfileSyncService.afterCustomerProfilePatch(saved);
+        return toDto(saved);
     }
 
     @Transactional
@@ -320,6 +337,9 @@ public class CustomerService {
             RewardTier rt = rewardTierRepository.findById(req.getRewardTierId())
                     .orElseThrow(() -> new ResourceNotFoundException("Reward tier not found"));
             c.setRewardTier(rt);
+        } else if (req.getRewardBalance() != null) {
+            int b = c.getCustomerRewardBalance() != null ? c.getCustomerRewardBalance() : 0;
+            rewardTierService.tierForBalance(b).ifPresent(c::setRewardTier);
         }
         if (req.getPhotoApprovalPending() != null && c.getUser() != null) {
             c.getUser().setPhotoApprovalPending(req.getPhotoApprovalPending());
@@ -557,11 +577,15 @@ public class CustomerService {
         if (c.getUser() != null && c.getUser().getUserId() != null) {
             dtoUser = userRepository.findById(c.getUser().getUserId()).orElse(c.getUser());
         }
+        int points = c.getCustomerRewardBalance() != null ? c.getCustomerRewardBalance() : 0;
+        RewardTier tier = rewardTierService.tierForBalance(points).orElse(c.getRewardTier());
         return new CustomerDto(
                 c.getId(),
                 dtoUser != null ? dtoUser.getUserId() : null,
                 dtoUser != null ? dtoUser.getUsername() : null,
-                c.getRewardTier().getId(),
+                tier != null ? tier.getId() : null,
+                tier != null ? tier.getRewardTierName() : null,
+                tier != null ? tier.getRewardTierDiscountRate() : null,
                 c.getCustomerFirstName(),
                 c.getCustomerMiddleInitial(),
                 c.getCustomerLastName(),
@@ -572,7 +596,8 @@ public class CustomerService {
                 addr != null ? addr.getId() : null,
                 CatalogMapper.address(addr),
                 dtoUser != null ? dtoUser.getProfilePhotoPath() : null,
-                dtoUser != null && Boolean.TRUE.equals(dtoUser.getPhotoApprovalPending())
+                dtoUser != null && Boolean.TRUE.equals(dtoUser.getPhotoApprovalPending()),
+                employeeCustomerLinkService.isEligibleForEmployeeDiscount(c.getId())
         );
     }
 

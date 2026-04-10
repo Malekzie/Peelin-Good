@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -32,7 +33,29 @@ public interface ReviewRepository extends JpaRepository<Review, UUID> {
 
     List<Review> findByReviewStatusOrderByReviewRatingDescReviewSubmittedDateDesc(ReviewStatus status);
 
+    boolean existsByCustomer_IdAndProduct_IdAndOrderIsNullAndReviewStatus(
+            UUID customerId,
+            Integer productId,
+            ReviewStatus reviewStatus
+    );
+
+    boolean existsByOrder_IdAndCustomer_IdAndReviewStatus(UUID orderId, UUID customerId, ReviewStatus reviewStatus);
+
+    /** Any review row for this order and customer (approved, pending, or rejected). */
+    boolean existsByOrder_IdAndCustomer_Id(UUID orderId, UUID customerId);
+
+    /** Any product-only review for this customer and product (order is null). */
     boolean existsByCustomer_IdAndProduct_IdAndOrderIsNull(UUID customerId, Integer productId);
 
-    boolean existsByOrder_IdAndCustomer_Id(UUID orderId, UUID customerId);
+    /** Product-only reviews in these statuses block a new submission (one attempt per product per customer). */
+    boolean existsByCustomer_IdAndProduct_IdAndOrderIsNullAndReviewStatusIn(
+            UUID customerId,
+            Integer productId,
+            Collection<ReviewStatus> statuses);
+
+    /** Same as product rule for order-linked location reviews (one attempt per customer/order). */
+    boolean existsByOrder_IdAndCustomer_IdAndReviewStatusIn(
+            UUID orderId,
+            UUID customerId,
+            Collection<ReviewStatus> statuses);
 }

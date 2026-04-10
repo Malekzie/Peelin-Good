@@ -12,42 +12,58 @@ WHERE r.order_id = o.order_id
   AND r.bakery_id IS NULL;
 
 -- Secondary backfill: infer from customer+product to most recent matching order.
+-- Safe when re-run / out-of-order: avoid duplicate (customer_id, order_id) (see V36 unique index).
 WITH matched AS (
-    SELECT
-        r.review_id,
-        x.order_id,
-        x.bakery_id
+    SELECT r.review_id,
+           r.customer_id,
+           x.order_id,
+           x.bakery_id,
+           ROW_NUMBER() OVER (
+               PARTITION BY r.customer_id, x.order_id
+               ORDER BY r.review_submitted_date NULLS LAST, r.review_id
+           ) AS rn
     FROM review r
-    JOIN LATERAL (
+             JOIN LATERAL (
         SELECT o.order_id, o.bakery_id
         FROM "order" o
-        JOIN order_item oi ON oi.order_id = o.order_id
+                 JOIN order_item oi ON oi.order_id = o.order_id
         WHERE o.customer_id = r.customer_id
           AND oi.product_id = r.product_id
         ORDER BY o.order_placed_datetime DESC
         LIMIT 1
-    ) x ON TRUE
+        ) x ON TRUE
     WHERE r.bakery_id IS NULL
-)
+),
+     picked AS (
+         SELECT review_id, customer_id, order_id, bakery_id
+         FROM matched
+         WHERE rn = 1
+     )
 UPDATE review r
-SET order_id = COALESCE(r.order_id, m.order_id),
-    bakery_id = m.bakery_id
-FROM matched m
-WHERE r.review_id = m.review_id
-  AND r.bakery_id IS NULL;
+SET order_id = COALESCE(r.order_id, p.order_id),
+    bakery_id = p.bakery_id
+FROM picked p
+WHERE r.review_id = p.review_id
+  AND r.bakery_id IS NULL
+  AND (
+    COALESCE(r.order_id, p.order_id) IS NULL
+        OR NOT EXISTS (SELECT 1
+                       FROM review other
+                       WHERE other.customer_id = p.customer_id
+                         AND other.order_id = COALESCE(r.order_id, p.order_id)
+                         AND other.review_id <> r.review_id)
+    );
 
--- Final safety fallback: customer's most recent order bakery.
+-- Final safety fallback: copy bakery from customer's most recent order only (do not mass-assign
+-- order_id — that would duplicate (customer_id, order_id) for multiple product reviews per customer).
 WITH customer_latest AS (
-    SELECT DISTINCT ON (o.customer_id)
-        o.customer_id,
-        o.order_id,
-        o.bakery_id
+    SELECT DISTINCT ON (o.customer_id) o.customer_id,
+                                        o.bakery_id
     FROM "order" o
     ORDER BY o.customer_id, o.order_placed_datetime DESC
 )
 UPDATE review r
-SET order_id = COALESCE(r.order_id, cl.order_id),
-    bakery_id = cl.bakery_id
+SET bakery_id = cl.bakery_id
 FROM customer_latest cl
 WHERE r.customer_id = cl.customer_id
   AND r.bakery_id IS NULL;
