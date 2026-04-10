@@ -56,6 +56,9 @@ public class OrderService {
     private final EmployeeCustomerLinkService employeeCustomerLinkService;
 
     private static final ZoneId DEFAULT_PRICING_ZONE = ZoneId.of("America/Edmonton");
+    private static final BigDecimal DELIVERY_FEE = new BigDecimal("7.00");
+    private static final BigDecimal DELIVERY_FREE_THRESHOLD = new BigDecimal("50.00");
+    static final BigDecimal TAX_RATE_PERCENT = new BigDecimal("5");
 
     @Transactional(readOnly = true)
     @Cacheable(value = "orders", keyGenerator = "userIdKeyGenerator")
@@ -79,6 +82,21 @@ public class OrderService {
     public OrderDto get(UUID orderId) {
         Order o = orderRepository.findById(orderId).orElseThrow(() -> new ResourceNotFoundException("Order not found"));
         assertCanView(o);
+        return toDto(o);
+    }
+
+    @Transactional(readOnly = true)
+    public OrderDto getByOrderNumber(String orderNumber) {
+        Order o = orderRepository.findByOrderNumber(orderNumber)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
+        // Logged-in customers may only view their own order; guests identify by knowing the order number
+        User u = currentUserService.currentUserOrNull();
+        if (u != null && u.getUserRole() == UserRole.customer) {
+            if (o.getCustomer() == null || o.getCustomer().getUser() == null
+                    || !o.getCustomer().getUser().getUserId().equals(u.getUserId())) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Not your order");
+            }
+        }
         return toDto(o);
     }
 
@@ -122,6 +140,7 @@ public class OrderService {
 
         if (req.getOrderMethod() == OrderMethod.delivery
                 && req.getAddressId() == null
+                && req.getDeliveryAddress() == null
                 && customer.getAddress() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Delivery requires address information");
         }
@@ -129,6 +148,14 @@ public class OrderService {
         if (req.getAddressId() != null) {
             address = addressRepository.findById(req.getAddressId())
                     .orElseThrow(() -> new ResourceNotFoundException("Address not found"));
+        } else if (req.getDeliveryAddress() != null) {
+            Address a = new Address();
+            a.setAddressLine1(req.getDeliveryAddress().getLine1());
+            a.setAddressLine2(req.getDeliveryAddress().getLine2());
+            a.setAddressCity(req.getDeliveryAddress().getCity());
+            a.setAddressProvince(req.getDeliveryAddress().getProvince());
+            a.setAddressPostalCode(req.getDeliveryAddress().getPostalCode());
+            address = addressRepository.save(a);
         } else if (req.getOrderMethod() == OrderMethod.delivery) {
             address = customer.getAddress();
         }
@@ -201,11 +228,15 @@ public class OrderService {
         }
 
         BigDecimal discount = tierDiscount.add(employeeDiscount);
-        BigDecimal taxRatePercent = resolveTaxRatePercent(
-                resolveTaxProvinceForCheckout(customer, address, bakery));
+        BigDecimal taxRatePercent = TAX_RATE_PERCENT;
         BigDecimal taxAmount = total.multiply(taxRatePercent)
                 .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
-        BigDecimal grandTotal = total.add(taxAmount);
+        BigDecimal deliveryFee = BigDecimal.ZERO;
+        if (OrderMethod.delivery.equals(req.getOrderMethod())
+                && total.compareTo(DELIVERY_FREE_THRESHOLD) < 0) {
+            deliveryFee = DELIVERY_FEE;
+        }
+        BigDecimal grandTotal = total.add(taxAmount).add(deliveryFee);
 
         Order order = new Order();
         order.setOrderNumber("ORD-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
@@ -292,7 +323,7 @@ public class OrderService {
             recommendationService.evictRecommendations(customer.getId());
         }
 
-        return new CheckoutSessionResponse(order.getId(), order.getOrderNumber(), clientSecret, paymentIntentId);
+        return new CheckoutSessionResponse(order.getId(), order.getOrderNumber(), clientSecret, paymentIntentId, total, discount, deliveryFee, taxAmount, grandTotal);
     }
 
     /**

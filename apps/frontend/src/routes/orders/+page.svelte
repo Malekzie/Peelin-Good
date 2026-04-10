@@ -4,15 +4,19 @@
 	import { Badge } from '$lib/components/ui/badge';
 	import { onMount } from 'svelte';
 	import { getMyOrders } from '$lib/services/orders';
+	import { getProducts } from '$lib/services/products';
 	import { createProductReview, createOrderReview } from '$lib/services/review';
 	import { apiFetch } from '$lib/utils/api';
 	import { resolve } from '$app/paths';
+	import { ChevronDown, ShoppingBag } from '@lucide/svelte';
 
 	const API = '/api/v1';
 
 	let orders = $state([]);
+	let productImages = $state({});
 	let loading = $state(true);
 	let error = $state(null);
+	let openOrders = $state(new Set());
 
 	// Accept delivery dialog state
 	let acceptDialog = $state(null);
@@ -53,13 +57,29 @@
 
 	onMount(async () => {
 		try {
-			orders = await getMyOrders();
+			const [ordersData, productsData] = await Promise.all([getMyOrders(), getProducts()]);
+			orders = ordersData ?? [];
+			const map = {};
+			for (const p of productsData ?? []) {
+				map[p.id] = p.imageUrl ?? null;
+			}
+			productImages = map;
 		} catch {
 			error = true;
 		} finally {
 			loading = false;
 		}
 	});
+
+	function toggle(orderId) {
+		const next = new Set(openOrders);
+		if (next.has(orderId)) {
+			next.delete(orderId);
+		} else {
+			next.add(orderId);
+		}
+		openOrders = next;
+	}
 
 	/** @param {any} order */
 	function orderHasAnyReviewableSlot(order) {
@@ -87,7 +107,6 @@
 	}
 
 	function openReviewPicker(order) {
-		// Build list of reviewable things (server tells us what's already used-up)
 		const items = [
 			{
 				type: 'order',
@@ -147,7 +166,6 @@
 		reviewError = null;
 		const pickerType = activeModal.pickerItemType;
 		const pickerId = activeModal.pickerItemId;
-		const modalOrderId = activeModal.orderId;
 		try {
 			/** @type {{ status?: string; moderationMessage?: string } | undefined} */
 			let submitted;
@@ -189,18 +207,13 @@
 			}
 
 			reviewSuccess = true;
-			if (st === 'pending') {
-				reviewOutcome = 'pending';
-			} else {
-				reviewOutcome = 'success';
-			}
+			reviewOutcome = st === 'pending' ? 'pending' : 'success';
 			showToast(
 				reviewOutcome === 'success'
 					? 'Thanks — your review was posted.'
 					: 'Your review was submitted and is pending approval.'
 			);
 
-			// Mark item as done in picker
 			if (reviewPicker) {
 				reviewPicker = {
 					...reviewPicker,
@@ -210,13 +223,10 @@
 				};
 			}
 
-			// If all items reviewed, close everything
 			const allDone = reviewPicker?.items.every((i) => i.done);
 			setTimeout(async () => {
 				closeModal();
-				if (allDone) {
-					closePicker();
-				}
+				if (allDone) closePicker();
 				await refreshOrdersList();
 			}, 1500);
 		} catch (e) {
@@ -245,10 +255,9 @@
 
 	function statusColor(status) {
 		switch (status) {
-			case 'pending':
+			case 'pending_payment':
 				return 'secondary';
-			case 'confirmed':
-				return 'outline';
+			case 'paid':
 			case 'preparing':
 				return 'outline';
 			case 'ready':
@@ -311,53 +320,102 @@
 			{:else}
 				<div class="space-y-4">
 					{#each orders as order (order.id)}
-						<div class="rounded-xl border border-border bg-card p-5 shadow-sm">
-							<div class="flex items-start justify-between gap-4">
-								<div class="space-y-1">
-									<p class="text-sm font-semibold text-foreground">
-										Order #{order.orderNumber}
-									</p>
-									<p class="text-xs text-muted-foreground">
-										{order.bakeryName ?? "Peelin' Good"} · {formatDate(order.placedAt)}
-									</p>
-									{#if order.items && order.items.length > 0}
-										<p class="text-xs text-muted-foreground">
-											{order.items.map((i) => i.productName).join(', ')}
+						<div class="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+							<!-- Accordion header -->
+							<button
+								type="button"
+								onclick={() => toggle(order.id)}
+								class="w-full px-5 py-4 text-left transition-colors hover:bg-muted/40"
+							>
+								<div class="flex items-center justify-between gap-4">
+									<div class="min-w-0 space-y-0.5">
+										<p class="text-sm font-semibold text-foreground">
+											Order #{order.orderNumber}
 										</p>
+										<p class="text-xs text-muted-foreground">
+											{order.bakeryName ?? "Peelin' Good"} · {formatDate(order.placedAt)}
+										</p>
+									</div>
+									<div class="flex shrink-0 items-center gap-3">
+										<div class="flex flex-col items-end gap-1">
+											<Badge variant={statusColor(order.status)}>
+												{order.status?.replace(/_/g, ' ') ?? '—'}
+											</Badge>
+											<p class="text-sm font-bold text-foreground">
+												{formatPrice(order.orderGrandTotal)}
+											</p>
+										</div>
+										<ChevronDown
+											class="h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200
+												{openOrders.has(order.id) ? 'rotate-180' : ''}"
+										/>
+									</div>
+								</div>
+							</button>
+
+							<!-- Accordion body -->
+							{#if openOrders.has(order.id)}
+								<div class="border-t border-border px-5 pb-5 pt-4">
+									{#if order.items && order.items.length > 0}
+										<div class="mb-4 flex flex-col gap-2">
+											{#each order.items as item (item.id)}
+												<a
+													href={resolve(`/menu?product=${item.productId}`)}
+													class="flex items-center gap-3 rounded-lg border border-border bg-background px-3 py-2 transition-colors hover:bg-muted/60"
+												>
+													{#if productImages[item.productId]}
+														<img
+															src={productImages[item.productId]}
+															alt={item.productName}
+															class="h-12 w-12 shrink-0 rounded-md object-cover"
+														/>
+													{:else}
+														<div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-[#F5EFE6]">
+															<ShoppingBag class="h-5 w-5 text-[#C4714A]/40" />
+														</div>
+													{/if}
+													<div class="min-w-0">
+														<p class="truncate text-sm font-medium text-foreground">{item.productName}</p>
+														<p class="text-xs text-muted-foreground">
+															Qty {item.quantity} · {formatPrice(item.lineTotal)}
+														</p>
+													</div>
+												</a>
+											{/each}
+										</div>
 									{/if}
+
+									<a
+										href={resolve(`/orders/${order.orderNumber}`)}
+										class="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+									>
+										View tracking →
+									</a>
 								</div>
-								<div class="flex shrink-0 flex-col items-end gap-2">
-									<Badge variant={statusColor(order.status)}>
-										{order.status?.replace('_', ' ') ?? '—'}
-									</Badge>
-									<p class="text-sm font-bold text-foreground">
-										{formatPrice(order.orderGrandTotal)}
-									</p>
-								</div>
+
+						<!-- Accept delivery button -->
+						{#if ['delivered', 'picked_up'].includes(order.status)}
+							<div class="mt-4 border-t border-border pt-4">
+								<button
+									onclick={() => (acceptDialog = { order })}
+									class="w-full rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
+								>
+									Accept Delivery
+								</button>
 							</div>
+						{/if}
 
-							<!-- Accept delivery button -->
-							{#if ['delivered', 'picked_up'].includes(order.status)}
-								<div class="mt-4 border-t border-border pt-4">
-									<button
-										onclick={() => (acceptDialog = { order })}
-										class="w-full rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
-									>
-										Accept Delivery
-									</button>
-								</div>
-							{/if}
-
-							<!-- Leave a review when something is still reviewable (from API flags) -->
-							{#if orderHasAnyReviewableSlot(order)}
-								<div class="mt-4 border-t border-border pt-4">
-									<button
-										onclick={() => openReviewPicker(order)}
-										class="w-full rounded-full border border-border px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted"
-									>
-										Leave a Review
-									</button>
-								</div>
+						<!-- Leave a review when something is still reviewable (from API flags) -->
+						{#if orderHasAnyReviewableSlot(order)}
+							<div class="mt-4 border-t border-border pt-4">
+								<button
+									onclick={() => openReviewPicker(order)}
+									class="w-full rounded-full border border-border px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted"
+								>
+									Leave a Review
+								</button>
+							</div>
+						{/if}
 							{/if}
 						</div>
 					{/each}

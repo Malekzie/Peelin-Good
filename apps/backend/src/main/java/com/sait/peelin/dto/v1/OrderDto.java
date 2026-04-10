@@ -32,5 +32,6 @@ public record OrderDto(
         BigDecimal orderSpecialDiscountAmount,
         BigDecimal orderTierDiscountAmount,
         BigDecimal orderEmployeeDiscountAmount,
+        BigDecimal deliveryFee,
         List<OrderItemDto> items
 ) {}

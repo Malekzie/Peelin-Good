@@ -21,10 +21,12 @@ public class GuestContactValidator implements ConstraintValidator<GuestContactVa
         String digits = GuestContactFiller.normalizeDigits(req.getPhone());
         boolean hasEmail = !email.isEmpty();
         boolean hasPhone = digits.length() >= 10;
-        if (!hasEmail && !hasPhone) {
+        if (!hasEmail) {
+            ctx.disableDefaultConstraintViolation();
+            ctx.buildConstraintViolationWithTemplate("Email is required").addPropertyNode("email").addConstraintViolation();
             return false;
         }
-        if (hasEmail && !EMAIL.matcher(email).matches()) {
+        if (!EMAIL.matcher(email).matches()) {
             ctx.disableDefaultConstraintViolation();
             ctx.buildConstraintViolationWithTemplate("Invalid email").addPropertyNode("email").addConstraintViolation();
             return false;

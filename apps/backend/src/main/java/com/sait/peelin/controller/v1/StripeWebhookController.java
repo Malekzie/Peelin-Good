@@ -1,5 +1,8 @@
 package com.sait.peelin.controller.v1;
 
+import com.sait.peelin.model.*;
+import com.sait.peelin.repository.*;
+import com.sait.peelin.service.EmailService;
 import com.sait.peelin.service.StripePaymentFulfillmentService;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -18,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -30,7 +34,15 @@ public class StripeWebhookController {
     @Value("${stripe.webhook-secret:}")
     private String webhookSecret;
 
+    @Value("${stripe.publishable-key:}")
+    private String publishableKey;
+
     private final StripePaymentFulfillmentService stripePaymentFulfillmentService;
+
+    @GetMapping("/config")
+    public ResponseEntity<Map<String, String>> config() {
+        return ResponseEntity.ok(Map.of("publishableKey", publishableKey != null ? publishableKey : ""));
+    }
 
     @PostMapping("/webhook")
     @Transactional
@@ -95,5 +107,4 @@ public class StripeWebhookController {
             return null;
         }
     }
-
 }
