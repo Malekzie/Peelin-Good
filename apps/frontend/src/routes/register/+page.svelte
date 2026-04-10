@@ -5,6 +5,7 @@
 	import { goto } from '$app/navigation';
 	import { user } from '$lib/stores/authStore';
 	import { Eye, EyeOff } from '@lucide/svelte';
+	import { formatCanadianPostalInput } from '$lib/canadianPostalCode';
 
 	let fields = {
 		firstName: '',
@@ -538,11 +539,19 @@
 							<input
 								id="register-postalCode"
 								type="text"
+								inputmode="text"
+								autocomplete="postal-code"
 								placeholder="T2P 1J9"
 								maxlength="7"
-								bind:value={fields.postalCode}
+								value={fields.postalCode}
+								oninput={(e) => {
+									fields = {
+										...fields,
+										postalCode: formatCanadianPostalInput(e.currentTarget.value)
+									};
+									handleInput('postalCode');
+								}}
 								onblur={() => handleBlur('postalCode')}
-								oninput={() => handleInput('postalCode')}
 								class="bg-surface-container-highest mt-1 w-full rounded-xl px-4 py-3 font-medium ring-1 ring-border transition
 									{errors.postalCode && touched.postalCode ? 'ring-2 ring-red-400' : ''}"
 							/>

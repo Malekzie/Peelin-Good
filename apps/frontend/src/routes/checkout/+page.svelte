@@ -9,6 +9,7 @@
 	import { getProfile, updateProfile } from '$lib/services/profile';
 	import { apiFetch } from '$lib/utils/api.js';
 	import * as Sentry from '@sentry/sveltekit';
+	import { formatCanadianPostalInput } from '$lib/canadianPostalCode';
 
 	const ORDERS_API = '/api/v1/orders';
 
@@ -73,7 +74,7 @@
 			line2 = profile.address?.line2 ?? '';
 			city = profile.address?.city ?? '';
 			province = profile.address?.province ?? '';
-			postalCode = profile.address?.postalCode ?? '';
+			postalCode = formatCanadianPostalInput(profile.address?.postalCode ?? '');
 		} catch {
 			console.warn('Failed to load profile, proceeding with empty checkout form');
 		}
@@ -289,7 +290,14 @@
 							<input
 								id="postalCode"
 								type="text"
-								bind:value={postalCode}
+								inputmode="text"
+								autocomplete="postal-code"
+								placeholder="A1A 1A1"
+								maxlength="7"
+								value={postalCode}
+								oninput={(e) => {
+									postalCode = formatCanadianPostalInput(e.currentTarget.value);
+								}}
 								required
 								class="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:ring-2 focus:ring-ring focus:outline-none"
 							/>

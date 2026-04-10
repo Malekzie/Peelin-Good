@@ -18,9 +18,14 @@
 #
 # Mail: without MAIL_USERNAME / MAIL_PASSWORD the SMTP health check fails and logs a WARN when
 # something touches overall health (e.g. JMX). Disable that indicator in dev; enable mail checks in prod.
+#
+# Redis: default spring.data.redis points at localhost:6379 (.env.example / docker). If Valkey/Redis is not
+# running locally, RedisReactiveHealthIndicator logs a WARN when health is probed. Disable in dev or run Redis.
 management:
   health:
     mail:
+      enabled: false
+    redis:
       enabled: false
 spring:
   datasource:

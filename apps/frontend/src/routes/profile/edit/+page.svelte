@@ -21,6 +21,7 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/stores';
+	import { formatCanadianPostalInput } from '$lib/canadianPostalCode';
 
 	const reason = $derived($page.url.searchParams.get('reason'));
 
@@ -92,7 +93,7 @@
 				addressLine2: profile.address?.line2 ?? '',
 				city: profile.address?.city ?? '',
 				province: profile.address?.province ?? 'AB',
-				postalCode: profile.address?.postalCode ?? '',
+				postalCode: formatCanadianPostalInput(profile.address?.postalCode ?? ''),
 				username: profile.username ?? '',
 				email: profile.email ?? ''
 			};
@@ -541,8 +542,14 @@
 								<input
 									id="postalCodeInput"
 									type="text"
+									inputmode="text"
+									autocomplete="postal-code"
+									placeholder="A1A 1A1"
 									maxlength="7"
-									bind:value={fields.postalCode}
+									value={fields.postalCode}
+									oninput={(e) => {
+										fields.postalCode = formatCanadianPostalInput(e.currentTarget.value);
+									}}
 									class="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm transition focus:ring-2 focus:ring-primary focus:outline-none
 										{errors.postalCode ? 'border-destructive ring-1 ring-destructive' : ''}"
 								/>
