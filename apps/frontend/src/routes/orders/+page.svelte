@@ -187,11 +187,7 @@
 			const st = (submitted?.status ?? '').toLowerCase();
 			if (st === 'rejected') {
 				const shortReason = submitted.moderationMessage?.trim();
-				showToast(
-					shortReason
-						? `Couldn't post review: ${shortReason}`
-						: "Couldn't post review."
-				);
+				showToast(shortReason ? `Couldn't post review: ${shortReason}` : "Couldn't post review.");
 				if (reviewPicker) {
 					reviewPicker = {
 						...reviewPicker,
@@ -355,7 +351,7 @@
 
 							<!-- Accordion body -->
 							{#if openOrders.has(order.id)}
-								<div class="border-t border-border px-5 pb-5 pt-4">
+								<div class="border-t border-border px-5 pt-4 pb-5">
 									{#if order.items && order.items.length > 0}
 										<div class="mb-4 flex flex-col gap-2">
 											{#each order.items as item (item.id)}
@@ -370,12 +366,16 @@
 															class="h-12 w-12 shrink-0 rounded-md object-cover"
 														/>
 													{:else}
-														<div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-[#F5EFE6]">
+														<div
+															class="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-[#F5EFE6]"
+														>
 															<ShoppingBag class="h-5 w-5 text-[#C25F1A]/40" />
 														</div>
 													{/if}
 													<div class="min-w-0">
-														<p class="truncate text-sm font-medium text-foreground">{item.productName}</p>
+														<p class="truncate text-sm font-medium text-foreground">
+															{item.productName}
+														</p>
 														<p class="text-xs text-muted-foreground">
 															Qty {item.quantity} · {formatPrice(item.lineTotal)}
 														</p>
@@ -391,31 +391,29 @@
 									>
 										View tracking →
 									</a>
+
+									{#if ['delivered', 'picked_up'].includes(order.status)}
+										<div class="mt-4 border-t border-border pt-4">
+											<button
+												onclick={() => (acceptDialog = { order })}
+												class="rounded-full bg-primary px-6 py-2 text-xs font-semibold text-primary-foreground hover:opacity-90"
+											>
+												Accept Delivery
+											</button>
+										</div>
+									{/if}
+
+									{#if orderHasAnyReviewableSlot(order)}
+										<div class="mt-4 border-t border-border pt-4">
+											<button
+												onclick={() => openReviewPicker(order)}
+												class="rounded-full border border-border px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted"
+											>
+												Leave a Review
+											</button>
+										</div>
+									{/if}
 								</div>
-
-						<!-- Accept delivery button -->
-						{#if ['delivered', 'picked_up'].includes(order.status)}
-							<div class="mt-4 border-t border-border pt-4">
-								<button
-									onclick={() => (acceptDialog = { order })}
-									class="w-full rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
-								>
-									Accept Delivery
-								</button>
-							</div>
-						{/if}
-
-						<!-- Leave a review when something is still reviewable (from API flags) -->
-						{#if orderHasAnyReviewableSlot(order)}
-							<div class="mt-4 border-t border-border pt-4">
-								<button
-									onclick={() => openReviewPicker(order)}
-									class="w-full rounded-full border border-border px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted"
-								>
-									Leave a Review
-								</button>
-							</div>
-						{/if}
 							{/if}
 						</div>
 					{/each}
