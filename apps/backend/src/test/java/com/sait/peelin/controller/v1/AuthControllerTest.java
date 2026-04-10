@@ -6,8 +6,8 @@ import com.sait.peelin.dto.v1.auth.LoginRequest;
 import com.sait.peelin.dto.v1.auth.RegisterRequest;
 import com.sait.peelin.service.AuthService;
 import com.sait.peelin.service.JwtService;
-import com.sait.peelin.service.OAuthMobileTicketService;
 import com.sait.peelin.service.PasswordResetService;
+import com.sait.peelin.service.WelcomeEmailService;
 import com.sait.peelin.service.TokenDenylistService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -64,7 +64,7 @@ class AuthControllerTest {
     private TokenDenylistService tokenDenylistService;
 
     @MockitoBean
-    private OAuthMobileTicketService oAuthMobileTicketService;
+    private WelcomeEmailService welcomeEmailService;
 
     @MockitoBean
     private UserDetailsService userDetailsService;

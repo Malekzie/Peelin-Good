@@ -85,10 +85,6 @@ app:
 
   frontend:
     url: ${FRONTEND_URL:http://localhost:5173}
-  mobile:
-    oauth:
-      # Deep link scheme registered in the Android app (e.g. workshop6://oauth?ticket=...)
-      redirect-scheme: ${APP_MOBILE_OAUTH_SCHEME:workshop6}
 
 management:
   endpoints:

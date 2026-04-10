@@ -25,7 +25,6 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final CorsConfigurationSource corsConfigurationSource;
     private final OAuth2SuccessHandler oAuth2SuccessHandler;
-    private final GooglePrivateIpOAuth2AuthorizationRequestResolver googleOAuth2AuthorizationRequestResolver;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -62,10 +61,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/auth/forgot-password", "/api/v1/auth/reset-password").permitAll()
                         .anyRequest().authenticated()
                 )
-                .oauth2Login(oauth2 -> oauth2
-                        .authorizationEndpoint(a ->
-                                a.authorizationRequestResolver(googleOAuth2AuthorizationRequestResolver))
-                        .successHandler(oAuth2SuccessHandler))
+                .oauth2Login(oauth2 -> oauth2.successHandler(oAuth2SuccessHandler))
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
