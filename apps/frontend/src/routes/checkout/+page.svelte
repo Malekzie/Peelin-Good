@@ -109,12 +109,11 @@
 				if (val.trim() && val.trim().length < 2) return 'Must be at least 2 characters.';
 				return '';
 			case 'guestEmail':
-				if (!guestEmail.trim() && !guestPhone.trim()) return 'Email or phone is required.';
-				if (val.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(val.trim()))
+				if (!guestEmail.trim()) return 'Email is required.';
+				if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(val.trim()))
 					return 'Enter a valid email address.';
 				return '';
 			case 'guestPhone':
-				if (!guestPhone.trim() && !guestEmail.trim()) return 'Phone or email is required.';
 				if (val.trim() && !/^\+?[\d\s\-().]{7,15}$/.test(val.trim()))
 					return 'Enter a valid phone number.';
 				return '';
@@ -142,9 +141,6 @@
 
 	function handleInput(name: ErrorKey) {
 		if (touched[name]) errors[name] = validateField(name);
-		// Re-validate the paired field when one of email/phone changes
-		if (name === 'guestEmail' && touched.guestPhone) errors.guestPhone = validateField('guestPhone');
-		if (name === 'guestPhone' && touched.guestEmail) errors.guestEmail = validateField('guestEmail');
 	}
 
 	function formatPhone(raw: string): string {
@@ -644,7 +640,7 @@
 						</div>
 						<div class="flex flex-col gap-1">
 							<label for="guestEmail" class="text-sm font-medium text-foreground">
-								Email <span class="text-muted-foreground text-xs">(or phone)</span>
+								Email <span class="text-red-500">*</span>
 							</label>
 							<input
 								id="guestEmail"

@@ -1,12 +1,15 @@
 package com.sait.peelin.service;
 
 import com.sait.peelin.model.*;
+import com.sait.peelin.support.GuestContactFiller;
 import jakarta.mail.MessagingException;
+import org.springframework.mail.MailException;
 import jakarta.mail.internet.MimeMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
@@ -25,7 +28,7 @@ public class EmailService {
     private static final Logger log = LoggerFactory.getLogger(EmailService.class);
     private static final double TAX_RATE = 0.13;
     private static final DateTimeFormatter DT_FMT =
-            DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy 'at' h:mm a z", Locale.CANADA);
+            DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy 'at' h:mm a O", Locale.CANADA);
     private static final NumberFormat CURRENCY = NumberFormat.getCurrencyInstance(Locale.CANADA);
 
     // Optional — null when MAIL_USERNAME is not set and Spring cannot create the bean.
@@ -34,6 +37,12 @@ public class EmailService {
 
     @Value("${spring.mail.from:}")
     private String fromAddress;
+
+    @Value("${app.frontend.url:http://localhost:5173}")
+    private String frontendUrl;
+
+    @Value("${app.email.logo-path:../frontend/static/images/Peelin' Good.png}")
+    private String logoPath;
 
     /**
      * Sends an HTML order confirmation email to the customer who placed the order.
@@ -48,15 +57,19 @@ public class EmailService {
             return;
         }
 
+        // Resolve recipient: registered customer or guest
+        String toEmail;
+        String firstName;
         Customer customer = order.getCustomer();
-        if (customer == null) {
-            log.warn("Order {} has no customer — skipping confirmation email", order.getOrderNumber());
-            return;
-        }
-
-        String toEmail = customer.getCustomerEmail();
-        if (toEmail == null || toEmail.isBlank()) {
-            log.warn("Customer on order {} has no email address — skipping confirmation email", order.getOrderNumber());
+        if (customer != null && customer.getCustomerEmail() != null
+                && !GuestContactFiller.isSyntheticGuestEmail(customer.getCustomerEmail())) {
+            toEmail = customer.getCustomerEmail();
+            firstName = customer.getCustomerFirstName() != null ? customer.getCustomerFirstName() : "Valued Customer";
+        } else if (order.getGuestEmail() != null && !order.getGuestEmail().isBlank()) {
+            toEmail = order.getGuestEmail();
+            firstName = order.getGuestName() != null ? order.getGuestName().split(" ")[0] : "Valued Customer";
+        } else {
+            log.warn("Order {} has no deliverable email address — skipping confirmation email", order.getOrderNumber());
             return;
         }
 
@@ -66,10 +79,14 @@ public class EmailService {
             helper.setFrom(fromAddress.isBlank() ? toEmail : fromAddress);
             helper.setTo(toEmail);
             helper.setSubject("Order Confirmed \u2014 " + order.getOrderNumber());
-            helper.setText(buildHtml(order, items, customer), true);
+            helper.setText(buildHtml(order, items, firstName, toEmail), true);
+            FileSystemResource logo = new FileSystemResource(logoPath);
+            if (logo.exists()) {
+                helper.addInline("logo", logo);
+            }
             mailSender.send(message);
             log.info("Confirmation email sent to {} for order {}", toEmail, order.getOrderNumber());
-        } catch (MessagingException e) {
+        } catch (MessagingException | MailException e) {
             log.error("Failed to send confirmation email for order {}", order.getOrderNumber(), e);
         }
     }
@@ -78,7 +95,7 @@ public class EmailService {
     // HTML builder
     // -------------------------------------------------------------------------
 
-    private String buildHtml(Order order, List<OrderItem> items, Customer customer) {
+    private String buildHtml(Order order, List<OrderItem> items, String firstName, String toEmail) {
         BigDecimal subtotalAfterDiscount = order.getOrderTotal() != null
                 ? order.getOrderTotal() : BigDecimal.ZERO;
         BigDecimal discount = order.getOrderDiscount() != null
@@ -88,9 +105,6 @@ public class EmailService {
                 .multiply(BigDecimal.valueOf(TAX_RATE))
                 .setScale(2, RoundingMode.HALF_UP);
         BigDecimal grandTotal = subtotalAfterDiscount.add(tax);
-
-        String firstName = customer.getCustomerFirstName() != null
-                ? customer.getCustomerFirstName() : "Valued Customer";
 
         StringBuilder html = new StringBuilder();
         html.append("<!DOCTYPE html><html><head>")
@@ -104,7 +118,7 @@ public class EmailService {
 
         // Header
         html.append("<tr><td style='background:#5c3d2e;padding:32px 40px;border-radius:8px 8px 0 0;text-align:center;'>")
-            .append("<h1 style='margin:0;color:#fff;font-size:26px;letter-spacing:1px;'>Peelin\u2019 Good</h1>")
+            .append("<img src='cid:logo' alt=\"Peelin\u2019 Good\" style='max-height:80px;max-width:240px;display:block;margin:0 auto 12px;' />")
             .append("<p style='margin:8px 0 0;color:#e0cfc4;font-size:14px;'>Your order is confirmed!</p>")
             .append("</td></tr>");
 
@@ -123,7 +137,7 @@ public class EmailService {
             .append("style='background:#faf7f4;border:1px solid #e8e0d8;border-radius:6px;margin-bottom:32px;'>")
             .append(metaRow("Order Number", "<strong>" + esc(order.getOrderNumber()) + "</strong>"))
             .append(metaRow("Placed", formatDt(order.getOrderPlacedDatetime())))
-            .append(metaRow("Scheduled", formatDt(order.getOrderScheduledDatetime())))
+            .append(metaRow("Est. Ready By", formatDt(resolveEstimatedReadyTime(order))))
             .append(metaRow("Method", capitalize(order.getOrderMethod() != null ? order.getOrderMethod().name() : "")))
             .append(metaRow("Location", buildLocationHtml(order)));
 
@@ -132,26 +146,36 @@ public class EmailService {
         }
         html.append("</table>");
 
-        // Items header
+        // Items
         html.append("<h3 style='margin:0 0 12px;color:#5c3d2e;font-size:16px;'>Your Items</h3>")
-            .append("<table width='100%' cellpadding='0' cellspacing='0' style='margin-bottom:24px;'>")
-            .append("<tr style='border-bottom:2px solid #e8e0d8;'>")
-            .append("<td style='padding:6px 0;color:#888;font-size:13px;'>Item</td>")
-            .append("<td style='padding:6px 0;color:#888;font-size:13px;text-align:center;'>Qty</td>")
-            .append("<td style='padding:6px 0;color:#888;font-size:13px;text-align:right;'>Unit</td>")
-            .append("<td style='padding:6px 0;color:#888;font-size:13px;text-align:right;'>Total</td>")
-            .append("</tr>");
+            .append("<table width='100%' cellpadding='0' cellspacing='0' style='margin-bottom:24px;border-collapse:collapse;'>");
 
         for (OrderItem item : items) {
             String name = item.getProduct() != null ? item.getProduct().getProductName() : "Item";
+            String imgUrl = item.getProduct() != null ? item.getProduct().getProductImageUrl() : null;
             html.append("<tr style='border-bottom:1px solid #f0ebe4;'>")
-                .append("<td style='padding:10px 0;font-size:14px;color:#333;'>").append(esc(name)).append("</td>")
-                .append("<td style='padding:10px 0;font-size:14px;color:#333;text-align:center;'>")
-                .append(item.getOrderItemQuantity()).append("</td>")
-                .append("<td style='padding:10px 0;font-size:14px;color:#333;text-align:right;'>")
-                .append(fmt(item.getOrderItemUnitPriceAtTime())).append("</td>")
-                .append("<td style='padding:10px 0;font-size:14px;color:#333;text-align:right;'>")
-                .append(fmt(item.getOrderItemLineTotal())).append("</td>")
+                // Image cell
+                .append("<td style='padding:8px 10px 8px 0;width:56px;vertical-align:middle;'>");
+            if (imgUrl != null && !imgUrl.isBlank()) {
+                html.append("<img src='").append(esc(imgUrl)).append("' alt='").append(esc(name)).append("' ")
+                    .append("width='48' height='48' style='border-radius:6px;display:block;object-fit:cover;' />");
+            } else {
+                html.append("<div style='width:48px;height:48px;border-radius:6px;background:#f5efe6;display:flex;align-items:center;justify-content:center;'></div>");
+            }
+            html.append("</td>")
+                // Name + qty
+                .append("<td style='padding:8px 8px 8px 0;font-size:14px;color:#333;vertical-align:middle;'>")
+                .append("<span style='font-weight:600;'>").append(esc(name)).append("</span>")
+                .append("<br><span style='font-size:12px;color:#888;'>Qty ").append(item.getOrderItemQuantity()).append("</span>")
+                .append("</td>")
+                // Unit price
+                .append("<td style='padding:8px 8px 8px 0;font-size:13px;color:#888;text-align:right;vertical-align:middle;'>")
+                .append(fmt(item.getOrderItemUnitPriceAtTime())).append(" ea")
+                .append("</td>")
+                // Line total
+                .append("<td style='padding:8px 0;font-size:14px;color:#333;font-weight:600;text-align:right;vertical-align:middle;'>")
+                .append(fmt(item.getOrderItemLineTotal()))
+                .append("</td>")
                 .append("</tr>");
         }
         html.append("</table>");
@@ -172,6 +196,15 @@ public class EmailService {
             .append(totalsRow("Total", fmt(grandTotal), "#5c3d2e", true))
             .append("</table>");
 
+        // Tracking button
+        String trackingUrl = frontendUrl + "/orders/" + esc(order.getOrderNumber());
+        html.append("<div style='text-align:center;margin-bottom:32px;'>")
+            .append("<a href='").append(trackingUrl).append("' ")
+            .append("style='display:inline-block;background:#5c3d2e;color:#fff;text-decoration:none;")
+            .append("font-size:14px;font-weight:bold;padding:12px 32px;border-radius:6px;'>")
+            .append("Track Your Order &rarr;")
+            .append("</a></div>");
+
         // Footer note
         html.append("<p style='margin:0;font-size:13px;color:#999;line-height:1.6;'>")
             .append("If you have any questions about your order, reply to this email or contact us at ")
@@ -187,7 +220,7 @@ public class EmailService {
         html.append("<tr><td style='background:#e8e0d8;padding:16px 40px;border-radius:0 0 8px 8px;text-align:center;'>")
             .append("<p style='margin:0;font-size:12px;color:#888;'>")
             .append("\u00a9 Peelin\u2019 Good \u2014 This email was sent to ")
-            .append(esc(customer.getCustomerEmail()))
+            .append(esc(toEmail))
             .append(" because you placed an order.")
             .append("</p></td></tr>");
 
@@ -244,6 +277,23 @@ public class EmailService {
                 + "<td style='padding:5px 0;font-size:" + size + ";color:" + color + ";font-weight:" + weight
                 + ";text-align:right;'>" + value + "</td>"
                 + "</tr>";
+    }
+
+    private OffsetDateTime resolveEstimatedReadyTime(Order order) {
+        if (order.getOrderScheduledDatetime() != null) {
+            return order.getOrderScheduledDatetime();
+        }
+        // ASAP order: placed time + 2 hours, rounded up to the nearest half hour
+        OffsetDateTime plusTwo = order.getOrderPlacedDatetime().plusHours(2)
+                .truncatedTo(java.time.temporal.ChronoUnit.MINUTES);
+        int minute = plusTwo.getMinute();
+        if (minute == 0) {
+            return plusTwo;
+        } else if (minute <= 30) {
+            return plusTwo.withMinute(30).withSecond(0).withNano(0);
+        } else {
+            return plusTwo.truncatedTo(java.time.temporal.ChronoUnit.HOURS).plusHours(1);
+        }
     }
 
     private String formatDt(OffsetDateTime dt) {

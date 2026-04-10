@@ -30,7 +30,7 @@ spring:
     base_url: ${DO_SPACES_BASE_URL:}
     prefix: ${DO_SPACES_PREFIX:customers}
   mail:
-    host: ${MAIL_HOST:smtp.gmail.com}
+    host: ${MAIL_HOST:}
     port: ${MAIL_PORT:587}
     username: ${MAIL_USERNAME:}
     password: ${MAIL_PASSWORD:}

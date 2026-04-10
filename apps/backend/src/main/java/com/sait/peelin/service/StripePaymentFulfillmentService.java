@@ -1,9 +1,11 @@
 package com.sait.peelin.service;
 
 import com.sait.peelin.model.Order;
+import com.sait.peelin.model.OrderItem;
 import com.sait.peelin.model.OrderStatus;
 import com.sait.peelin.model.Payment;
 import com.sait.peelin.model.PaymentStatus;
+import com.sait.peelin.repository.OrderItemRepository;
 import com.sait.peelin.repository.OrderRepository;
 import com.sait.peelin.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -24,7 +27,9 @@ public class StripePaymentFulfillmentService {
 
     private final PaymentRepository paymentRepository;
     private final OrderRepository orderRepository;
+    private final OrderItemRepository orderItemRepository;
     private final RewardAccrualService rewardAccrualService;
+    private final EmailService emailService;
 
     /**
      * Marks payment completed and order paid when Stripe reports success (webhook or client-driven confirm).
@@ -55,6 +60,9 @@ public class StripePaymentFulfillmentService {
         orderRepository.save(order);
 
         rewardAccrualService.grantEarnedPointsForPaidOrder(order);
+
+        List<OrderItem> items = orderItemRepository.findByOrder_Id(order.getId());
+        emailService.sendOrderConfirmation(order, items);
 
         log.info("Order {} fulfilled via PaymentIntent {}", order.getId(), paymentIntentId);
     }

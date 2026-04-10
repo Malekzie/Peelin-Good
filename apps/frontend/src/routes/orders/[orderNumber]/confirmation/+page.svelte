@@ -2,8 +2,11 @@
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import { api } from '$lib/api';
+	import { getProducts } from '$lib/services/products';
+	import { ShoppingBag } from '@lucide/svelte';
 
 	interface OrderItem {
+		productId: number;
 		productName: string;
 		quantity: number;
 		lineTotal: number;
@@ -20,6 +23,7 @@
 	}
 
 	let order = $state<Order | null>(null);
+	let productImages = $state<Record<number, string | null>>({});
 	let loading = $state(true);
 	let error = $state('');
 
@@ -27,7 +31,16 @@
 
 	async function fetchOrder() {
 		try {
-			order = await api.get<Order>(`/orders/by-number/${orderNumber}`);
+			const [orderData, productsData] = await Promise.all([
+				api.get<Order>(`/orders/by-number/${orderNumber}`),
+				getProducts()
+			]);
+			order = orderData;
+			const map: Record<number, string | null> = {};
+			for (const p of productsData ?? []) {
+				map[p.id] = p.imageUrl ?? null;
+			}
+			productImages = map;
 		} catch (err: unknown) {
 			error = err instanceof Error ? err.message : 'Could not load order.';
 		} finally {
@@ -85,10 +98,27 @@
 
 			<div class="flex flex-col gap-2">
 				{#each order.items as item (item.productName)}
-					<div class="flex justify-between text-sm">
-						<span class="text-muted-foreground">{item.productName} × {item.quantity}</span>
-						<span class="text-foreground">${Number(item.lineTotal).toFixed(2)}</span>
-					</div>
+					<a
+						href={resolve(`/menu?product=${item.productId}`)}
+						class="flex items-center gap-3 rounded-lg border border-border bg-background px-3 py-2 transition-colors hover:bg-muted/60"
+					>
+						{#if productImages[item.productId]}
+							<img
+								src={productImages[item.productId]}
+								alt={item.productName}
+								class="h-12 w-12 shrink-0 rounded-md object-cover"
+							/>
+						{:else}
+							<div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-[#F5EFE6]">
+								<ShoppingBag class="h-5 w-5 text-[#C4714A]/40" />
+							</div>
+						{/if}
+						<div class="min-w-0 flex-1">
+							<p class="truncate text-sm font-medium text-foreground">{item.productName}</p>
+							<p class="text-xs text-muted-foreground">Qty {item.quantity}</p>
+						</div>
+						<span class="shrink-0 text-sm font-semibold text-foreground">${Number(item.lineTotal).toFixed(2)}</span>
+					</a>
 				{/each}
 			</div>
 
