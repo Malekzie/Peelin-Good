@@ -100,3 +100,15 @@ export async function registerUser(payload) {
 		return { ok: false, message: 'Could not reach the server. Try again later.' };
 	}
 }
+
+export async function forgotPassword(email) {
+	try {
+		await fetch(`${API_BASE}/forgot-password`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ email })
+		});
+	} catch {
+		Sentry.captureMessage("Failed to reach endpoint for 'forgot-password'", 'warning');
+	}
+}

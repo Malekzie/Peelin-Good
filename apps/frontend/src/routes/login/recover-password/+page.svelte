@@ -1,4 +1,6 @@
 <script>
+	import { forgotPassword } from '$lib/services/auth';
+
 	let email = '';
 	let error = '';
 	let touched = false;
@@ -28,13 +30,9 @@
 
 		loading = true;
 		try {
-			await fetch('/api/v1/auth/forgot-password', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ email })
-			});
+			await forgotPassword(email);
 		} catch {
-			// Always show success to prevent email enumeration
+			//
 		} finally {
 			loading = false;
 			success = true;
@@ -61,7 +59,7 @@
 					If an account exists with that email, a recovery link has been sent.
 				</p>
 			{:else}
-				<form class="space-y-6" on:submit={handleSubmit}>
+				<form class="space-y-6" onsubmit={handleSubmit}>
 					<div class="space-y-1.5">
 						<label for="recoveryEmailInput" class="text-on-surface-variant px-1 text-sm font-bold">
 							Email Address
@@ -71,8 +69,8 @@
 							type="email"
 							placeholder="email@example.com"
 							bind:value={email}
-							on:blur={handleBlur}
-							on:input={handleInput}
+							onblur={handleBlur}
+							oninput={handleInput}
 							class="bg-surface-container-highest mt-1 w-full rounded-xl px-6 py-3 font-medium ring-1 ring-border transition
 								{error && touched ? 'ring-2 ring-red-400' : ''}"
 						/>
