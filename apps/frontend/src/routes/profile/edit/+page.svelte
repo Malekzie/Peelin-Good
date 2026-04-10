@@ -41,6 +41,7 @@
 	let uploadingPhoto = $state(false);
 	let showDeactivateConfirm = $state(false);
 	let deactivating = $state(false);
+	let deactivatePassword = $state('');
 	let showDeleteConfirm = $state(false);
 	let deleting = $state(false);
 
@@ -104,17 +105,35 @@
 		}
 	});
 
+	const missingFields = $derived(
+		reason === 'checkout' && profile
+			? {
+					phone: !profile.phone,
+					addressLine1: !profile.address?.line1,
+					city: !profile.address?.city,
+					province: !profile.address?.province,
+					postalCode: !profile.address?.postalCode
+				}
+			: {}
+	);
+
 	async function handleDeactivate() {
+		if (!deactivatePassword.trim()) {
+			errors.deactivatePassword = 'Enter your password to confirm.';
+			return;
+		}
 		deactivating = true;
+		errors.deactivatePassword = '';
 		try {
-			await deactivateAccount();
+			await deactivateAccount(deactivatePassword);
 			await logoutUser();
 			goto(resolve('/'));
 		} catch {
 			showDeactivateConfirm = false;
-			errors.general = 'Failed to deactivate account. Please try again.';
+			errors.general = 'Failed to deactivate account. Check your password and try again.';
 		} finally {
 			deactivating = false;
+			deactivatePassword = '';
 		}
 	}
 
@@ -167,6 +186,17 @@
 		if (digits.length >= 4) parts.push(') ' + digits.substring(3, 6));
 		if (digits.length >= 7) parts.push('-' + digits.substring(6, 10));
 		return parts.join('');
+	}
+
+	function formatPostalCode(value) {
+		const cleaned = value
+			.replace(/[^a-zA-Z0-9]/g, '')
+			.toUpperCase()
+			.substring(0, 6);
+		if (cleaned.length > 3) {
+			return cleaned.substring(0, 3) + ' ' + cleaned.substring(3);
+		}
+		return cleaned;
 	}
 
 	async function handleSave(event) {
@@ -245,7 +275,17 @@
 				<div
 					class="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
 				>
-					Please complete your profile before placing an order.
+					<p class="font-semibold">Please complete your profile before placing an order.</p>
+					{#if Object.values(missingFields).some(Boolean)}
+						<p class="mt-1">The following fields are required:</p>
+						<ul class="mt-1 list-disc pl-5">
+							{#if missingFields.phone}<li>Phone number</li>{/if}
+							{#if missingFields.addressLine1}<li>Address line 1</li>{/if}
+							{#if missingFields.city}<li>City</li>{/if}
+							{#if missingFields.province}<li>Province</li>{/if}
+							{#if missingFields.postalCode}<li>Postal code</li>{/if}
+						</ul>
+					{/if}
 				</div>
 			{/if}
 
@@ -433,7 +473,11 @@
 									fields.phone = formatPhone(e.target.value);
 								}}
 								class="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm transition focus:ring-2 focus:ring-primary focus:outline-none
-									{errors.phone ? 'border-destructive ring-1 ring-destructive' : ''}"
+									{errors.phone
+									? 'border-destructive ring-1 ring-destructive'
+									: missingFields.phone
+										? 'border-amber-400 ring-1 ring-amber-400'
+										: ''}"
 							/>
 							{#if errors.phone}<p class="text-xs text-destructive">{errors.phone}</p>{/if}
 						</div>
@@ -477,7 +521,11 @@
 								type="text"
 								bind:value={fields.addressLine1}
 								class="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm transition focus:ring-2 focus:ring-primary focus:outline-none
-									{errors.addressLine1 ? 'border-destructive ring-1 ring-destructive' : ''}"
+                {errors.addressLine1
+									? 'border-destructive ring-1 ring-destructive'
+									: missingFields.addressLine1
+										? 'border-amber-400 ring-1 ring-amber-400'
+										: ''}"
 							/>
 							{#if errors.addressLine1}<p class="text-xs text-destructive">
 									{errors.addressLine1}
@@ -511,7 +559,11 @@
 									type="text"
 									bind:value={fields.city}
 									class="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm transition focus:ring-2 focus:ring-primary focus:outline-none
-										{errors.city ? 'border-destructive ring-1 ring-destructive' : ''}"
+                    {errors.city
+										? 'border-destructive ring-1 ring-destructive'
+										: missingFields.city
+											? 'border-amber-400 ring-1 ring-amber-400'
+											: ''}"
 								/>
 								{#if errors.city}<p class="text-xs text-destructive">{errors.city}</p>{/if}
 							</div>
@@ -525,7 +577,11 @@
 									id="provinceInput"
 									bind:value={fields.province}
 									class="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm transition focus:ring-2 focus:ring-primary focus:outline-none
-										{errors.province ? 'border-destructive ring-1 ring-destructive' : ''}"
+                    {errors.province
+										? 'border-destructive ring-1 ring-destructive'
+										: missingFields.province
+											? 'border-amber-400 ring-1 ring-amber-400'
+											: ''}"
 								>
 									{#each provinces as p}
 										<option value={p.value}>{p.label}</option>
@@ -551,7 +607,11 @@
 										fields.postalCode = formatCanadianPostalInput(e.currentTarget.value);
 									}}
 									class="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm transition focus:ring-2 focus:ring-primary focus:outline-none
-										{errors.postalCode ? 'border-destructive ring-1 ring-destructive' : ''}"
+                    {errors.postalCode
+										? 'border-destructive ring-1 ring-destructive'
+										: missingFields.postalCode
+											? 'border-amber-400 ring-1 ring-amber-400'
+											: ''}"
 								/>
 								{#if errors.postalCode}<p class="text-xs text-destructive">
 										{errors.postalCode}
@@ -683,10 +743,26 @@
 					<h2 class="text-lg font-bold text-amber-600">Deactivate Account</h2>
 					<p class="mt-2 text-sm text-muted-foreground">
 						Your account will be deactivated and you will be logged out. Contact support to
-						reactivate it.
+						reactivate it. Enter your password to confirm.
 					</p>
+					<label class="mt-4 block text-sm font-medium">Password</label>
+					<input
+						type="password"
+						class="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+						bind:value={deactivatePassword}
+						autocomplete="current-password"
+					/>
+					{#if errors.deactivatePassword}
+						<p class="mt-1 text-sm text-destructive">{errors.deactivatePassword}</p>
+					{/if}
 					<div class="mt-6 flex justify-end gap-3">
-						<Button variant="outline" onclick={() => (showDeactivateConfirm = false)}>Cancel</Button
+						<Button
+							variant="outline"
+							onclick={() => {
+								showDeactivateConfirm = false;
+								deactivatePassword = '';
+								errors.deactivatePassword = '';
+							}}>Cancel</Button
 						>
 						<Button
 							class="bg-amber-500 text-white hover:bg-amber-600"

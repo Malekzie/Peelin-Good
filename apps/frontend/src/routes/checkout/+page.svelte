@@ -1125,8 +1125,8 @@
 					<div
 						class="mb-4 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 text-sm font-medium text-primary"
 					>
-						20% employee discount applies to your order after today&apos;s specials and your loyalty tier
-						discount. Final amounts are calculated when you place the order.
+						20% employee discount applies to your order after today&apos;s specials and your loyalty
+						tier discount. Final amounts are calculated when you place the order.
 					</div>
 				{/if}
 				{#each $cart.items as item (item.productId)}

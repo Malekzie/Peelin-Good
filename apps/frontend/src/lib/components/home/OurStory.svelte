@@ -4,11 +4,12 @@
 
 <section class="bg-[#FAF7F2] px-6 py-20">
 	<div class="mx-auto grid max-w-7xl grid-cols-1 items-center gap-16 md:grid-cols-2">
-		<!-- Image placeholder -->
-		<div
-			class="flex h-80 items-center justify-center overflow-hidden rounded-xl border border-border bg-[#F5EFE6]"
-		>
-			<p class="text-sm text-muted-foreground">Photo coming soon</p>
+		<div class="overflow-hidden rounded-xl border border-border">
+			<img
+				src="https://peelin-good-storage.tor1.cdn.digitaloceanspaces.com/bakery/bakery.jpg"
+				alt="Peelin' Good Bakery"
+				class="h-80 w-full object-cover"
+			/>
 		</div>
 
 		<!-- Text -->

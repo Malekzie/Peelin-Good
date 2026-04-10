@@ -4,6 +4,7 @@ import com.sait.peelin.model.User;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
@@ -20,6 +21,9 @@ public class WelcomeEmailService {
     @Value("${app.frontend.url:http://localhost:5173}")
     private String frontendUrl;
 
+    @Value("${app.email.logo-path:../frontend/static/images/Peelin' Good.png}")
+    private String logoPath;
+
     public void sendWelcomeEmail(User user) {
         if (fromEmail == null || fromEmail.isBlank()) {
             System.out.println("Mail not configured, skipping welcome email for: " + user.getUserEmail());
@@ -28,6 +32,7 @@ public class WelcomeEmailService {
 
         String htmlBody = """
             <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+                <img src="cid:logo" alt="Peelin' Good" style="max-height: 80px; display: block; margin: 0 auto 16px;" />
                 <h2 style="color: #703210;">Welcome to Peelin' Good!</h2>
                 <p>Hi %s,</p>
                 <p>Your account has been created successfully. We're thrilled to have you!</p>
@@ -42,11 +47,17 @@ public class WelcomeEmailService {
         Thread.ofVirtual().start(() -> {
             try {
                 MimeMessage message = mailSender.createMimeMessage();
-                MimeMessageHelper helper = new MimeMessageHelper(message, true);
+                MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
                 helper.setFrom(fromEmail, "Peelin' Good Bakery");
                 helper.setTo(user.getUserEmail());
                 helper.setSubject("Welcome to Peelin' Good!");
                 helper.setText(htmlBody, true);
+
+                FileSystemResource logo = new FileSystemResource(logoPath);
+                if (logo.exists()) {
+                    helper.addInline("logo", logo);
+                }
+
                 mailSender.send(message);
                 System.out.println("Welcome email sent to: " + user.getUserEmail());
             } catch (Exception e) {

@@ -234,6 +234,22 @@
 						>
 					</p>
 				</form>
+
+				<!-- Guest account -->
+				{#if page.url.searchParams.get('redirectTo') === '/checkout'}
+					<div class="flex items-center gap-4 p-3">
+						<div class="h-px flex-1 bg-border"></div>
+						<span class="text-xs tracking-widest text-muted-foreground uppercase">or</span>
+						<div class="h-px flex-1 bg-border"></div>
+					</div>
+					<button
+						type="button"
+						onclick={() => goto(resolve('/checkout/guest'))}
+						class="w-full rounded-full border border-border py-4 text-base font-semibold text-foreground transition hover:bg-muted"
+					>
+						Continue as guest
+					</button>
+				{/if}
 			</div>
 		</div>
 	</section>

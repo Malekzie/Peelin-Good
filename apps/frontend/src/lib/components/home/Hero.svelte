@@ -5,7 +5,11 @@
 <section class="grid min-h-[500px] grid-cols-1 bg-[#FAF7F2] md:grid-cols-2">
 	<!-- Text -->
 	<div class="flex flex-col justify-center gap-5 px-8 py-16 md:px-12 lg:px-16">
-		<img src="/images/Peelin' Good.png" alt="Peelin' Good Bakery" class="w-48 object-contain" />
+		<img
+			src="/images/Peelin' Good ~BAKERY~.png"
+			alt="Peelin' Good Bakery"
+			class="w-64 self-center object-contain"
+		/>
 		<h1 class="text-5xl leading-[1.08] font-black tracking-tight text-[#2C1A0E] lg:text-6xl">
 			Made from<br />scratch.<br />
 			<span class="text-[#C4714A]">Always.</span>
@@ -34,7 +38,7 @@
 	<div class="relative hidden overflow-hidden md:block">
 		<!-- Unsplash bakery photo -->
 		<img
-			src="https://images.unsplash.com/photo-1608198093002-ad4e005484ec?q=80&w=1600&auto=format&fit=crop"
+			src="https://peelin-good-storage.tor1.cdn.digitaloceanspaces.com/bakery/bakery-header.png"
 			alt="Fresh baked goods at Peelin' Good"
 			class="absolute inset-0 h-full w-full object-cover brightness-95"
 		/>
@@ -51,9 +55,9 @@
 			</div>
 
 			<div class="flex items-end justify-end">
-				<div class="rounded-full bg-[#C4714A] px-4 py-2">
+				<a href={resolve('/menu')} class="rounded-full bg-[#C4714A] px-4 py-2">
 					<p class="text-xs font-bold tracking-widest text-white uppercase">Order today</p>
-				</div>
+				</a>
 			</div>
 		</div>
 	</div>

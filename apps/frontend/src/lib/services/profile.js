@@ -87,9 +87,11 @@ export async function uploadProfilePhoto(file) {
 	return res.json();
 }
 
-export async function deactivateAccount() {
-	const res = await apiFetch(`${API}/customers/me/deactivate`, {
-		method: 'PATCH'
+export async function deactivateAccount(currentPassword) {
+	const res = await apiFetch(`${API}/account/deactivate`, {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify({ currentPassword })
 	});
 
 	if (!res) return;

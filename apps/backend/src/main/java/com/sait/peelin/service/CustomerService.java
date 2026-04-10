@@ -611,10 +611,4 @@ public class CustomerService {
         userRepository.delete(u);
     }
 
-    @Transactional
-    public void deactivateMe() {
-        User u = currentUserService.requireUser();
-        u.setActive(false);
-        userRepository.save(u);
-    }
 }
