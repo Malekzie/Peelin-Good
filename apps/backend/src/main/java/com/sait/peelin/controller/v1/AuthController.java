@@ -4,7 +4,6 @@ import com.sait.peelin.dto.v1.auth.*;
 import com.sait.peelin.model.User;
 import com.sait.peelin.service.AuthService;
 import com.sait.peelin.service.JwtService;
-import com.sait.peelin.service.OAuthMobileTicketService;
 import com.sait.peelin.service.PasswordResetService;
 import com.sait.peelin.service.TokenDenylistService;
 import com.sait.peelin.service.WelcomeEmailService;
@@ -43,7 +42,6 @@ public class AuthController {
     private final PasswordResetService passwordResetService;
     private final JwtService jwtService;
     private final WelcomeEmailService welcomeEmailService;
-    private final OAuthMobileTicketService oAuthMobileTicketService;
 
     @Value("${app.frontend.url:http://localhost:5173}")
     private String frontendUrl;
@@ -132,42 +130,6 @@ public class AuthController {
         // TODO: implement OAuth2 login (Google/Microsoft)
         return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED)
                 .body("OAuth2 login is scaffolded but not yet implemented");
-    }
-
-    /**
-     * Starts the server-side OAuth2 flow for a native app: sets a session flag, then redirects to
-     * {@code /oauth2/authorization/{provider}}. On success the app receives {@code scheme://oauth?ticket=...}
-     * and should call {@link #oauth2MobileClaim(String)}.
-     */
-    @GetMapping("/oauth2/mobile-begin/{provider}")
-    public void oauth2MobileBegin(
-            @PathVariable String provider,
-            HttpServletRequest request,
-            HttpServletResponse response
-    ) throws IOException {
-        String p = provider == null ? "" : provider.trim().toLowerCase();
-        if (!"google".equals(p) && !"microsoft".equals(p)) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "provider must be google or microsoft");
-            return;
-        }
-        request.getSession(true).setAttribute(
-                com.sait.peelin.security.OAuth2SuccessHandler.SESSION_MOBILE_OAUTH,
-                Boolean.TRUE
-        );
-        String ctx = request.getContextPath() == null ? "" : request.getContextPath();
-        response.sendRedirect(ctx + "/oauth2/authorization/" + p);
-    }
-
-    /**
-     * Exchanges a one-time ticket (from the mobile deep link) for the same JWT issued after OAuth2 login.
-     */
-    @GetMapping("/oauth2/mobile-claim")
-    public ResponseEntity<AuthResponse> oauth2MobileClaim(@RequestParam("ticket") String ticket) {
-        Optional<String> jwt = oAuthMobileTicketService.claim(ticket);
-        if (jwt.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.GONE).build();
-        }
-        return ResponseEntity.ok(authService.getUserInfoFromToken(jwt.get()));
     }
 
     @PostMapping("/forgot-password")
