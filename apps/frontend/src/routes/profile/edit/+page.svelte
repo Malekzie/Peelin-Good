@@ -41,6 +41,7 @@
 	let uploadingPhoto = $state(false);
 	let showDeactivateConfirm = $state(false);
 	let deactivating = $state(false);
+	let deactivatePassword = $state('');
 	let showDeleteConfirm = $state(false);
 	let deleting = $state(false);
 
@@ -117,16 +118,22 @@
 	);
 
 	async function handleDeactivate() {
+		if (!deactivatePassword.trim()) {
+			errors.deactivatePassword = 'Enter your password to confirm.';
+			return;
+		}
 		deactivating = true;
+		errors.deactivatePassword = '';
 		try {
-			await deactivateAccount();
+			await deactivateAccount(deactivatePassword);
 			await logoutUser();
 			goto(resolve('/'));
 		} catch {
 			showDeactivateConfirm = false;
-			errors.general = 'Failed to deactivate account. Please try again.';
+			errors.general = 'Failed to deactivate account. Check your password and try again.';
 		} finally {
 			deactivating = false;
+			deactivatePassword = '';
 		}
 	}
 
@@ -736,10 +743,26 @@
 					<h2 class="text-lg font-bold text-amber-600">Deactivate Account</h2>
 					<p class="mt-2 text-sm text-muted-foreground">
 						Your account will be deactivated and you will be logged out. Contact support to
-						reactivate it.
+						reactivate it. Enter your password to confirm.
 					</p>
+					<label class="mt-4 block text-sm font-medium">Password</label>
+					<input
+						type="password"
+						class="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+						bind:value={deactivatePassword}
+						autocomplete="current-password"
+					/>
+					{#if errors.deactivatePassword}
+						<p class="mt-1 text-sm text-destructive">{errors.deactivatePassword}</p>
+					{/if}
 					<div class="mt-6 flex justify-end gap-3">
-						<Button variant="outline" onclick={() => (showDeactivateConfirm = false)}>Cancel</Button
+						<Button
+							variant="outline"
+							onclick={() => {
+								showDeactivateConfirm = false;
+								deactivatePassword = '';
+								errors.deactivatePassword = '';
+							}}>Cancel</Button
 						>
 						<Button
 							class="bg-amber-500 text-white hover:bg-amber-600"

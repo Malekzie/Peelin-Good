@@ -3,6 +3,7 @@ package com.sait.peelin.service;
 import com.sait.peelin.dto.v1.auth.AccountProfilePatchRequest;
 import com.sait.peelin.dto.v1.auth.AuthResponse;
 import com.sait.peelin.dto.v1.auth.ChangePasswordRequest;
+import com.sait.peelin.dto.v1.auth.DeactivateAccountRequest;
 import com.sait.peelin.dto.v1.auth.LoginRequest;
 import com.sait.peelin.dto.v1.auth.RegisterRequest;
 import com.sait.peelin.model.Customer;
@@ -210,6 +211,23 @@ public class AuthService {
                 .build();
         String token = jwtService.generateToken(userDetails);
         return buildAuthResponse(u, token);
+    }
+
+    /**
+     * Deactivates the current user after verifying their password. Any authenticated role may call this.
+     */
+    @Transactional
+    public void deactivateAccount(DeactivateAccountRequest request) {
+        User u = currentUserService.requireUser();
+        if (!StringUtils.hasText(u.getUserPasswordHash())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "This account has no password set; contact support to deactivate.");
+        }
+        if (!passwordEncoder.matches(request.getCurrentPassword(), u.getUserPasswordHash())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Current password is incorrect");
+        }
+        u.setActive(false);
+        userRepository.save(u);
     }
 
     @Transactional

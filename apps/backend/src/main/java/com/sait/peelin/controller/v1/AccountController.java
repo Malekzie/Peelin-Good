@@ -3,6 +3,7 @@ package com.sait.peelin.controller.v1;
 import com.sait.peelin.dto.v1.auth.AccountProfilePatchRequest;
 import com.sait.peelin.dto.v1.auth.AuthResponse;
 import com.sait.peelin.dto.v1.auth.ChangePasswordRequest;
+import com.sait.peelin.dto.v1.auth.DeactivateAccountRequest;
 import com.sait.peelin.service.AuthService;
 import com.sait.peelin.service.CustomerService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -47,6 +48,18 @@ public class AccountController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void changePassword(@Valid @RequestBody ChangePasswordRequest request) {
         authService.changePassword(request);
+    }
+
+    @Operation(summary = "Deactivate my account", description = "Sets the authenticated user inactive after verifying the current password. Any role may use this endpoint.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Account deactivated"),
+            @ApiResponse(responseCode = "400", description = "Incorrect password or validation error", content = @Content),
+            @ApiResponse(responseCode = "401", description = "Not authenticated", content = @Content)
+    })
+    @PostMapping("/deactivate")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deactivateAccount(@Valid @RequestBody DeactivateAccountRequest request) {
+        authService.deactivateAccount(request);
     }
 
     @Operation(summary = "Upload profile photo", description = "Upload a profile photo for the authenticated customer. The photo is stored and set to pending review before being publicly visible.")
