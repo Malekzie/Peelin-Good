@@ -1,5 +1,4 @@
 <script>
-	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
 	import { Button } from '$lib/components/ui/button';
 	import { Separator } from '$lib/components/ui/separator';
 	import { Skeleton } from '$lib/components/ui/skeleton';
@@ -32,50 +31,122 @@
 </script>
 
 <div class="md:col-span-4">
-	<Card class="h-full">
-		<CardHeader>
-			<CardTitle>AI Powered Recommendations</CardTitle>
-		</CardHeader>
-		<CardContent class="flex flex-col gap-1">
+	<div
+		class="relative h-full overflow-hidden rounded-2xl border border-amber-200/60 bg-gradient-to-b from-amber-50/60 to-orange-50/40 dark:border-amber-900/30 dark:from-amber-950/20 dark:to-orange-950/10"
+	>
+		<div
+			class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-amber-300/70 via-orange-300 to-amber-400"
+		/>
+
+		<div class="flex flex-col gap-1 p-5 pt-6">
+			<!-- Header -->
+			<div class="mb-1 flex items-center gap-2">
+				<div
+					class="flex h-7 w-7 items-center justify-center rounded-full bg-amber-100/70 text-amber-600 dark:bg-amber-900/50 dark:text-amber-500"
+				>
+					<!-- Sparkle icon -->
+					<div
+						class="flex h-7 w-7 items-center justify-center rounded-full bg-amber-100/70 dark:bg-amber-900/50"
+					>
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="16"
+							height="16"
+							viewBox="0 0 32 32"
+							fill="none"
+						>
+							<!-- Orange body -->
+							<circle cx="16" cy="18" r="11" fill="#F97316" />
+							<!-- Shine -->
+							<circle cx="12" cy="13" r="2.5" fill="#FED7AA" opacity="0.5" />
+							<!-- Leaf -->
+							<path d="M16 7 C16 7 18 3 22 4 C22 4 19 6 18 9" fill="#65A30D" />
+							<!-- Stem -->
+							<line
+								x1="16"
+								y1="7"
+								x2="16"
+								y2="9"
+								stroke="#92400E"
+								stroke-width="1.5"
+								stroke-linecap="round"
+							/>
+						</svg>
+					</div>
+				</div>
+				<span class="text-sm font-semibold text-amber-900 dark:text-amber-200"
+					>AI Recommendations</span
+				>
+			</div>
+			<p class="mb-4 text-xs text-amber-700/70 dark:text-amber-400/70">Picked just for you</p>
+
+			<!-- Content -->
 			{#if loading}
 				{#each Array(3) as _, i}
-					<div class="flex items-center gap-3 rounded-lg px-3 py-3">
-						<Skeleton class="h-4 w-full" />
+					<div class="flex items-center gap-3 rounded-lg px-2 py-2.5">
+						<Skeleton class="h-4 w-full bg-amber-200/60 dark:bg-amber-800/30" />
 					</div>
 					{#if i < 2}
-						<Separator />
+						<Separator class="bg-amber-200/60 dark:bg-amber-800/30" />
 					{/if}
 				{/each}
 			{:else if error}
-				<p class="px-3 py-4 text-sm text-muted-foreground">Could not load recommendations.</p>
+				<p class="px-2 py-4 text-sm text-amber-800/60 dark:text-amber-400/60">
+					Could not load recommendations.
+				</p>
 			{:else if needsPreferences}
-				<p class="px-3 py-4 text-sm text-muted-foreground">
+				<p class="px-2 py-4 text-sm text-amber-800/70 dark:text-amber-300/70">
 					Set your taste preferences first, then we can suggest products tailored to you.
 				</p>
-				<Button variant="secondary" href={resolve('/profile/preferences')} class="mt-1 w-full">
+				<Button
+					variant="secondary"
+					href={resolve('/profile/preferences')}
+					class="mt-1 w-full bg-amber-100 text-amber-900 hover:bg-amber-200 dark:bg-amber-900/40 dark:text-amber-200 dark:hover:bg-amber-900/60"
+				>
 					Edit preferences
 				</Button>
 			{:else if recommendations.length === 0}
-				<p class="px-3 py-4 text-sm text-muted-foreground">
+				<p class="px-2 py-4 text-sm text-amber-800/70 dark:text-amber-300/70">
 					No recommendations yet. Order something to get started!
 				</p>
 			{:else}
 				{#each recommendations as rec, i (rec.productId)}
 					<a
 						href={resolve(`/menu?search=${encodeURIComponent(rec.productName ?? '')}`)}
-						class="flex items-center justify-between rounded-lg px-3 py-3 transition-colors hover:bg-muted"
+						class="group flex items-center justify-between rounded-lg px-2 py-2.5 transition-colors hover:bg-amber-100/80 dark:hover:bg-amber-900/30"
 					>
-						<p class="text-sm font-medium text-foreground">{rec.productName}</p>
+						<p class="text-sm font-medium text-amber-900 dark:text-amber-200">{rec.productName}</p>
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="14"
+							height="14"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							class="shrink-0 text-amber-400 opacity-0 transition-opacity group-hover:opacity-100 dark:text-amber-500"
+						>
+							<path d="M5 12h14M12 5l7 7-7 7" />
+						</svg>
 					</a>
 					{#if i < recommendations.length - 1}
-						<Separator />
+						<Separator class="bg-amber-200/50 dark:bg-amber-800/30" />
 					{/if}
 				{/each}
 			{/if}
 
-			<Button variant="outline" href={resolve('/menu')} class="mt-4 w-full">
+			<Button
+				variant="outline"
+				href={resolve('/menu')}
+				class="mt-4 w-full border-amber-300 text-amber-900 hover:bg-amber-100 dark:border-amber-700 dark:text-amber-200 dark:hover:bg-amber-900/30"
+			>
 				View all products
 			</Button>
-		</CardContent>
-	</Card>
+
+			<p class="mt-2 text-center text-[10px] text-amber-700/50 dark:text-amber-500/50">
+				Recommendations are generated by AI using your preferences and past orders. Update your
+				preferences at anytime to improve your suggestions.
+			</p>
+		</div>
+	</div>
 </div>
