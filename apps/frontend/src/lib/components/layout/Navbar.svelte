@@ -67,6 +67,11 @@
 				href={resolve('/about')}
 				class="text-sm font-medium text-foreground transition-colors hover:text-primary">About</a
 			>
+			<a
+				href={resolve('/locations')}
+				class="text-sm font-medium text-foreground transition-colors hover:text-primary"
+				>Locations</a
+			>
 		</div>
 
 		<!-- Right icons -->
@@ -118,6 +123,10 @@
 
 			<hr class="border-border" />
 			<a href={resolve('/about')} class="text-sm text-foreground hover:text-primary">About</a>
+
+			<a href={resolve('/locations')} class="text-sm text-foreground hover:text-primary"
+				>Locations</a
+			>
 
 			<div class="flex gap-4 pt-2">
 				<button

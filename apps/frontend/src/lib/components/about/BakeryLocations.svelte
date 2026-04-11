@@ -1,40 +1,17 @@
-<script lang="ts">
+<script>
 	import { onMount } from 'svelte';
 	import { Skeleton } from '$lib/components/ui/skeleton';
 	import { getBakeries, getBakeryReviews, getBakeryAverage } from '$lib/services/bakeries';
 
-	type Review = {
-		id: string;
-		reviewerDisplayName: string;
-		rating: number;
-		comment: string | null;
-	};
-
-	type BakeryWithReviews = {
-		id: number;
-		name: string;
-		phone: string;
-		email: string;
-		status: string;
-		address: {
-			addressLine1: string;
-			addressCity: string;
-			addressProvince: string;
-			addressPostalCode: string;
-		} | null;
-		reviews: Review[];
-		average: number | null;
-	};
-
-	let bakeries = $state<BakeryWithReviews[]>([]);
+	let bakeries = $state([]);
 	let loading = $state(true);
-	let expanded = $state<number | null>(null);
+	let expanded = $state(null);
 
 	onMount(async () => {
 		try {
 			const raw = await getBakeries();
 			bakeries = await Promise.all(
-				raw.map(async (b: any) => {
+				raw.map(async (b) => {
 					const [reviews, average] = await Promise.all([
 						getBakeryReviews(b.id).catch(() => []),
 						getBakeryAverage(b.id).catch(() => null)
@@ -49,12 +26,12 @@
 		}
 	});
 
-	function formatAddress(address: any) {
+	function formatAddress(address) {
 		if (!address) return '';
-		return `${address.addressLine1}, ${address.addressCity}, ${address.addressProvince}`;
+		return `${address.line1}, ${address.city}, ${address.province} ${address.postalCode}`;
 	}
 
-	function stars(rating: number) {
+	function stars(rating) {
 		return '★'.repeat(rating) + '☆'.repeat(5 - rating);
 	}
 </script>
