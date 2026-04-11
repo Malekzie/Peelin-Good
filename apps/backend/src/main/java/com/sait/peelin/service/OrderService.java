@@ -351,10 +351,6 @@ public class OrderService {
         }
 
         if (!stripeService.isConfigured()) {
-            if (req.paymentIntentId().startsWith("dev_pi_")) {
-                stripePaymentFulfillmentService.fulfillOrderByPaymentIntentId(req.paymentIntentId());
-                return toDto(orderRepository.findById(orderId).orElseThrow());
-            }
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Stripe is not configured");
         }
 
