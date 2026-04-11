@@ -44,6 +44,7 @@ public class ReviewService {
     private final OrderItemRepository orderItemRepository;
     private final EmployeeRepository employeeRepository;
     private final CurrentUserService currentUserService;
+    private final CustomerLookupCacheService customerLookupCacheService;
     private final ReviewModerationService reviewModerationService;
 
     @Transactional(readOnly = true)
@@ -95,8 +96,10 @@ public class ReviewService {
         if (u.getUserRole() != UserRole.customer) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
-        Customer customer = customerRepository.findByUser_UserId(u.getUserId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Customer profile required"));
+        Customer customer = customerLookupCacheService.findByUserId(u.getUserId());
+        if (customer == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Customer profile required");
+        }
         Product product = productRepository.findById(productId).orElseThrow(() -> new ResourceNotFoundException("Product not found"));
 
         if (!orderItemRepository.existsPurchasedByCustomer(customer.getId(), productId)) {
@@ -146,8 +149,10 @@ public class ReviewService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Order id is required");
         }
 
-        Customer customer = customerRepository.findByUser_UserId(u.getUserId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Customer profile required"));
+        Customer customer = customerLookupCacheService.findByUserId(u.getUserId());
+        if (customer == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Customer profile required");
+        }
 
         Order order = orderRepository.findById(req.getOrderId())
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found"));

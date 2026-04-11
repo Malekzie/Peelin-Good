@@ -37,6 +37,17 @@ public class AdminUserController {
         return adminUserService.list();
     }
 
+    @Operation(summary = "List staff users", description = "Returns all admin and employee users. Used for messaging recipient lists.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Staff list returned"),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions", content = @Content)
+    })
+    @GetMapping("/staff")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPLOYEE')")
+    public List<UserSummaryDto> listStaff() {
+        return adminUserService.listStaff();
+    }
+
     @Operation(summary = "Set user active status", description = "Enable or disable a user account. Disabled users cannot log in.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "User active status updated"),

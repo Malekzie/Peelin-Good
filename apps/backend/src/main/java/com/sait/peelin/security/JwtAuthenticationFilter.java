@@ -1,9 +1,9 @@
 package com.sait.peelin.security;
 
 import com.sait.peelin.model.User;
-import com.sait.peelin.repository.UserRepository;
 import com.sait.peelin.service.JwtService;
 import com.sait.peelin.service.TokenDenylistService;
+import com.sait.peelin.service.UserLookupCacheService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
@@ -11,9 +11,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -24,9 +23,8 @@ import java.io.IOException;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
-    private final UserDetailsService userDetailsService;
     private final TokenDenylistService tokenDenylistService;
-    private final UserRepository userRepository;
+    private final UserLookupCacheService userLookupCacheService;
 
     @Override
     protected void doFilterInternal(
@@ -38,9 +36,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         var existingAuth = SecurityContextHolder.getContext().getAuthentication();
 
         if (existingAuth != null && existingAuth.isAuthenticated() && existingAuth.getName() != null) {
-            User sessionUser = userRepository.findByUsernameIgnoreCaseOrUserEmailIgnoreCase(existingAuth.getName(), existingAuth.getName()).orElse(null);
+            User sessionUser = userLookupCacheService.findActiveByLoginIdentifier(existingAuth.getName());
 
-            if (sessionUser != null && !Boolean.TRUE.equals(sessionUser.getActive())) {
+            if (sessionUser == null) {
                 var session = request.getSession(false);
                 if (session != null) session.invalidate();
                 SecurityContextHolder.clearContext();
@@ -59,29 +57,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             final String username = jwtService.extractUsername(jwt);
 
-            if (username != null) {
-                UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-
-                if (jwtService.isTokenValid(jwt, userDetails)) {
-                    // check if account is still active
-                    User activeUser = userRepository.findByUsernameIgnoreCaseOrUserEmailIgnoreCase(username, username).orElse(null);
-
-                    if (activeUser == null || !Boolean.TRUE.equals(activeUser.getActive())) {
-                        var session = request.getSession(false);
-
-                        if (session != null) {
-                            session.invalidate();
-                        }
-
-                        SecurityContextHolder.clearContext();
-                        filterChain.doFilter(request, response);
-                        return;
-                    }
-
-                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                            userDetails, null, userDetails.getAuthorities());
-                    SecurityContextHolder.getContext().setAuthentication(authToken);
+            if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                User user = userLookupCacheService.findActiveByLoginIdentifier(username);
+                if (user == null) {
+                    filterChain.doFilter(request, response);
+                    return;
                 }
+
+                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                        username,
+                        null,
+                        java.util.List.of(new SimpleGrantedAuthority("ROLE_" + user.getUserRole().name().toUpperCase()))
+                );
+                // Reuse the resolved user in this request so downstream current-user lookups avoid a second DB hit.
+                authToken.setDetails(user);
+                SecurityContextHolder.getContext().setAuthentication(authToken);
             }
         } catch (Exception e) {
             logger.warn("JWT validation failed: " + e.getMessage());

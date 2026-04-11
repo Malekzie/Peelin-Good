@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -44,6 +45,7 @@ public class LegacyMessageService {
         m.setReceiver(receiver);
         m.setMessageSubject(req.getSubject());
         m.setMessageContent(req.getContent());
+        m.setMessageSentDatetime(OffsetDateTime.now());
         m.setMessageIsRead(false);
         return toDto(messageRepository.save(m));
     }

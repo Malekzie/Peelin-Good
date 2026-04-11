@@ -24,6 +24,7 @@ public class RewardQueryService {
     private final RewardRepository rewardRepository;
     private final CustomerRepository customerRepository;
     private final CurrentUserService currentUserService;
+    private final CustomerLookupCacheService customerLookupCacheService;
 
     @Transactional(readOnly = true)
     public List<RewardDto> listForCustomer(UUID customerId) {
@@ -32,8 +33,10 @@ public class RewardQueryService {
         }
         User u = currentUserService.requireUser();
         if (u.getUserRole() == UserRole.customer) {
-            var self = customerRepository.findByUser_UserId(u.getUserId())
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN));
+            var self = customerLookupCacheService.findByUserId(u.getUserId());
+            if (self == null) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+            }
             if (!self.getId().equals(customerId)) {
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN);
             }
