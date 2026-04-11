@@ -66,7 +66,9 @@
 
 			const tagParam = $page.url.searchParams.get('tag');
 			if (tagParam && tags.some((t) => String(t.id) === tagParam)) {
-				activeTagId = tags.find((t) => String(t.id) === tagParam)?.id ?? null;
+				const byId = tags.find((t) => String(t.id) === tagParam);
+				const byName = tags.find((t) => t.name.toLowerCase() === tagParam.toLowerCase());
+				activeTagId = (byId ?? byName)?.id ?? null;
 			}
 
 			const searchParam = $page.url.searchParams.get('search');
@@ -104,7 +106,7 @@
 <div class="min-h-screen bg-[#FAF7F2]">
 	<!-- Page header -->
 	<header class="border-b border-border/60 bg-[#FAF7F2] px-6 pt-14 pb-10 text-center">
-		<p class="mb-3 text-[11px] font-semibold tracking-[0.2em] text-[#C4714A] uppercase">
+		<p class="mb-3 text-[11px] font-semibold tracking-[0.2em] text-[#C25F1A] uppercase">
 			Peelin' Good Bakery
 		</p>
 		<h1 class="text-5xl font-black tracking-tight text-[#2C1A0E] sm:text-6xl">Our Menu</h1>
@@ -119,7 +121,7 @@
 				type="text"
 				placeholder="Search breads, pastries, cakes..."
 				bind:value={searchQuery}
-				class="rounded-full bg-white pr-10 pl-10 shadow-sm focus-visible:ring-[#C4714A]"
+				class="rounded-full bg-white pr-10 pl-10 shadow-sm focus-visible:ring-[#C25F1A]"
 			/>
 			{#if searchQuery}
 				<button
@@ -146,7 +148,7 @@
 						onclick={() => (activeTagId = null)}
 						class="rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors
 							{activeTagId === null
-							? 'bg-[#C4714A] text-white'
+							? 'bg-[#C25F1A] text-white'
 							: 'text-foreground/70 hover:bg-black/5 hover:text-foreground'}"
 					>
 						All items
@@ -156,7 +158,7 @@
 							onclick={() => (activeTagId = tag.id)}
 							class="rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors
 								{activeTagId === tag.id
-								? 'bg-[#C4714A] text-white'
+								? 'bg-[#C25F1A] text-white'
 								: 'text-foreground/70 hover:bg-black/5 hover:text-foreground'}"
 						>
 							{tag.name}
@@ -208,8 +210,8 @@
 				</div>
 			{:else if filtered.length === 0}
 				<div class="flex flex-col items-center justify-center py-24 text-center">
-					<div class="flex h-16 w-16 items-center justify-center rounded-full bg-[#C4714A]/10">
-						<Search class="h-7 w-7 text-[#C4714A]" />
+					<div class="flex h-16 w-16 items-center justify-center rounded-full bg-[#C25F1A]/10">
+						<Search class="h-7 w-7 text-[#C25F1A]" />
 					</div>
 					<h2 class="mt-4 text-lg font-semibold text-foreground">Nothing found</h2>
 					<p class="mt-1 text-sm text-muted-foreground">
@@ -220,7 +222,7 @@
 							activeTagId = null;
 							searchQuery = '';
 						}}
-						class="mt-5 rounded-full bg-[#C4714A] px-5 py-2 text-sm font-semibold text-white hover:bg-[#C4714A]/90"
+						class="mt-5 rounded-full bg-[#C25F1A] px-5 py-2 text-sm font-semibold text-white hover:bg-[#C25F1A]/90"
 					>
 						Show all items
 					</button>
@@ -252,7 +254,7 @@
 					/>
 				{:else}
 					<div class="flex h-full w-full items-center justify-center">
-						<ShoppingBag class="h-14 w-14 text-[#C4714A]/25" />
+						<ShoppingBag class="h-14 w-14 text-[#C25F1A]/25" />
 					</div>
 				{/if}
 			</div>
@@ -263,7 +265,7 @@
 					<SheetTitle class="text-2xl font-bold text-[#2C1A0E]">
 						{selectedProduct.name}
 					</SheetTitle>
-					<p class="text-xl font-bold text-[#C4714A]">{sheetPrice}</p>
+					<p class="text-xl font-bold text-[#C25F1A]">{sheetPrice}</p>
 				</SheetHeader>
 
 				{#if selectedProduct.description}
@@ -278,7 +280,7 @@
 							{@const tagName = tags.find((t) => t.id === tagId)?.name}
 							{#if tagName}
 								<span
-									class="rounded-full bg-[#F5EFE6] px-3 py-1 text-xs font-semibold text-[#C4714A]"
+									class="rounded-full bg-[#F5EFE6] px-3 py-1 text-xs font-semibold text-[#C25F1A]"
 								>
 									{tagName}
 								</span>
@@ -348,14 +350,14 @@
 				<Button
 					onclick={addSelectedToCart}
 					class="mt-auto h-12 w-full gap-2 text-sm font-semibold transition-all duration-300
-						{sheetAdded ? 'bg-[#8A9E7F] hover:bg-[#8A9E7F]' : 'bg-[#C4714A] hover:bg-[#C4714A]/90'}"
+						{sheetAdded ? 'bg-[#8A9E7F] hover:bg-[#8A9E7F]' : 'bg-[#C25F1A] hover:bg-[#C25F1A]/90'}"
 				>
 					{#if sheetAdded}
 						<Check class="h-4 w-4" />
 						Added to cart
 					{:else}
 						<ShoppingBag class="h-4 w-4" />
-						Add to cart — {sheetPrice}
+						Add to cart: {sheetPrice}
 					{/if}
 				</Button>
 			</div>

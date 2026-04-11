@@ -87,7 +87,7 @@
 			<div>
 				<h1 class="text-2xl font-bold tracking-tight text-foreground">Preferences</h1>
 				<p class="mt-1 text-sm text-muted-foreground">
-					Tell us what you like and dislike — we'll use this to personalize your recommendations.
+					Tell us what you like and dislike. We'll use this to personalize your recommendations.
 				</p>
 			</div>
 

@@ -28,7 +28,7 @@
 
 <section class="bg-[#FAF7F2] px-6 py-16">
 	<div class="mx-auto max-w-7xl">
-		<p class="mb-1 text-[11px] font-semibold tracking-[0.2em] text-[#C4714A] uppercase">Browse</p>
+		<p class="mb-1 text-[11px] font-semibold tracking-[0.2em] text-[#C25F1A] uppercase">Browse</p>
 		<h2 class="mb-8 text-3xl font-black tracking-tight text-[#2C1A0E]">What are you craving?</h2>
 
 		<div class="overflow-hidden rounded-xl border border-border">
@@ -43,7 +43,7 @@
 						>
 							{#if cat.badge}
 								<span
-									class="mb-1 self-start rounded-full bg-[#F5EFE6] px-2 py-0.5 text-[10px] font-semibold tracking-wide text-[#C4714A] uppercase"
+									class="mb-1 self-start rounded-full bg-[#F5EFE6] px-2 py-0.5 text-[10px] font-semibold tracking-wide text-[#C25F1A] uppercase"
 								>
 									{cat.badge}
 								</span>
@@ -51,7 +51,7 @@
 							<span class="text-sm font-semibold text-foreground">{cat.name}</span>
 							<span class="text-xs leading-snug text-muted-foreground">{cat.desc}</span>
 							<span
-								class="absolute top-5 right-4 text-[#C4714A] opacity-0 transition-opacity group-hover:opacity-100"
+								class="absolute top-5 right-4 text-[#C25F1A] opacity-0 transition-opacity group-hover:opacity-100"
 								>→</span
 							>
 						</a>

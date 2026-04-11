@@ -45,7 +45,7 @@
 			/>
 		{:else}
 			<div class="flex h-full w-full items-center justify-center">
-				<ShoppingBag class="h-10 w-10 text-[#C4714A]/30" />
+				<ShoppingBag class="h-10 w-10 text-[#C25F1A]/30" />
 			</div>
 		{/if}
 	</div>
@@ -59,7 +59,7 @@
 			{/if}
 		</div>
 
-		<p class="text-lg font-bold text-[#C4714A]">{price}</p>
+		<p class="text-lg font-bold text-[#C25F1A]">{price}</p>
 
 		<!-- Stepper + Add — clicks here don't open the sheet -->
 		<!-- svelte-ignore a11y_click_events_have_key_events -->
@@ -92,7 +92,7 @@
 			<Button
 				onclick={addToCart}
 				class="flex-1 gap-1.5 text-xs transition-all duration-300
-					{added ? 'bg-[#8A9E7F] hover:bg-[#8A9E7F]' : 'bg-[#C4714A] hover:bg-[#C4714A]/90'}"
+					{added ? 'bg-[#8A9E7F] hover:bg-[#8A9E7F]' : 'bg-[#C25F1A] hover:bg-[#C25F1A]/90'}"
 			>
 				{#if added}
 					<Check class="h-3.5 w-3.5" />

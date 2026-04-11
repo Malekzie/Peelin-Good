@@ -262,7 +262,7 @@
 		const city = b.address?.city ?? '';
 		const dist = distanceLabel(b);
 		let label = b.name;
-		if (city) label += ` — ${city}`;
+		if (city) label += `, ${city}`;
 		if (dist) label += ` (${dist})`;
 		return label;
 	}
@@ -375,7 +375,7 @@
 				offset === 1
 					? 'tomorrow'
 					: d.toLocaleDateString('en-CA', { weekday: 'long' });
-			return `This location is closed on the selected day — it will open ${dayLabel} at ${timeStr}.`;
+			return `This location is closed on the selected day. It will open ${dayLabel} at ${timeStr}.`;
 		}
 		return 'This location appears to be closed for the near future.';
 	});
@@ -1041,12 +1041,12 @@
 					{#if bakeryHours.length > 0}
 						{#if isOpenNow}
 							<p class="mt-2 text-sm text-muted-foreground">
-								Order will be prepared as soon as possible — est. ready by
+								Order will be prepared as soon as possible. Est. ready by
 								<span class="font-medium text-foreground">{getAsapEstimateLabel()}</span>.
 							</p>
 						{:else if nextOpenStr}
 							<div class="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm text-amber-800">
-								This location is currently closed — it will open <span class="font-medium">{nextOpenStr}</span>.
+								This location is currently closed. It will open <span class="font-medium">{nextOpenStr}</span>.
 							</div>
 						{:else}
 							<p class="mt-2 text-sm text-muted-foreground">

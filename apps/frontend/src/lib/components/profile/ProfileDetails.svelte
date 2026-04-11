@@ -62,12 +62,23 @@
 	</Card>
 
 	{#if profile.employeeDiscountEligible}
-		<Card class="border-primary/30 bg-primary/5">
+		<Card class="bg-[#FAF7F2]">
 			<CardContent class="pt-6">
-				<p class="text-sm font-semibold text-primary">
-					20% employee discount — You are eligible at checkout. Applied after today&apos;s specials and your
-					loyalty tier discount.
-				</p>
+				<div class="flex items-start gap-3">
+					<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10">
+						<Star class="h-5 w-5 text-primary" />
+					</div>
+					<div>
+						<p class="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+							Employee benefit
+						</p>
+						<p class="text-lg font-bold text-foreground">20% employee discount</p>
+						<p class="mt-1 text-sm text-muted-foreground">
+							You are eligible at checkout. This applies after today&apos;s specials and your loyalty tier
+							discount.
+						</p>
+					</div>
+				</div>
 			</CardContent>
 		</Card>
 	{/if}
@@ -109,7 +120,7 @@
 				<Separator class="my-4" />
 
 				<p class="text-xs text-muted-foreground">
-					Earn points with every order; your tier discount applies automatically at checkout when available.
+					Earn points with every order. Your tier discount applies automatically at checkout when available.
 				</p>
 			</CardContent>
 		</Card>

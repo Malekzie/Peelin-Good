@@ -45,7 +45,7 @@
 		<div>
 			<h1 class="text-2xl font-bold tracking-tight text-foreground">Users</h1>
 			<p class="mt-1 text-sm text-muted-foreground">
-				All registered accounts — enable or disable access
+				All registered accounts. Enable or disable access.
 			</p>
 		</div>
 

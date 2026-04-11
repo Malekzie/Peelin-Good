@@ -169,7 +169,7 @@
 						/>
 					{:else}
 						<div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-[#F5EFE6]">
-							<ShoppingBag class="h-5 w-5 text-[#C4714A]/40" />
+							<ShoppingBag class="h-5 w-5 text-[#C25F1A]/40" />
 						</div>
 					{/if}
 					<div class="min-w-0 flex-1">

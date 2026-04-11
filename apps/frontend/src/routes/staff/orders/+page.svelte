@@ -87,7 +87,7 @@
 		<div>
 			<h1 class="text-2xl font-bold tracking-tight text-foreground">Orders</h1>
 			<p class="mt-1 text-sm text-muted-foreground">
-				Recent orders — update status as work progresses
+				Recent orders. Update status as work progresses.
 			</p>
 		</div>
 

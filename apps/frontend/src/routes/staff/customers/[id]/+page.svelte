@@ -13,6 +13,7 @@
 		approvePhoto,
 		rejectPhoto
 	} from '$lib/services/staff-customers.js';
+	import { listUsers, setUserActive } from '$lib/services/staff-users.js';
 
 	const id = page.params.id;
 	const isAdmin = $derived($user?.role === 'admin');
@@ -23,10 +24,14 @@
 	let editing = $state(false);
 	let saving = $state(false);
 	let draft = $state({});
+	let confirmingDeactivate = $state(false);
 
 	onMount(async () => {
 		try {
-			customer = await getCustomer(id);
+			const [customerData, users] = await Promise.all([getCustomer(id), listUsers()]);
+			customer = customerData;
+			const linkedUser = users.find((u) => String(u.id) === String(customer.userId));
+			if (linkedUser) customer = { ...customer, active: linkedUser.active };
 			resetDraft();
 		} catch {
 			error = true;
@@ -34,6 +39,23 @@
 			loading = false;
 		}
 	});
+
+	async function handleToggleActive() {
+		if (customer.active !== false) {
+			confirmingDeactivate = true;
+			return;
+		}
+		await doToggleActive();
+	}
+
+	async function doToggleActive() {
+		try {
+			await setUserActive(customer.userId, customer.active === false);
+			customer = { ...customer, active: !customer.active };
+		} catch {
+			//
+		}
+	}
 
 	function resetDraft() {
 		draft = {
@@ -87,7 +109,16 @@
 						{customer.lastName ?? ''}
 					</h1>
 					{#if isAdmin && !editing}
-						<Button size="sm" variant="outline" onclick={() => (editing = true)}>Edit</Button>
+						<div class="flex gap-2">
+							<Button size="sm" variant="outline" onclick={() => (editing = true)}>Edit</Button>
+							<Button
+								size="sm"
+								variant={customer.active === false ? 'outline' : 'destructive'}
+								onclick={handleToggleActive}
+							>
+								{customer.active === false ? 'Reactivate' : 'Deactivate'}
+							</Button>
+						</div>
 					{/if}
 				</div>
 
@@ -155,9 +186,21 @@
 							</dt>
 							<dd class="mt-1 text-foreground">
 								{#if customer.address}
-									{customer.address.addressLine1}, {customer.address.addressCity}
+									{customer.address.line1}, {customer.address.city}
 								{:else}
 									—
+								{/if}
+							</dd>
+						</div>
+						<div>
+							<dt class="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
+								Status
+							</dt>
+							<dd class="mt-1">
+								{#if customer.active === false}
+									<span class="text-xs font-medium text-destructive">Deactivated</span>
+								{:else}
+									<span class="text-xs font-medium text-green-600">Active</span>
 								{/if}
 							</dd>
 						</div>
@@ -178,6 +221,33 @@
 					<div class="flex gap-2">
 						<Button size="sm" variant="outline" onclick={handleApprovePhoto}>Approve</Button>
 						<Button size="sm" variant="destructive" onclick={handleRejectPhoto}>Reject</Button>
+					</div>
+				</div>
+			{/if}
+
+			{#if confirmingDeactivate}
+				<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+					<div class="w-full max-w-sm rounded-xl border border-border bg-card p-6 shadow-lg">
+						<h2 class="text-base font-semibold text-foreground">Deactivate account?</h2>
+						<p class="mt-2 text-sm text-muted-foreground">
+							{customer.firstName}'s account will be deactivated and they will no longer be able to
+							log in.
+						</p>
+						<div class="mt-6 flex justify-end gap-2">
+							<Button size="sm" variant="outline" onclick={() => (confirmingDeactivate = false)}>
+								Cancel
+							</Button>
+							<Button
+								size="sm"
+								variant="destructive"
+								onclick={async () => {
+									confirmingDeactivate = false;
+									await doToggleActive();
+								}}
+							>
+								Deactivate
+							</Button>
+						</div>
 					</div>
 				</div>
 			{/if}
