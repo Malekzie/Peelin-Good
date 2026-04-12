@@ -25,5 +25,7 @@ public record ReviewDto(
          * When status is {@code rejected}, brief reason from AI moderation (or API failure message).
          * Rejected moderation outcomes are persisted for one-attempt review policy.
          */
-        String moderationMessage
+        String moderationMessage,
+        boolean verifiedPurchase,
+        boolean verifiedAccount
 ) {}

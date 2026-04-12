@@ -149,4 +149,17 @@ public class PasswordResetService {
             }
         });
     }
+
+    public void validateToken(String token) {
+        PasswordResetToken resetToken = tokenRepository.findByToken(hashToken(token))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid or expired reset token"));
+
+        if (resetToken.getUsed()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Reset token has already been used");
+        }
+
+        if (resetToken.getExpiresAt().isBefore(OffsetDateTime.now())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Reset token has expired");
+        }
+    }
 }

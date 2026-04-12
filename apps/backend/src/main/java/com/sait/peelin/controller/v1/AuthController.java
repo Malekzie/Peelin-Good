@@ -52,12 +52,12 @@ public class AuthController {
     @Value("${app.cookie.secure:false}")
     private boolean cookieSecure;
 
-    private void setTokenCookie(HttpServletResponse response, String token) {
+    private void setTokenCookie(HttpServletResponse response, String token, boolean rememberMe) {
         ResponseCookie cookie = ResponseCookie.from("token", token)
                 .httpOnly(true)
                 .secure(cookieSecure)
                 .path("/")
-                .maxAge(Duration.ofMillis(jwtExpiration))
+                .maxAge(rememberMe ? Duration.ofMillis(jwtExpiration) : Duration.ofSeconds(-1))
                 .sameSite("Lax")
                 .build();
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
@@ -67,7 +67,7 @@ public class AuthController {
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest loginRequest, HttpServletResponse response) {
         AuthResponse authResponse = authService.login(loginRequest);
 
-        setTokenCookie(response, authResponse.getToken());
+        setTokenCookie(response, authResponse.getToken(), loginRequest.isRememberMe());
 
         return ResponseEntity.ok(authResponse);
     }
@@ -82,7 +82,7 @@ public class AuthController {
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest registerRequest, HttpServletResponse response) {
         AuthResponse authResponse = authService.register(registerRequest);
 
-        setTokenCookie(response, authResponse.getToken());
+        setTokenCookie(response, authResponse.getToken(), true);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(authResponse);
     }
@@ -156,7 +156,7 @@ public class AuthController {
             return;
         }
         request.getSession().removeAttribute("oauth2_pending_token");
-        setTokenCookie(response, token);
+        setTokenCookie(response, token, true);
         AuthResponse auth = authService.getUserInfoFromToken(token);
         String q = "username=" + URLEncoder.encode(auth.getUsername(), StandardCharsets.UTF_8)
                 + "&role=" + URLEncoder.encode(auth.getRole(), StandardCharsets.UTF_8)
@@ -164,13 +164,9 @@ public class AuthController {
         response.sendRedirect(frontendUrl + "/auth/callback?" + q);
     }
 
-    // TEMP
-    @GetMapping("/test-welcome-email")
-    public ResponseEntity<String> testWelcomeEmail() {
-        User fakeUser = new User();
-        fakeUser.setUsername("testuser");
-        fakeUser.setUserEmail("auckmason@gmail.com");
-        welcomeEmailService.sendWelcomeEmail(fakeUser);
-        return ResponseEntity.ok("Email sent");
+    @GetMapping("/reset-password/validate")
+    public ResponseEntity<Void> validateResetToken(@RequestParam String token) {
+        passwordResetService.validateToken(token);
+        return ResponseEntity.ok().build();
     }
 }

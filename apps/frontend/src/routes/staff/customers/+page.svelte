@@ -9,7 +9,8 @@
 		listCustomers,
 		getPendingPhotos,
 		approvePhoto,
-		rejectPhoto
+		rejectPhoto,
+		patchCustomer
 	} from '$lib/services/staff-customers.js';
 
 	let tab = $state('all');
@@ -97,9 +98,7 @@
 				>
 					{label}
 					{#if key === 'photos' && pendingPhotos.length > 0}
-						<span
-							class="ml-1 rounded-full bg-destructive px-1.5 py-0.5 text-xs text-white"
-						>
+						<span class="ml-1 rounded-full bg-destructive px-1.5 py-0.5 text-xs text-white">
 							{pendingPhotos.length}
 						</span>
 					{/if}
@@ -131,14 +130,15 @@
 						<p class="px-6 py-8 text-center text-sm text-muted-foreground">No customers found</p>
 					{:else}
 						{#each filteredCustomers as c (c.id)}
-							<div class="flex items-center justify-between px-5 py-3">
-								<div>
-									<p class="text-sm font-medium text-foreground">
-										{c.firstName ?? ''} {c.lastName ?? ''}
+							<div class="flex items-center justify-between gap-3 px-5 py-3">
+								<div class="min-w-0">
+									<p class="truncate text-sm font-medium text-foreground">
+										{c.firstName ?? ''}
+										{c.lastName ?? ''}
 									</p>
-									<p class="text-xs text-muted-foreground">{c.email ?? '—'}</p>
+									<p class="truncate text-xs text-muted-foreground">{c.email ?? '—'}</p>
 								</div>
-								<div class="flex items-center gap-3">
+								<div class="flex shrink-0 items-center gap-3">
 									{#if c.photoApprovalPending}
 										<Badge variant="destructive" class="text-xs">Photo pending</Badge>
 									{/if}
@@ -154,54 +154,53 @@
 					{/if}
 				</div>
 			</div>
+		{:else if pendingPhotos.length === 0}
+			<div class="rounded-xl border border-border bg-card p-10 text-center">
+				<p class="text-sm text-muted-foreground">No pending photos</p>
+			</div>
 		{:else}
-			{#if pendingPhotos.length === 0}
-				<div class="rounded-xl border border-border bg-card p-10 text-center">
-					<p class="text-sm text-muted-foreground">No pending photos</p>
-				</div>
-			{:else}
-				<div class="space-y-3">
-					{#each pendingPhotos as c (c.id)}
-						<div
-							class="flex items-center justify-between rounded-xl border border-border bg-card px-5 py-4"
-						>
-							<div class="flex items-center gap-4">
-								{#if c.profilePhotoPath}
-									<img
-										src={c.profilePhotoPath}
-										alt="Profile"
-										class="h-12 w-12 rounded-full border border-border object-cover"
-									/>
-								{/if}
-								<div>
-									<p class="text-sm font-medium text-foreground">
-										{c.firstName ?? ''} {c.lastName ?? ''}
-									</p>
-									<p class="text-xs text-muted-foreground">{c.email ?? '—'}</p>
-								</div>
-							</div>
-							<div class="flex gap-2">
-								<Button
-									size="sm"
-									variant="outline"
-									onclick={() => handleApprove(c.id)}
-									disabled={!!actioning[c.id]}
-								>
-									{actioning[c.id] === 'approve' ? '...' : 'Approve'}
-								</Button>
-								<Button
-									size="sm"
-									variant="destructive"
-									onclick={() => handleReject(c.id)}
-									disabled={!!actioning[c.id]}
-								>
-									{actioning[c.id] === 'reject' ? '...' : 'Reject'}
-								</Button>
+			<div class="space-y-3">
+				{#each pendingPhotos as c (c.id)}
+					<div
+						class="flex flex-col gap-3 rounded-xl border border-border bg-card px-5 py-4 sm:flex-row sm:items-center sm:justify-between"
+					>
+						<div class="flex items-center gap-4">
+							{#if c.profilePhotoPath}
+								<img
+									src={c.profilePhotoPath}
+									alt="Profile"
+									class="h-12 w-12 rounded-full border border-border object-cover"
+								/>
+							{/if}
+							<div>
+								<p class="text-sm font-medium text-foreground">
+									{c.firstName ?? ''}
+									{c.lastName ?? ''}
+								</p>
+								<p class="text-xs text-muted-foreground">{c.email ?? '—'}</p>
 							</div>
 						</div>
-					{/each}
-				</div>
-			{/if}
+						<div class="flex gap-2">
+							<Button
+								size="sm"
+								variant="outline"
+								onclick={() => handleApprove(c.id)}
+								disabled={!!actioning[c.id]}
+							>
+								{actioning[c.id] === 'approve' ? '...' : 'Approve'}
+							</Button>
+							<Button
+								size="sm"
+								variant="destructive"
+								onclick={() => handleReject(c.id)}
+								disabled={!!actioning[c.id]}
+							>
+								{actioning[c.id] === 'reject' ? '...' : 'Reject'}
+							</Button>
+						</div>
+					</div>
+				{/each}
+			</div>
 		{/if}
 	</div>
 </main>

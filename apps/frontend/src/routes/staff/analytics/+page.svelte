@@ -39,7 +39,7 @@
 	let error = $state(false);
 
 	const chartConfig = {
-		value: { label: 'Value', color: '#C4714A' }
+		value: { label: 'Value', color: '#C25F1A' }
 	} satisfies Chart.ChartConfig;
 
 	onMount(async () => {
@@ -188,7 +188,7 @@
 								x="label"
 								y="value"
 								axis="x"
-								series={[{ key: 'value', label: 'Revenue', color: '#C4714A' }]}
+								series={[{ key: 'value', label: 'Revenue', color: '#C25F1A' }]}
 							/>
 						</Chart.Container>
 					{/if}
@@ -206,7 +206,7 @@
 								xScale={scaleBand().padding(0.3)}
 								x="label"
 								axis="x"
-								series={[{ key: 'value', label: 'Revenue', color: '#C4714A' }]}
+								series={[{ key: 'value', label: 'Revenue', color: '#C25F1A' }]}
 							/>
 						</Chart.Container>
 					{/if}

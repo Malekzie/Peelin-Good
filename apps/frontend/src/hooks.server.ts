@@ -28,6 +28,10 @@ export const handle: Handle = sequence(Sentry.sentryHandle(), async ({ event, re
 
 	const isStaff = pathname === '/staff' || pathname.startsWith('/staff/');
 
+	if (pathname === '/deactivated') {
+		return resolve(event);
+	}
+
 	if (isProtected && !user) {
 		throw redirect(303, `/login?redirectTo=${encodeURIComponent(pathname)}`);
 	} else if (isStaff) {

@@ -45,7 +45,7 @@
 		<div>
 			<h1 class="text-2xl font-bold tracking-tight text-foreground">Users</h1>
 			<p class="mt-1 text-sm text-muted-foreground">
-				All registered accounts — enable or disable access
+				All registered accounts. Enable or disable access.
 			</p>
 		</div>
 
@@ -65,14 +65,14 @@
 			<div class="rounded-xl border border-border bg-card">
 				<div class="divide-y divide-border">
 					{#each users as u (u.id)}
-						<div class="flex items-center justify-between px-5 py-3">
-							<div>
-								<p class="text-sm font-medium text-foreground">{u.username}</p>
-								<p class="text-xs text-muted-foreground">
+						<div class="flex items-center justify-between gap-3 px-5 py-3">
+							<div class="min-w-0">
+								<p class="truncate text-sm font-medium text-foreground">{u.username}</p>
+								<p class="truncate text-xs text-muted-foreground">
 									{u.email} · <span class="capitalize">{u.role}</span>
 								</p>
 							</div>
-							<div class="flex items-center gap-3">
+							<div class="flex shrink-0 items-center gap-3">
 								<Badge variant={u.active ? 'default' : 'secondary'}>
 									{u.active ? 'Active' : 'Disabled'}
 								</Badge>

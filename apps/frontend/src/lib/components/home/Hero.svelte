@@ -12,16 +12,16 @@
 		/>
 		<h1 class="text-5xl leading-[1.08] font-black tracking-tight text-[#2C1A0E] lg:text-6xl">
 			Made from<br />scratch.<br />
-			<span class="text-[#C4714A]">Always.</span>
+			<span class="text-[#C25F1A]">Always.</span>
 		</h1>
 		<p class="max-w-sm text-[15px] leading-relaxed text-muted-foreground">
-			Bread, pastries, and cakes baked in small batches every morning — with local ingredients and
+			Bread, pastries, and cakes baked in small batches every morning, with local ingredients and
 			nothing to hide.
 		</p>
 		<div class="flex gap-3 pt-2">
 			<a
 				href={resolve('/menu')}
-				class="rounded-full bg-[#C4714A] px-6 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+				class="rounded-full bg-[#C25F1A] px-6 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90"
 			>
 				Browse the menu
 			</a>
@@ -55,7 +55,7 @@
 			</div>
 
 			<div class="flex items-end justify-end">
-				<a href={resolve('/menu')} class="rounded-full bg-[#C4714A] px-4 py-2">
+				<a href={resolve('/menu')} class="rounded-full bg-[#C25F1A] px-4 py-2">
 					<p class="text-xs font-bold tracking-widest text-white uppercase">Order today</p>
 				</a>
 			</div>

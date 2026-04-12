@@ -10,8 +10,10 @@
 		listProducts,
 		createProduct,
 		updateProduct,
-		deleteProduct
+		deleteProduct,
+		uploadProductImage
 	} from '$lib/services/staff-products.js';
+	import { getTags } from '$lib/services/tags';
 
 	let products = $state([]);
 	let loading = $state(true);
@@ -20,6 +22,12 @@
 	let showCreate = $state(false);
 	let saving = $state(false);
 	let deleting = $state({});
+	let createImageFile = $state(null);
+	let editImageFile = $state(null);
+	let uploadingImage = $state(false);
+	let tags = $state([]);
+	let createTagIds = $state([]);
+	let editTagIds = $state([]);
 
 	let editDraft = $state({ name: '', description: '', basePrice: '' });
 	let createDraft = $state({ name: '', description: '', basePrice: '' });
@@ -30,7 +38,7 @@
 			return;
 		}
 		try {
-			products = await listProducts();
+			[products, tags] = await Promise.all([listProducts(), getTags()]);
 		} catch {
 			error = true;
 		} finally {
@@ -45,16 +53,22 @@
 			description: product.description ?? '',
 			basePrice: String(product.basePrice)
 		};
+		editTagIds = product.tagIds ?? [];
 	}
 
 	async function handleUpdate(id) {
 		saving = true;
 		try {
-			const updated = await updateProduct(id, {
+			let updated = await updateProduct(id, {
 				name: editDraft.name,
 				description: editDraft.description,
-				basePrice: parseFloat(editDraft.basePrice)
+				basePrice: parseFloat(editDraft.basePrice),
+				tagIds: editTagIds
 			});
+			if (editImageFile) {
+				updated = await uploadProductImage(id, editImageFile);
+				editImageFile = null;
+			}
 			products = products.map((p) => (p.id === id ? updated : p));
 			editingId = null;
 		} catch {
@@ -70,11 +84,19 @@
 			const created = await createProduct({
 				name: createDraft.name,
 				description: createDraft.description,
-				basePrice: parseFloat(createDraft.basePrice)
+				basePrice: parseFloat(createDraft.basePrice),
+				tagIds: createTagIds
 			});
-			products = [created, ...products];
+			if (createImageFile) {
+				const withImage = await uploadProductImage(created.id, createImageFile);
+				products = [withImage, ...products];
+			} else {
+				products = [created, ...products];
+			}
 			showCreate = false;
 			createDraft = { name: '', description: '', basePrice: '' };
+			createImageFile = null;
+			createTagIds = [];
 		} catch {
 			// leave form open
 		} finally {
@@ -129,6 +151,47 @@
 					/>
 				</div>
 				<Input bind:value={createDraft.description} placeholder="Description (optional)" />
+
+				<div class="flex flex-col gap-1">
+					<label class="text-xs font-medium text-muted-foreground">
+						Product Image <span class="font-normal">(optional)</span>
+					</label>
+					<input
+						type="file"
+						accept="image/jpeg,image/png,image/webp"
+						onchange={(e) => (createImageFile = e.target.files?.[0] ?? null)}
+						class="text-sm text-muted-foreground file:mr-3 file:rounded-md file:border file:border-border file:bg-background file:px-3 file:py-1 file:text-xs file:font-medium"
+					/>
+				</div>
+
+				{#if tags.length > 0}
+					<div class="flex flex-col gap-1">
+						<label class="text-xs font-medium text-muted-foreground">Categories</label>
+						<div class="flex flex-wrap gap-2">
+							{#each tags as tag (tag.id)}
+								<label
+									class="flex cursor-pointer items-center gap-1.5 rounded-full border border-border px-3 py-1 text-xs font-medium transition-colors
+                    {createTagIds.includes(tag.id)
+										? 'border-primary bg-primary text-primary-foreground'
+										: 'bg-background text-muted-foreground hover:bg-muted'}"
+								>
+									<input
+										type="checkbox"
+										class="hidden"
+										checked={createTagIds.includes(tag.id)}
+										onchange={() => {
+											createTagIds = createTagIds.includes(tag.id)
+												? createTagIds.filter((id) => id !== tag.id)
+												: [...createTagIds, tag.id];
+										}}
+									/>
+									{tag.name}
+								</label>
+							{/each}
+						</div>
+					</div>
+				{/if}
+
 				<Button type="submit" size="sm" disabled={saving}>
 					{saving ? 'Creating...' : 'Create'}
 				</Button>
@@ -172,6 +235,47 @@
 										/>
 									</div>
 									<Input bind:value={editDraft.description} placeholder="Description" />
+
+									<div class="flex flex-col gap-1">
+										<label class="text-xs font-medium text-muted-foreground">
+											Replace Image <span class="font-normal">(optional)</span>
+										</label>
+										<input
+											type="file"
+											accept="image/jpeg,image/png,image/webp"
+											onchange={(e) => (editImageFile = e.target.files?.[0] ?? null)}
+											class="text-sm text-muted-foreground file:mr-3 file:rounded-md file:border file:border-border file:bg-background file:px-3 file:py-1 file:text-xs file:font-medium"
+										/>
+									</div>
+
+									{#if tags.length > 0}
+										<div class="flex flex-col gap-1">
+											<label class="text-xs font-medium text-muted-foreground">Categories</label>
+											<div class="flex flex-wrap gap-2">
+												{#each tags as tag (tag.id)}
+													<label
+														class="flex cursor-pointer items-center gap-1.5 rounded-full border border-border px-3 py-1 text-xs font-medium transition-colors
+                    {editTagIds.includes(tag.id)
+															? 'border-primary bg-primary text-primary-foreground'
+															: 'bg-background text-muted-foreground hover:bg-muted'}"
+													>
+														<input
+															type="checkbox"
+															class="hidden"
+															checked={editTagIds.includes(tag.id)}
+															onchange={() => {
+																editTagIds = editTagIds.includes(tag.id)
+																	? editTagIds.filter((id) => id !== tag.id)
+																	: [...editTagIds, tag.id];
+															}}
+														/>
+														{tag.name}
+													</label>
+												{/each}
+											</div>
+										</div>
+									{/if}
+
 									<div class="flex gap-2">
 										<Button type="submit" size="sm" disabled={saving}>
 											{saving ? '...' : 'Save'}
@@ -200,11 +304,7 @@
 										</p>
 									</div>
 									<div class="flex gap-2">
-										<Button
-											size="sm"
-											variant="outline"
-											onclick={() => startEdit(product)}
-										>
+										<Button size="sm" variant="outline" onclick={() => startEdit(product)}>
 											Edit
 										</Button>
 										<Button

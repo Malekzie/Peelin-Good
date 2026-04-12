@@ -2,6 +2,8 @@
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
 	import { Eye, EyeOff } from '@lucide/svelte';
+	import { validateResetToken, resetPassword } from '$lib/services/password-reset';
+	import { onMount } from 'svelte';
 
 	let password = '';
 	let confirmPassword = '';
@@ -10,12 +12,24 @@
 	let touchedPassword = false;
 	let touchedConfirm = false;
 	let loading = false;
+	let validating = true;
+	let tokenValid = false;
 	let success = false;
 	let serverError = '';
 	let showPassword = false;
 	let showConfirm = false;
 
 	const token = $page.url.searchParams.get('token');
+
+	onMount(async () => {
+		if (!token) {
+			tokenValid = false;
+			validating = false;
+			return;
+		}
+		tokenValid = await validateResetToken(token);
+		validating = false;
+	});
 
 	function validatePassword(value) {
 		if (!value.trim()) return 'Password is required.';
@@ -50,31 +64,15 @@
 		confirmError = validateConfirm(confirmPassword);
 		if (passwordError || confirmError) return;
 
-		if (!token) {
-			serverError = 'Invalid or missing reset token.';
-			return;
-		}
-
 		loading = true;
 		serverError = '';
 
 		try {
-			const res = await fetch('/api/v1/auth/reset-password', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ token, newPassword: password })
-			});
-
-			if (!res.ok) {
-				const data = await res.json().catch(() => ({}));
-				serverError = data.message ?? 'Reset link is invalid or has expired.';
-				return;
-			}
-
+			await resetPassword(token, password);
 			success = true;
 			setTimeout(() => goto('/login'), 2500);
-		} catch {
-			serverError = 'Could not reach the server. Try again later.';
+		} catch (e) {
+			serverError = e.message;
 		} finally {
 			loading = false;
 		}
@@ -93,7 +91,18 @@
 		>
 			<div class="bg-outline/20 mb-6 h-px w-full"></div>
 
-			{#if success}
+			{#if validating}
+				<p class="text-center text-sm text-muted-foreground">Checking your reset link...</p>
+			{:else if !tokenValid}
+				<p
+					class="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-center text-sm text-red-800"
+				>
+					This reset link is invalid or has expired.
+				</p>
+				<a href="/login/recover-password" class="block text-center text-sm text-primary underline">
+					Request a new link
+				</a>
+			{:else if success}
 				<p class="text-center font-medium text-green-600">
 					Password reset successfully! Redirecting you to login...
 				</p>

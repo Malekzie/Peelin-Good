@@ -34,11 +34,36 @@ spring:
       minimum-idle: 0
       connection-timeout: 60000
   flyway:
+    enabled: true
+    locations: classpath:db/migration
+    validate-on-migrate: false
     connect-retries: 20
     connect-retries-interval: 3s
     ignore-migration-patterns:
       - "*:missing"
     out-of-order: true
+    # After one successful run, align the DB with: UPDATE flyway_schema_history SET checksum = -316084932 WHERE version = '10';
+    # Then set validate-on-migrate back to true (or omit).
+  spaces:
+    endpoint: ${DO_SPACES_ENDPOINT:}
+    bucket: ${DO_SPACES_BUCKET:}
+    access-key: ${DO_SPACES_KEY:}
+    secret-key: ${DO_SPACES_SECRET:}
+    base_url: ${DO_SPACES_BASE_URL:}
+    prefix: ${DO_SPACES_PREFIX:customers}
+  mail:
+    host: ${MAIL_HOST:}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    from: ${MAIL_FROM:${MAIL_USERNAME:}}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
   security:
     oauth2:
       client:
@@ -47,3 +72,9 @@ spring:
             redirect-uri: "http://localhost:${server.port:8080}/login/oauth2/code/{registrationId}"
           microsoft:
             redirect-uri: "http://localhost:${server.port:8080}/login/oauth2/code/{registrationId}"
+
+# Without STRIPE_SECRET_KEY, checkout uses an in-process placeholder (no live card capture).
+stripe:
+  secret-key: ${STRIPE_SECRET_KEY:}
+  webhook-secret: ${STRIPE_WEBHOOK_SECRET:}
+  publishable-key: ${STRIPE_PUBLISHABLE_KEY:}

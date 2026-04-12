@@ -101,4 +101,10 @@ public class ProductReviewController {
     public List<ReviewDto> top(@RequestParam(defaultValue = "3") int limit) {
         return reviewService.topReviews(limit);
     }
+
+    @PostMapping("/bakeries/{bakeryId}/reviews")
+    public ReviewDto createForBakery(@PathVariable Integer bakeryId,
+                                     @Valid @RequestBody ReviewCreateRequest req) {
+        return reviewService.createForBakery(bakeryId, req);
+    }
 }

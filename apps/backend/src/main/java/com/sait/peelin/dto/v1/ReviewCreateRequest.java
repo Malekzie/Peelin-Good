@@ -17,4 +17,6 @@ public class ReviewCreateRequest {
     @Size(max = 2000)
     private String comment;
     private UUID orderId;
+    @Size(max = 100)
+    private String guestName;
 }

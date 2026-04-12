@@ -87,7 +87,7 @@
 		<div>
 			<h1 class="text-2xl font-bold tracking-tight text-foreground">Orders</h1>
 			<p class="mt-1 text-sm text-muted-foreground">
-				Recent orders — update status as work progresses
+				Recent orders. Update status as work progresses.
 			</p>
 		</div>
 
@@ -107,7 +107,7 @@
 			<div class="space-y-3">
 				{#each orders as order (order.id)}
 					<div
-						class="flex items-center justify-between rounded-xl border border-border bg-card px-5 py-4"
+						class="flex flex-col gap-3 rounded-xl border border-border bg-card px-5 py-4 sm:flex-row sm:items-center sm:justify-between"
 					>
 						<div class="space-y-0.5">
 							<p class="text-sm font-semibold text-foreground">#{order.orderNumber}</p>
@@ -120,7 +120,7 @@
 								{formatCurrency(order.orderGrandTotal)}
 							</p>
 						</div>
-						<div class="flex items-center gap-3">
+						<div class="flex shrink-0 items-center gap-3">
 							<Badge variant={statusVariant(order.status)}>
 								{order.status?.replace(/_/g, ' ') ?? '—'}
 							</Badge>

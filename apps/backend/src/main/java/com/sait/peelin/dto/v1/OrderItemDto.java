@@ -6,6 +6,7 @@ public record OrderItemDto(
         Integer id,
         Integer productId,
         String productName,
+        String productImageUrl,
         Integer batchId,
         int quantity,
         BigDecimal unitPrice,

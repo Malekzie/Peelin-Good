@@ -8,11 +8,22 @@ export async function getTopReviews(limit = 3) {
 	return res.json();
 }
 
-export async function createProductReview(productId, rating, comment) {
+export async function createProductReview(
+	productId,
+	rating,
+	comment,
+	orderId = null,
+	guestName = null
+) {
 	const res = await apiFetch(`${API}/products/${productId}/reviews`, {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify({ rating, comment })
+		body: JSON.stringify({
+			rating,
+			comment,
+			...(orderId ? { orderId } : {}),
+			...(guestName ? { guestName } : {})
+		})
 	});
 
 	if (!res) return;

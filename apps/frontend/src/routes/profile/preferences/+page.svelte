@@ -79,7 +79,9 @@
 	}
 </script>
 
-<div class="flex h-[calc(100dvh-var(--app-navbar-height))] overflow-hidden bg-background">
+<div
+	class="flex h-[calc(100dvh-var(--app-navbar-height))] flex-col overflow-hidden bg-background md:flex-row"
+>
 	<ProfileSidebar />
 
 	<main class="flex-1 overflow-y-auto p-8 lg:p-10">
@@ -87,7 +89,7 @@
 			<div>
 				<h1 class="text-2xl font-bold tracking-tight text-foreground">Preferences</h1>
 				<p class="mt-1 text-sm text-muted-foreground">
-					Tell us what you like and dislike — we'll use this to personalize your recommendations.
+					Tell us what you like and dislike. We'll use this to personalize your recommendations.
 				</p>
 			</div>
 

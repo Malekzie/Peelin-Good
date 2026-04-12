@@ -1,0 +1,1 @@
+ALTER TABLE review ALTER COLUMN bakery_id DROP NOT NULL;

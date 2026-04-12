@@ -10,17 +10,19 @@ export async function requestPasswordReset(email) {
 	return { ok: res.ok };
 }
 
+export async function validateResetToken(token) {
+	const res = await fetch(`${API_BASE}/reset-password/validate?token=${encodeURIComponent(token)}`);
+	return res.ok;
+}
+
 export async function resetPassword(token, newPassword) {
 	const res = await fetch(`${API_BASE}/reset-password`, {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify({ token, newPassword })
 	});
-
 	if (!res.ok) {
-		const err = await res.json().catch(() => ({}));
-		return { ok: false, message: err.message ?? 'Reset failed. THe link may have expired' };
+		const data = await res.json().catch(() => ({}));
+		throw new Error(data.message ?? 'Reset link is invalid or has expired.');
 	}
-
-	return { ok: true };
 }

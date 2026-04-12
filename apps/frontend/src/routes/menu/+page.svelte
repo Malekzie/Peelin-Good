@@ -11,7 +11,10 @@
 	import { Search, X, ShoppingBag, Plus, Minus, Check } from '@lucide/svelte';
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
-	import { getProductReviews } from '$lib/services/review';
+	import { getProductReviews, createProductReview } from '$lib/services/review';
+	import { user } from '$lib/stores/authStore';
+	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
 
 	let activeTagId = $state(null);
 	let searchQuery = $state('');
@@ -20,6 +23,15 @@
 	let loading = $state(true);
 	let productReviews = $state([]);
 	let reviewsLoading = $state(false);
+
+	let reviewModal = $state(false);
+	let reviewRating = $state(0);
+	let reviewComment = $state('');
+	let reviewGuestName = $state('');
+	let reviewSubmitting = $state(false);
+	let reviewError = $state(null);
+	let reviewSuccess = $state(false);
+	let showAllReviews = $state(false);
 
 	// Sheet state
 	let sheetOpen = $state(false);
@@ -34,6 +46,7 @@
 		sheetOpen = true;
 		productReviews = [];
 		reviewsLoading = true;
+		showAllReviews = false;
 
 		try {
 			productReviews = await getProductReviews(product.id);
@@ -41,6 +54,52 @@
 			productReviews = [];
 		} finally {
 			reviewsLoading = false;
+		}
+	}
+
+	function openReviewModal() {
+		reviewRating = 0;
+		reviewComment = '';
+		reviewGuestName = '';
+		reviewError = null;
+		reviewSuccess = false;
+		reviewModal = true;
+		sheetOpen = false;
+	}
+
+	function closeReviewModal() {
+		reviewModal = false;
+	}
+
+	async function submitProductReview() {
+		if (reviewRating === 0) {
+			reviewError = 'Please select a star rating.';
+			return;
+		}
+		reviewSubmitting = true;
+		reviewError = null;
+		try {
+			const submitted = await createProductReview(
+				selectedProduct.id,
+				reviewRating,
+				reviewComment,
+				null,
+				reviewGuestName || null
+			);
+			const status = (submitted?.status ?? '').toLowerCase();
+			if (status === 'rejected') {
+				reviewError = submitted?.moderationMessage
+					? `Couldn't post review: ${submitted.moderationMessage}`
+					: "We couldn't post that review. Try different wording.";
+			} else {
+				reviewSuccess = true;
+				productReviews = await getProductReviews(selectedProduct.id);
+				setTimeout(() => closeReviewModal(), 1500);
+			}
+		} catch (e) {
+			reviewError = e.message ?? 'Failed to submit review.';
+		} finally {
+			reviewSubmitting = false;
 		}
 	}
 
@@ -66,7 +125,9 @@
 
 			const tagParam = $page.url.searchParams.get('tag');
 			if (tagParam && tags.some((t) => String(t.id) === tagParam)) {
-				activeTagId = tags.find((t) => String(t.id) === tagParam)?.id ?? null;
+				const byId = tags.find((t) => String(t.id) === tagParam);
+				const byName = tags.find((t) => t.name.toLowerCase() === tagParam.toLowerCase());
+				activeTagId = (byId ?? byName)?.id ?? null;
 			}
 
 			const searchParam = $page.url.searchParams.get('search');
@@ -104,7 +165,7 @@
 <div class="min-h-screen bg-[#FAF7F2]">
 	<!-- Page header -->
 	<header class="border-b border-border/60 bg-[#FAF7F2] px-6 pt-14 pb-10 text-center">
-		<p class="mb-3 text-[11px] font-semibold tracking-[0.2em] text-[#C4714A] uppercase">
+		<p class="mb-3 text-[11px] font-semibold tracking-[0.2em] text-[#C25F1A] uppercase">
 			Peelin' Good Bakery
 		</p>
 		<h1 class="text-5xl font-black tracking-tight text-[#2C1A0E] sm:text-6xl">Our Menu</h1>
@@ -119,7 +180,7 @@
 				type="text"
 				placeholder="Search breads, pastries, cakes..."
 				bind:value={searchQuery}
-				class="rounded-full bg-white pr-10 pl-10 shadow-sm focus-visible:ring-[#C4714A]"
+				class="rounded-full bg-white pr-10 pl-10 shadow-sm focus-visible:ring-[#C25F1A]"
 			/>
 			{#if searchQuery}
 				<button
@@ -130,6 +191,30 @@
 					<X class="h-4 w-4" />
 				</button>
 			{/if}
+		</div>
+
+		<!-- Mobile tag strip -->
+		<div class="mt-4 flex gap-2 overflow-x-auto pb-1 md:hidden" style="scrollbar-width: none;">
+			<button
+				onclick={() => (activeTagId = null)}
+				class="shrink-0 rounded-full px-4 py-1.5 text-xs font-semibold transition-colors
+            {activeTagId === null
+					? 'bg-[#C25F1A] text-white'
+					: 'border border-border bg-white text-foreground/70 hover:text-foreground'}"
+			>
+				All
+			</button>
+			{#each tags as tag (tag.id)}
+				<button
+					onclick={() => (activeTagId = tag.id)}
+					class="shrink-0 rounded-full px-4 py-1.5 text-xs font-semibold transition-colors
+                {activeTagId === tag.id
+						? 'bg-[#C25F1A] text-white'
+						: 'border border-border bg-white text-foreground/70 hover:text-foreground'}"
+				>
+					{tag.name}
+				</button>
+			{/each}
 		</div>
 	</header>
 
@@ -146,7 +231,7 @@
 						onclick={() => (activeTagId = null)}
 						class="rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors
 							{activeTagId === null
-							? 'bg-[#C4714A] text-white'
+							? 'bg-[#C25F1A] text-white'
 							: 'text-foreground/70 hover:bg-black/5 hover:text-foreground'}"
 					>
 						All items
@@ -156,7 +241,7 @@
 							onclick={() => (activeTagId = tag.id)}
 							class="rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors
 								{activeTagId === tag.id
-								? 'bg-[#C4714A] text-white'
+								? 'bg-[#C25F1A] text-white'
 								: 'text-foreground/70 hover:bg-black/5 hover:text-foreground'}"
 						>
 							{tag.name}
@@ -192,7 +277,7 @@
 			{/if}
 
 			{#if loading}
-				<div class="grid grid-cols-2 gap-5 lg:grid-cols-3">
+				<div class="grid grid-cols-1 gap-5 lg:grid-cols-3">
 					{#each Array.from({ length: 6 }), i (i)}
 						<div class="flex flex-col overflow-hidden rounded-xl border border-border bg-white">
 							<Skeleton class="h-48 w-full rounded-none" />
@@ -208,8 +293,8 @@
 				</div>
 			{:else if filtered.length === 0}
 				<div class="flex flex-col items-center justify-center py-24 text-center">
-					<div class="flex h-16 w-16 items-center justify-center rounded-full bg-[#C4714A]/10">
-						<Search class="h-7 w-7 text-[#C4714A]" />
+					<div class="flex h-16 w-16 items-center justify-center rounded-full bg-[#C25F1A]/10">
+						<Search class="h-7 w-7 text-[#C25F1A]" />
 					</div>
 					<h2 class="mt-4 text-lg font-semibold text-foreground">Nothing found</h2>
 					<p class="mt-1 text-sm text-muted-foreground">
@@ -220,13 +305,13 @@
 							activeTagId = null;
 							searchQuery = '';
 						}}
-						class="mt-5 rounded-full bg-[#C4714A] px-5 py-2 text-sm font-semibold text-white hover:bg-[#C4714A]/90"
+						class="mt-5 rounded-full bg-[#C25F1A] px-5 py-2 text-sm font-semibold text-white hover:bg-[#C25F1A]/90"
 					>
 						Show all items
 					</button>
 				</div>
 			{:else}
-				<div class="grid grid-cols-2 gap-5 lg:grid-cols-3">
+				<div class="grid grid-cols-1 gap-5 lg:grid-cols-3">
 					{#each filtered as product, i (product.id)}
 						<div class="product-card" style="animation-delay: {Math.min(i * 50, 350)}ms">
 							<ProductCard {product} onselect={openSheet} />
@@ -252,7 +337,7 @@
 					/>
 				{:else}
 					<div class="flex h-full w-full items-center justify-center">
-						<ShoppingBag class="h-14 w-14 text-[#C4714A]/25" />
+						<ShoppingBag class="h-14 w-14 text-[#C25F1A]/25" />
 					</div>
 				{/if}
 			</div>
@@ -263,7 +348,7 @@
 					<SheetTitle class="text-2xl font-bold text-[#2C1A0E]">
 						{selectedProduct.name}
 					</SheetTitle>
-					<p class="text-xl font-bold text-[#C4714A]">{sheetPrice}</p>
+					<p class="text-xl font-bold text-[#C25F1A]">{sheetPrice}</p>
 				</SheetHeader>
 
 				{#if selectedProduct.description}
@@ -278,7 +363,7 @@
 							{@const tagName = tags.find((t) => t.id === tagId)?.name}
 							{#if tagName}
 								<span
-									class="rounded-full bg-[#F5EFE6] px-3 py-1 text-xs font-semibold text-[#C4714A]"
+									class="rounded-full bg-[#F5EFE6] px-3 py-1 text-xs font-semibold text-[#C25F1A]"
 								>
 									{tagName}
 								</span>
@@ -300,10 +385,26 @@
 						<p class="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
 							Customer Reviews
 						</p>
-						{#each productReviews as review (review.id)}
+						{#each showAllReviews ? productReviews : productReviews.slice(0, 3) as review (review.id)}
 							<div class="rounded-lg bg-muted/50 px-3 py-2">
 								<div class="flex items-center justify-between">
-									<p class="text-xs font-semibold text-foreground">{review.reviewerDisplayName}</p>
+									<div class="flex items-center gap-2">
+										<p class="text-xs font-semibold text-foreground">
+											{review.reviewerDisplayName}
+										</p>
+										{#if review.verifiedAccount}
+											<span
+												class="rounded-full bg-blue-100 px-1.5 py-0.5 text-[9px] font-semibold text-blue-700"
+												>✓ Verified</span
+											>
+										{/if}
+										{#if review.verifiedPurchase}
+											<span
+												class="rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] font-semibold text-amber-700"
+												>✓ Purchased</span
+											>
+										{/if}
+									</div>
 									<p class="text-xs text-yellow-500">
 										{'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}
 									</p>
@@ -313,9 +414,25 @@
 								{/if}
 							</div>
 						{/each}
+						{#if productReviews.length > 3}
+							<button
+								onclick={() => (showAllReviews = !showAllReviews)}
+								class="text-xs font-semibold text-[#C25F1A] hover:underline"
+							>
+								{showAllReviews ? 'Show less' : `See all ${productReviews.length} reviews`}
+							</button>
+						{/if}
 					</div>
-					<Separator />
 				{/if}
+
+				<button
+					onclick={openReviewModal}
+					class="text-sm font-semibold text-[#C25F1A] hover:underline"
+				>
+					Leave a Review
+				</button>
+
+				<Separator />
 
 				<!-- Quantity -->
 				<div class="flex flex-col gap-2">
@@ -348,20 +465,78 @@
 				<Button
 					onclick={addSelectedToCart}
 					class="mt-auto h-12 w-full gap-2 text-sm font-semibold transition-all duration-300
-						{sheetAdded ? 'bg-[#8A9E7F] hover:bg-[#8A9E7F]' : 'bg-[#C4714A] hover:bg-[#C4714A]/90'}"
+						{sheetAdded ? 'bg-[#8A9E7F] hover:bg-[#8A9E7F]' : 'bg-[#C25F1A] hover:bg-[#C25F1A]/90'}"
 				>
 					{#if sheetAdded}
 						<Check class="h-4 w-4" />
 						Added to cart
 					{:else}
 						<ShoppingBag class="h-4 w-4" />
-						Add to cart — {sheetPrice}
+						Add to cart: {sheetPrice}
 					{/if}
 				</Button>
 			</div>
 		{/if}
 	</SheetContent>
 </Sheet>
+
+{#if reviewModal}
+	<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+		<div class="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-xl">
+			<h2 class="text-lg font-bold text-foreground">Review {selectedProduct?.name}</h2>
+
+			<div class="mt-4 flex gap-2">
+				{#each [1, 2, 3, 4, 5] as star (star)}
+					<button
+						onclick={() => (reviewRating = star)}
+						class="text-2xl transition-transform hover:scale-110 {reviewRating >= star
+							? 'text-yellow-400'
+							: 'text-muted-foreground/30'}">★</button
+					>
+				{/each}
+			</div>
+
+			{#if !$user}
+				<input
+					type="text"
+					placeholder="Your name (optional)"
+					bind:value={reviewGuestName}
+					class="mt-4 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#C25F1A]"
+				/>
+			{/if}
+
+			<textarea
+				bind:value={reviewComment}
+				placeholder="Leave a comment (optional)"
+				rows="3"
+				disabled={reviewSubmitting}
+				class="mt-3 w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#C25F1A]"
+			></textarea>
+
+			{#if reviewError}
+				<p class="mt-2 text-xs text-destructive">{reviewError}</p>
+			{/if}
+			{#if reviewSuccess}
+				<p class="mt-2 text-xs text-green-600">✓ Thanks! Your review was posted.</p>
+			{/if}
+
+			<div class="mt-4 flex justify-end gap-3">
+				<button
+					onclick={closeReviewModal}
+					disabled={reviewSubmitting}
+					class="rounded-full border border-border px-4 py-2 text-sm font-medium hover:bg-muted disabled:opacity-50"
+					>Cancel</button
+				>
+				<button
+					onclick={submitProductReview}
+					disabled={reviewSubmitting || reviewSuccess}
+					class="rounded-full bg-[#C25F1A] px-4 py-2 text-sm font-semibold text-white hover:bg-[#C25F1A]/90 disabled:opacity-50"
+					>{reviewSubmitting ? 'Submitting...' : 'Submit'}</button
+				>
+			</div>
+		</div>
+	</div>
+{/if}
 
 <style>
 	.product-card {

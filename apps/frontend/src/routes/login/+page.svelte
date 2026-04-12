@@ -16,6 +16,8 @@
 	let passwordTouched = $state(false);
 	let showPassword = $state(false);
 
+	let rememberMe = $state(false);
+
 	function validateIdentifier(value) {
 		if (!value.trim()) return 'Email or username is required.';
 		return '';
@@ -38,6 +40,8 @@
 
 	const oauthErrorMessage = $derived.by(() => {
 		const code = page.url.searchParams.get('error');
+		const reason = page.url.searchParams.get('reason');
+		if (reason === 'expired') return 'Your session has expired. Please sign in again.';
 		if (!code) return '';
 		if (code === 'no_provider_id') {
 			return "We couldn't verify your account with that provider. Try again or use email sign-in.";
@@ -59,7 +63,7 @@
 
 		if (emailError || passwordError) return;
 
-		const { ok, message } = await loginUser(identifier, password);
+		const { ok, message } = await loginUser(identifier, password, rememberMe);
 
 		if (!ok) {
 			emailError = message ?? 'Invalid email or password.';
@@ -209,7 +213,7 @@
 					<!-- Remember -->
 					<div class="flex items-center justify-between text-sm">
 						<label class="flex items-center gap-2">
-							<input type="checkbox" />
+							<input type="checkbox" bind:checked={rememberMe} />
 							Keep me signed in
 						</label>
 						<a

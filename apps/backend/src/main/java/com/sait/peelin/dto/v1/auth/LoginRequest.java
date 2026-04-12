@@ -15,6 +15,8 @@ public class LoginRequest {
     @NotBlank
     private String password;
 
+    private boolean rememberMe;
+
     @AssertTrue(message = "username or email must be provided")
     public boolean isLoginPrincipalProvided() {
         return (username != null && !username.trim().isEmpty())

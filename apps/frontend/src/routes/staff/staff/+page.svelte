@@ -49,16 +49,17 @@
 			<div class="rounded-xl border border-border bg-card">
 				<div class="divide-y divide-border">
 					{#each employees as emp (emp.id)}
-						<div class="flex items-center justify-between px-5 py-4">
-							<div class="space-y-0.5">
-								<p class="text-sm font-medium text-foreground">
-									{emp.firstName} {emp.lastName}
+						<div class="flex items-center justify-between gap-3 px-5 py-4">
+							<div class="min-w-0 space-y-0.5">
+								<p class="truncate text-sm font-medium text-foreground">
+									{emp.firstName}
+									{emp.lastName}
 								</p>
-								<p class="text-xs text-muted-foreground">
+								<p class="truncate text-xs text-muted-foreground">
 									{emp.workEmail ?? '—'}
 								</p>
 							</div>
-							<div class="flex items-center gap-3">
+							<div class="flex shrink-0 items-center gap-3">
 								{#if emp.position}
 									<Badge variant="outline">{emp.position}</Badge>
 								{/if}

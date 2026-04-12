@@ -47,6 +47,17 @@ public class OrderController {
         return orderService.get(id);
     }
 
+    @Operation(summary = "Get order by order number", description = "Returns an order by its human-readable order number. Guests may look up by number; logged-in customers must own the order.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Order found"),
+            @ApiResponse(responseCode = "403", description = "Order belongs to another customer", content = @Content),
+            @ApiResponse(responseCode = "404", description = "Order not found", content = @Content)
+    })
+    @GetMapping("/by-number/{orderNumber}")
+    public OrderDto getByOrderNumber(@PathVariable String orderNumber) {
+        return orderService.getByOrderNumber(orderNumber);
+    }
+
     @Operation(summary = "Checkout", description = "Place a new order. Cart items, delivery method, and bakery are included in the request body.")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Order placed successfully"),

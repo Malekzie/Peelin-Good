@@ -1,5 +1,13 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
+	import { onMount } from 'svelte';
+	import { getTags } from '$lib/services/tags';
+
+	let tags = $state([]);
+
+	onMount(async () => {
+		tags = await getTags().catch(() => []);
+	});
 </script>
 
 <footer class="border-t border-border bg-background px-6 py-12">
@@ -8,7 +16,7 @@
 		<div class="flex flex-col gap-3">
 			<p class="font-serif text-xl font-bold text-foreground">Peelin' Good</p>
 			<p class="text-sm leading-relaxed text-muted-foreground">
-				Artisan baked goods, made fresh daily. Come find us — or order online.
+				Artisan baked goods, made fresh daily. Come find us, or order online.
 			</p>
 		</div>
 
@@ -17,21 +25,30 @@
 			<p class="mb-2 text-xs font-semibold tracking-widest text-muted-foreground uppercase">
 				Explore
 			</p>
+			{#each tags.slice(0, 4) as tag (tag.id)}
+				<a
+					href={resolve(`/menu?tag=${tag.id}`)}
+					class="text-sm text-foreground transition-colors hover:text-primary">{tag.name}</a
+				>
+			{/each}
+		</div>
+
+		<!-- Company -->
+		<div class="flex flex-col gap-2">
+			<p class="mb-2 text-xs font-semibold tracking-widest text-muted-foreground uppercase">
+				Company
+			</p>
 			<a
-				href={resolve('/menu/breads')}
-				class="text-sm text-foreground transition-colors hover:text-primary">Breads</a
+				href={resolve('/about')}
+				class="text-sm text-foreground transition-colors hover:text-primary">About Us</a
 			>
 			<a
-				href={resolve('/menu/pastries/')}
-				class="text-sm text-foreground transition-colors hover:text-primary">Pastries</a
+				href={resolve('/locations')}
+				class="text-sm text-foreground transition-colors hover:text-primary">Locations</a
 			>
 			<a
-				href={resolve('/menu/cakes/')}
-				class="text-sm text-foreground transition-colors hover:text-primary">Cakes</a
-			>
-			<a
-				href={resolve('/menu/seasonal/')}
-				class="text-sm text-foreground transition-colors hover:text-primary">Seasonal</a
+				href={resolve('/support')}
+				class="text-sm text-foreground transition-colors hover:text-primary">Support</a
 			>
 		</div>
 

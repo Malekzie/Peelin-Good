@@ -35,3 +35,15 @@ export async function deleteProduct(id) {
 	});
 	if (!res.ok) throw new Error('Failed to delete product');
 }
+
+export async function uploadProductImage(id, file) {
+	const formData = new FormData();
+	formData.append('image', file);
+	const res = await fetch(`${API}/${id}/image`, {
+		method: 'POST',
+		credentials: 'include',
+		body: formData
+	});
+	if (!res.ok) throw new Error('Failed to upload image');
+	return res.json();
+}

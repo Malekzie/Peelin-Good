@@ -1,5 +1,5 @@
 <section class="space-y-6 text-center">
-	<h1 class="font-headline text-5xl font-black text-[#703210]">About Our Bakery</h1>
+	<h1 class="font-headline text-5xl font-black text-[#C25F1A]">About Our Bakery</h1>
 	<p class="text-on-surface-variant mx-auto max-w-2xl text-lg">
 		We craft small-batch, artisan baked goods using time-honored techniques, premium ingredients,
 		and a passion for quality.

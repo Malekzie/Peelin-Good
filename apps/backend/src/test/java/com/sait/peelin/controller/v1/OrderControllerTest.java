@@ -77,7 +77,10 @@ class OrderControllerTest {
         req.setItems(java.util.List.of(line));
 
         CheckoutSessionResponse responseDto = new CheckoutSessionResponse(
-                UUID.randomUUID(), "ORD-123", "pi_test_secret_123", "pi_test_id_123");
+                UUID.randomUUID(), "ORD-123", "pi_test_secret_123", "pi_test_id_123",
+                new java.math.BigDecimal("10.00"), java.math.BigDecimal.ZERO,
+                java.math.BigDecimal.ZERO, new java.math.BigDecimal("0.50"),
+                new java.math.BigDecimal("10.50"));
         when(orderService.checkout(any(CheckoutRequest.class))).thenReturn(responseDto);
 
         mockMvc.perform(post("/api/v1/orders")

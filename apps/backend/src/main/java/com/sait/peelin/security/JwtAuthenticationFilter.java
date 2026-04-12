@@ -44,7 +44,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 var session = request.getSession(false);
                 if (session != null) session.invalidate();
                 SecurityContextHolder.clearContext();
-                filterChain.doFilter(request, response);
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.setContentType("application/json");
+                response.getWriter().write("{\"reason\":\"deactivated\"}");
                 return;
             }
         }
@@ -74,7 +76,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         }
 
                         SecurityContextHolder.clearContext();
-                        filterChain.doFilter(request, response);
+
+                        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                        response.setContentType("application/json");
+                        response.getWriter().write("{\"reason\":\"deactivated\"}");
                         return;
                     }
 
@@ -85,6 +90,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
         } catch (Exception e) {
             logger.warn("JWT validation failed: " + e.getMessage());
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setContentType("application/json");
+            response.getWriter().write("{\"reason\":\"expired\"}");
+            return;
         }
 
         filterChain.doFilter(request, response);
