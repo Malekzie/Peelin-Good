@@ -1,6 +1,7 @@
 package com.sait.peelin.controller.v1;
 
 import com.sait.peelin.dto.v1.UserActivePatchRequest;
+import com.sait.peelin.dto.v1.UserCreateRequest;
 import com.sait.peelin.dto.v1.UserSummaryDto;
 import com.sait.peelin.service.AdminUserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -11,6 +12,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -46,6 +48,19 @@ public class AdminUserController {
     @PreAuthorize("hasAnyRole('ADMIN','EMPLOYEE')")
     public List<UserSummaryDto> listStaff() {
         return adminUserService.listStaff();
+    }
+
+    @Operation(summary = "Create user", description = "Create a new employee or customer account. Admin only.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "User created"),
+            @ApiResponse(responseCode = "409", description = "Username or email already taken", content = @Content),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions", content = @Content)
+    })
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("hasRole('ADMIN')")
+    public UserSummaryDto create(@Valid @RequestBody UserCreateRequest req) {
+        return adminUserService.createUser(req);
     }
 
     @Operation(summary = "Set user active status", description = "Enable or disable a user account. Disabled users cannot log in.")
