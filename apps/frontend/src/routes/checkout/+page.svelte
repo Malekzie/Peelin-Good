@@ -7,6 +7,7 @@
 	import { isLoggedIn } from '$lib/stores/authStore';
 	import { api } from '$lib/api';
 	import { formatCanadianPostalInput } from '$lib/canadianPostalCode';
+	import { formatDiscountCad, formatPriceCad } from '$lib/utils/money';
 
 	// ── Types ────────────────────────────────────────────────────────────────────
 
@@ -1131,7 +1132,7 @@
 				{#each $cart.items as item (item.productId)}
 					<div class="flex justify-between py-1 text-sm text-muted-foreground">
 						<span>{item.productName} × {item.quantity}</span>
-						<span>${item.lineTotal.toFixed(2)}</span>
+						<span>{formatPriceCad(item.lineTotal)}</span>
 					</div>
 				{/each}
 				<hr class="my-3 border-border" />
@@ -1141,7 +1142,7 @@
 				</p>
 				<div class="mt-3 flex justify-between text-sm text-muted-foreground">
 					<span>Subtotal</span>
-					<span>${$cart.subtotal.toFixed(2)}</span>
+					<span>{formatPriceCad($cart.subtotal)}</span>
 				</div>
 				{#if orderMethod === 'delivery'}
 					<div class="mt-1 flex justify-between text-sm text-muted-foreground">
@@ -1149,21 +1150,23 @@
 						{#if deliveryFee === 0}
 							<span class="font-medium text-green-600">Free</span>
 						{:else}
-							<span>${deliveryFee.toFixed(2)}</span>
+							<span>{formatPriceCad(deliveryFee)}</span>
 						{/if}
 					</div>
 					{#if deliveryFee > 0}
-						<p class="mt-0.5 text-xs text-muted-foreground">Free delivery on orders $50+</p>
+						<p class="mt-0.5 text-xs text-muted-foreground">
+							Free delivery on orders of {formatPriceCad(50)} or more
+						</p>
 					{/if}
 				{/if}
 				<div class="mt-1 flex justify-between text-sm text-muted-foreground">
 					<span>Est. tax (5%)</span>
-					<span>${($cart.subtotal * 0.05).toFixed(2)}</span>
+					<span>{formatPriceCad($cart.subtotal * 0.05)}</span>
 				</div>
 				<hr class="my-3 border-border" />
 				<div class="flex justify-between text-sm font-medium text-foreground">
 					<span>Est. total</span>
-					<span>${($cart.subtotal + deliveryFee + $cart.subtotal * 0.05).toFixed(2)}</span>
+					<span>{formatPriceCad($cart.subtotal + deliveryFee + $cart.subtotal * 0.05)}</span>
 				</div>
 				<p class="mt-2 text-xs text-muted-foreground">* Final discounts applied at payment</p>
 			</section>
@@ -1192,12 +1195,16 @@
 				<div class="flex flex-col gap-1 text-sm">
 					<div class="flex justify-between text-muted-foreground">
 						<span>Subtotal</span>
-						<span>${(Number(pendingSubtotal ?? $cart.subtotal) + Number(pendingDiscount ?? 0)).toFixed(2)}</span>
+						<span
+							>{formatPriceCad(
+								Number(pendingSubtotal ?? $cart.subtotal) + Number(pendingDiscount ?? 0)
+							)}</span
+						>
 					</div>
 					{#if Number(pendingDiscount ?? 0) > 0}
 						<div class="flex justify-between text-muted-foreground">
 							<span>Discount</span>
-							<span>−${Number(pendingDiscount).toFixed(2)}</span>
+							<span>{formatDiscountCad(pendingDiscount)}</span>
 						</div>
 					{/if}
 					{#if orderMethod === 'delivery'}
@@ -1207,18 +1214,24 @@
 							{#if fee === 0}
 								<span class="font-medium text-green-600">Free</span>
 							{:else}
-								<span>${Number(fee).toFixed(2)}</span>
+								<span>{formatPriceCad(fee)}</span>
 							{/if}
 						</div>
 					{/if}
 					<div class="flex justify-between text-muted-foreground">
 						<span>Tax (5%)</span>
-						<span>${Number(pendingTaxAmount ?? $cart.subtotal * 0.05).toFixed(2)}</span>
+						<span>{formatPriceCad(Number(pendingTaxAmount ?? $cart.subtotal * 0.05))}</span>
 					</div>
 					<hr class="my-1 border-border" />
 					<div class="flex justify-between font-bold text-foreground">
 						<span>Total</span>
-						<span>${Number(pendingGrandTotal ?? ($cart.subtotal + deliveryFee + $cart.subtotal * 0.05)).toFixed(2)}</span>
+						<span
+							>{formatPriceCad(
+								Number(
+									pendingGrandTotal ?? $cart.subtotal + deliveryFee + $cart.subtotal * 0.05
+								)
+							)}</span
+						>
 					</div>
 				</div>
 			</div>

@@ -17,6 +17,7 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { truncateModerationMessage } from '$lib/utils/reviewMessage';
+	import { formatPriceCad } from '$lib/utils/money';
 
 	let activeTagId = $state(null);
 	let searchQuery = $state('');
@@ -117,9 +118,11 @@
 
 	const sheetPrice = $derived(
 		selectedProduct
-			? typeof selectedProduct.basePrice === 'number'
-				? `$${selectedProduct.basePrice.toFixed(2)}`
-				: `$${parseFloat(selectedProduct.basePrice).toFixed(2)}`
+			? formatPriceCad(
+					typeof selectedProduct.basePrice === 'number'
+						? selectedProduct.basePrice
+						: parseFloat(selectedProduct.basePrice)
+				)
 			: ''
 	);
 

@@ -1,24 +1,21 @@
 <script>
 	import { onMount } from 'svelte';
 	import { Skeleton } from '$lib/components/ui/skeleton';
-	import { getBakeries, getBakeryReviews, getBakeryAverage } from '$lib/services/bakeries';
+	import { getBakeries } from '$lib/services/bakeries';
+	import { resolve } from '$app/paths';
+
+	const INITIAL_COUNT = 3;
 
 	let bakeries = $state([]);
 	let loading = $state(true);
-	let expanded = $state(null);
+	let expanded = $state(false);
+
+	const visibleBakeries = $derived(expanded ? bakeries : bakeries.slice(0, INITIAL_COUNT));
+	const hasMore = $derived(bakeries.length > INITIAL_COUNT);
 
 	onMount(async () => {
 		try {
-			const raw = await getBakeries();
-			bakeries = await Promise.all(
-				raw.map(async (b) => {
-					const [reviews, average] = await Promise.all([
-						getBakeryReviews(b.id).catch(() => []),
-						getBakeryAverage(b.id).catch(() => null)
-					]);
-					return { ...b, reviews: reviews.slice(0, 3), average };
-				})
-			);
+			bakeries = await getBakeries();
 		} catch (e) {
 			console.error('Failed to load bakeries:', e);
 		} finally {
@@ -31,75 +28,69 @@
 		return `${address.line1}, ${address.city}, ${address.province} ${address.postalCode}`;
 	}
 
-	function stars(rating) {
-		return '★'.repeat(rating) + '☆'.repeat(5 - rating);
+	function mapsUrl(address) {
+		if (!address) return '#';
+		const query = encodeURIComponent(formatAddress(address));
+		return `https://www.google.com/maps/dir/?api=1&destination=${query}`;
 	}
 </script>
 
-<div class="mx-auto max-w-5xl px-4 py-12">
-	<h2 class="mb-8 text-center text-3xl font-bold">Our Bakery Locations</h2>
+<section class="space-y-6">
+	<div class="text-center">
+		<h2 class="font-headline text-2xl font-bold">Our Locations</h2>
+		<p class="text-on-surface-variant mt-1 text-sm">Find a Peelin' Good near you.</p>
+	</div>
 
 	{#if loading}
 		<div class="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
 			{#each Array(3) as _, i (i)}
-				<Skeleton class="h-48 w-full rounded-xl" />
+				<Skeleton class="h-40 w-full rounded-xl" />
 			{/each}
 		</div>
 	{:else}
 		<div class="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-			{#each bakeries as bakery (bakery.id)}
-				<div
-					class="rounded-xl border border-gray-200 bg-white shadow-sm transition hover:shadow-lg"
-				>
-					<div class="p-6">
-						<h3 class="mb-1 text-xl font-semibold">{bakery.name}</h3>
-
-						{#if bakery.average !== null}
-							<p class="mb-2 text-sm text-yellow-500">
-								{stars(Math.round(bakery.average))}
-								<span class="text-gray-500">({bakery.average.toFixed(1)})</span>
-							</p>
-						{/if}
-
-						<p class="mb-1 text-sm text-gray-600">{formatAddress(bakery.address)}</p>
-						<p class="mb-1 text-sm text-gray-600">
-							<span class="font-medium">Phone:</span>
-							{bakery.phone}
-						</p>
-						<p class="mb-3 text-sm text-gray-600">
-							<span class="font-medium">Email:</span>
-							{bakery.email}
-						</p>
-
-						{#if bakery.reviews.length > 0}
-							<button
-								onclick={() => (expanded = expanded === bakery.id ? null : bakery.id)}
-								class="text-xs font-semibold text-primary hover:underline"
-							>
-								{expanded === bakery.id ? 'Hide reviews' : `See reviews (${bakery.reviews.length})`}
-							</button>
-
-							{#if expanded === bakery.id}
-								<div class="mt-3 space-y-3 border-t border-gray-100 pt-3">
-									{#each bakery.reviews as review (review.id)}
-										<div class="rounded-lg bg-gray-50 px-3 py-2">
-											<div class="flex items-center justify-between">
-												<p class="text-xs font-semibold text-gray-800">
-													{review.reviewerDisplayName}
-												</p>
-												<p class="text-xs text-yellow-500">{stars(review.rating)}</p>
-											</div>
-											{#if review.comment}
-												<p class="mt-1 text-xs text-gray-500">{review.comment}</p>
-											{/if}
-										</div>
-									{/each}
-								</div>
-							{/if}
-						{/if}
-					</div>
+			{#each visibleBakeries as bakery (bakery.id)}
+				<div class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+					<h3 class="mb-1 text-lg font-semibold">{bakery.name}</h3>
+					<p class="mb-1 text-sm text-gray-600">{formatAddress(bakery.address)}</p>
+					<p class="mb-1 text-sm text-gray-600">
+						<span class="font-medium">Phone:</span>
+						{bakery.phone}
+					</p>
+					<p class="mb-4 text-sm text-gray-600">
+						<span class="font-medium">Email:</span>
+						{bakery.email}
+					</p>
+					<a
+						href={mapsUrl(bakery.address)}
+						target="_blank"
+						rel="noopener noreferrer"
+						class="text-xs font-semibold text-primary hover:underline"
+					>
+						Get directions →
+					</a>
 				</div>
 			{/each}
 		</div>
+
+		{#if hasMore}
+			<div class="text-center">
+				<button
+					onclick={() => (expanded = !expanded)}
+					class="inline-block rounded-full border border-primary px-6 py-2 text-sm font-semibold text-primary hover:bg-primary/10"
+				>
+					{expanded ? 'Show less' : `See all ${bakeries.length} locations`}
+				</button>
+			</div>
+		{/if}
+
+		<div class="text-center">
+			<a
+				href={resolve('/locations')}
+				class="inline-block rounded-full border border-primary px-6 py-2 text-sm font-semibold text-primary hover:bg-primary/10"
+			>
+				View all locations & reviews
+			</a>
+		</div>
 	{/if}
-</div>
+</section>

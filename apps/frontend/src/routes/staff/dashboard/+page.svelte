@@ -4,6 +4,7 @@
 	import { Badge } from '$lib/components/ui/badge';
 	import KpiCard from '$lib/components/staff/KpiCard.svelte';
 	import { getDashboardSummary } from '$lib/services/dashboard.js';
+	import { formatPriceCad } from '$lib/utils/money';
 
 	let summary = $state(null);
 	let loading = $state(true);
@@ -29,7 +30,7 @@
 
 	function formatCurrency(val) {
 		if (val == null) return '—';
-		return `$${Number(val).toFixed(2)}`;
+		return formatPriceCad(val);
 	}
 
 	function formatDate(dt) {

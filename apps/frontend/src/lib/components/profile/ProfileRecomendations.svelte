@@ -53,16 +53,20 @@
 				<div class="flex flex-col gap-3">
 					{#each Array(4) as _, i (i)}
 						<Skeleton
-							class="h-16 w-full rounded-xl border border-emerald-300/70 bg-emerald-200/50 dark:border-emerald-700/50 dark:bg-emerald-900/40"
+							class="h-10 w-full rounded-xl border border-emerald-300/70 bg-emerald-200/50 dark:border-emerald-700/50 dark:bg-emerald-900/40"
 						/>
 					{/each}
 				</div>
 			{:else if error}
-				<p class="rounded-xl border border-emerald-400/50 bg-white/70 px-3 py-4 text-sm text-emerald-950/85 dark:border-emerald-700/50 dark:bg-emerald-900/35 dark:text-emerald-100/85">
+				<p
+					class="rounded-xl border border-emerald-400/50 bg-white/70 px-3 py-4 text-sm text-emerald-950/85 dark:border-emerald-700/50 dark:bg-emerald-900/35 dark:text-emerald-100/85"
+				>
 					Could not load recommendations.
 				</p>
 			{:else if needsPreferences}
-				<p class="rounded-xl border border-emerald-400/50 bg-white/70 px-3 py-4 text-sm text-emerald-950/90 dark:border-emerald-700/50 dark:bg-emerald-900/35 dark:text-emerald-100/90">
+				<p
+					class="rounded-xl border border-emerald-400/50 bg-white/70 px-3 py-4 text-sm text-emerald-950/90 dark:border-emerald-700/50 dark:bg-emerald-900/35 dark:text-emerald-100/90"
+				>
 					Set your taste preferences first, then we can suggest products tailored to you.
 				</p>
 				<Button
@@ -73,7 +77,9 @@
 					Edit preferences
 				</Button>
 			{:else if recommendations.length === 0}
-				<p class="rounded-xl border border-emerald-400/50 bg-white/70 px-3 py-4 text-sm text-emerald-950/90 dark:border-emerald-700/50 dark:bg-emerald-900/35 dark:text-emerald-100/90">
+				<p
+					class="rounded-xl border border-emerald-400/50 bg-white/70 px-3 py-4 text-sm text-emerald-950/90 dark:border-emerald-700/50 dark:bg-emerald-900/35 dark:text-emerald-100/90"
+				>
 					No recommendations yet. Order something to get started!
 				</p>
 			{:else}
@@ -81,9 +87,9 @@
 					{#each recommendations as rec (rec.productId)}
 						<a
 							href={resolve(`/menu?search=${encodeURIComponent(rec.productName ?? '')}`)}
-							class="group flex w-full min-w-0 flex-row items-center justify-between gap-3 rounded-xl border border-emerald-500/70 bg-emerald-50/95 px-3 py-2.5 shadow-sm transition hover:border-emerald-600 hover:shadow-md dark:border-emerald-600/55 dark:bg-emerald-900/40 dark:hover:border-emerald-500"
+							class="group flex w-full items-center justify-between rounded-xl border border-emerald-500/70 bg-emerald-50/95 px-4 py-3 shadow-sm transition hover:border-emerald-600 hover:shadow-md dark:border-emerald-600/55 dark:bg-emerald-900/40 dark:hover:border-emerald-500"
 						>
-							<p class="min-w-0 flex-1 text-sm font-semibold leading-snug text-emerald-950 dark:text-emerald-50">
+							<p class="text-sm leading-snug font-semibold text-emerald-950 dark:text-emerald-50">
 								{rec.productName}
 							</p>
 							<svg
@@ -110,9 +116,7 @@
 				>
 					Disclaimer
 				</p>
-				<p
-					class="mt-1 text-[10px] leading-snug text-emerald-800/90 dark:text-emerald-300/85"
-				>
+				<p class="mt-1 text-[10px] leading-snug text-emerald-800/90 dark:text-emerald-300/85">
 					Suggestions use AI and may be inaccurate. Not dietary or medical advice.
 				</p>
 			</div>

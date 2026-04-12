@@ -4,6 +4,7 @@
 	import { cart } from '$lib/stores/cart';
 	import * as Sentry from '@sentry/sveltekit';
 	import { formatCanadianPostalInput } from '$lib/canadianPostalCode';
+	import { formatPriceCad } from '$lib/utils/money';
 
 	const ORDERS_API = '/api/v1/orders';
 
@@ -345,7 +346,7 @@
 				{#each $cart.items as item (item.productId)}
 					<div class="flex justify-between py-1 text-sm text-muted-foreground">
 						<span>{item.productName} × {item.quantity}</span>
-						<span>${item.lineTotal.toFixed(2)}</span>
+						<span>{formatPriceCad(item.lineTotal)}</span>
 					</div>
 				{/each}
 				<hr class="my-3 border-border" />
@@ -354,7 +355,7 @@
 				</p>
 				<div class="mt-3 flex justify-between text-sm text-muted-foreground">
 					<span>Cart subtotal (list prices)</span>
-					<span>${$cart.subtotal.toFixed(2)}</span>
+					<span>{formatPriceCad($cart.subtotal)}</span>
 				</div>
 			</section>
 

@@ -169,6 +169,19 @@
 										>{bakery.email}</a
 									>
 								</div>
+								{#if bakery.address}
+									<a
+										href="https://www.google.com/maps/dir/?api=1&destination={encodeURIComponent(
+											formatAddress(bakery.address)
+										)}"
+										target="_blank"
+										rel="noopener noreferrer"
+										class="mt-2 inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-xs font-semibold text-white hover:opacity-90"
+									>
+										<MapPin size={12} />
+										Get directions
+									</a>
+								{/if}
 							</div>
 						</div>
 					</div>

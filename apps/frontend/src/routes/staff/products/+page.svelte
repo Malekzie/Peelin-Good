@@ -14,6 +14,7 @@
 		uploadProductImage
 	} from '$lib/services/staff-products.js';
 	import { getTags } from '$lib/services/tags';
+	import { formatPriceCad } from '$lib/utils/money';
 
 	let products = $state([]);
 	let loading = $state(true);
@@ -295,7 +296,7 @@
 									<div>
 										<p class="text-sm font-medium text-foreground">{product.name}</p>
 										<p class="text-xs text-muted-foreground">
-											${Number(product.basePrice).toFixed(2)}
+											{formatPriceCad(product.basePrice)}
 											{#if product.description}
 												· {product.description.slice(0, 60)}{product.description.length > 60
 													? '…'
