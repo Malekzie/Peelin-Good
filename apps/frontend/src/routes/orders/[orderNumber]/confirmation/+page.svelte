@@ -4,6 +4,7 @@
 	import { api } from '$lib/api';
 	import { getProducts } from '$lib/services/products';
 	import { ShoppingBag } from '@lucide/svelte';
+	import { formatDiscountCad, formatPriceCad } from '$lib/utils/money';
 
 	interface OrderItem {
 		productId: number;
@@ -120,7 +121,7 @@
 							<p class="truncate text-sm font-medium text-foreground">{item.productName}</p>
 							<p class="text-xs text-muted-foreground">Qty {item.quantity}</p>
 						</div>
-						<span class="shrink-0 text-sm font-semibold text-foreground">${Number(item.lineTotal).toFixed(2)}</span>
+						<span class="shrink-0 text-sm font-semibold text-foreground">{formatPriceCad(item.lineTotal)}</span>
 					</a>
 				{/each}
 			</div>
@@ -129,12 +130,12 @@
 
 			<div class="flex justify-between text-sm text-muted-foreground">
 				<span>Subtotal</span>
-				<span>${Number(order.orderTotal).toFixed(2)}</span>
+				<span>{formatPriceCad(order.orderTotal)}</span>
 			</div>
 			{#if Number(order.orderDiscount) > 0}
 				<div class="flex justify-between text-sm text-muted-foreground">
 					<span>Discount</span>
-					<span>−${Number(order.orderDiscount).toFixed(2)}</span>
+					<span>{formatDiscountCad(order.orderDiscount)}</span>
 				</div>
 			{/if}
 			{#if order.orderMethod === 'delivery'}
@@ -144,20 +145,20 @@
 					{#if fee === 0}
 						<span class="font-medium text-green-600">Free</span>
 					{:else}
-						<span>${Number(fee).toFixed(2)}</span>
+						<span>{formatPriceCad(fee)}</span>
 					{/if}
 				</div>
 			{/if}
 			{#if order.orderTaxAmount}
 				<div class="flex justify-between text-sm text-muted-foreground">
 					<span>Tax (13%)</span>
-					<span>${Number(order.orderTaxAmount).toFixed(2)}</span>
+					<span>{formatPriceCad(order.orderTaxAmount)}</span>
 				</div>
 			{/if}
 			<hr class="border-border" />
 			<div class="flex justify-between font-bold text-foreground">
 				<span>Total</span>
-				<span>${Number(order.orderGrandTotal ?? order.orderTotal).toFixed(2)}</span>
+				<span>{formatPriceCad(order.orderGrandTotal ?? order.orderTotal)}</span>
 			</div>
 		</div>
 

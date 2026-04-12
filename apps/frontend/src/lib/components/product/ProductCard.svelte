@@ -3,6 +3,7 @@
 	import { Card, CardContent } from '$lib/components/ui/card';
 	import { Button } from '$lib/components/ui/button';
 	import { Plus, Minus, ShoppingBag, Check } from '@lucide/svelte';
+	import { formatPriceCad } from '$lib/utils/money';
 
 	let { product, onselect = () => {} } = $props();
 
@@ -10,9 +11,9 @@
 	let added = $state(false);
 
 	const price = $derived(
-		typeof product.basePrice === 'number'
-			? `$${product.basePrice.toFixed(2)}`
-			: `$${parseFloat(product.basePrice).toFixed(2)}`
+		formatPriceCad(
+			typeof product.basePrice === 'number' ? product.basePrice : parseFloat(product.basePrice)
+		)
 	);
 
 	function addToCart(e) {

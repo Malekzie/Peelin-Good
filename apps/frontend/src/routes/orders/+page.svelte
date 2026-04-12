@@ -10,6 +10,7 @@
 	import { apiFetch } from '$lib/utils/api';
 	import { truncateModerationMessage } from '$lib/utils/reviewMessage';
 	import { resolve } from '$app/paths';
+	import { formatPriceCad } from '$lib/utils/money';
 	import { ChevronDown, ShoppingBag } from '@lucide/svelte';
 
 	const API = '/api/v1';
@@ -278,7 +279,7 @@
 
 	function formatPrice(amount) {
 		if (amount == null) return '—';
-		return `$${Number(amount).toFixed(2)}`;
+		return formatPriceCad(amount);
 	}
 </script>
 
