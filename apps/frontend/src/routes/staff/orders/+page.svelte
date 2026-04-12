@@ -5,6 +5,7 @@
 	import { Button } from '$lib/components/ui/button';
 	import { getDashboardSummary } from '$lib/services/dashboard.js';
 	import { updateOrderStatus, markDelivered } from '$lib/services/staff-orders.js';
+	import { formatPriceCad } from '$lib/utils/money';
 
 	let orders = $state([]);
 	let loading = $state(true);
@@ -78,7 +79,7 @@
 
 	function formatCurrency(val) {
 		if (val == null) return '—';
-		return `$${Number(val).toFixed(2)}`;
+		return formatPriceCad(val);
 	}
 </script>
 

@@ -1,6 +1,7 @@
 <script>
 	import { ShoppingCart } from '@lucide/svelte';
 	import { cart } from '$lib/stores/cart';
+	import { formatPriceCad } from '$lib/utils/money';
 
 	let { name, description, price, discountPercent, imageUrl, productId } = $props();
 
@@ -50,10 +51,10 @@
 		<div class="mt-2 flex items-center justify-between border-t border-border pt-3">
 			<div class="flex items-baseline gap-2">
 				{#if discountedPrice}
-					<span class="text-base font-bold text-foreground">${discountedPrice.toFixed(2)}</span>
-					<span class="text-xs text-muted-foreground line-through">${price.toFixed(2)}</span>
+					<span class="text-base font-bold text-foreground">{formatPriceCad(discountedPrice)}</span>
+					<span class="text-xs text-muted-foreground line-through">{formatPriceCad(price)}</span>
 				{:else}
-					<span class="text-base font-bold text-foreground">${price.toFixed(2)}</span>
+					<span class="text-base font-bold text-foreground">{formatPriceCad(price)}</span>
 				{/if}
 			</div>
 			<button

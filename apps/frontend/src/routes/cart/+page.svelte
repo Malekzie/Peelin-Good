@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import { cart } from '$lib/stores/cart';
+	import { formatDiscountCad, formatPriceCad } from '$lib/utils/money';
 	import { ShoppingCart, Trash2, Plus, Minus } from '@lucide/svelte';
 </script>
 
@@ -38,7 +39,7 @@
 
 					<div class="min-w-0 flex-1">
 						<p class="truncate font-semibold text-foreground">{item.productName}</p>
-						<p class="text-sm text-muted-foreground">${item.unitPrice.toFixed(2)} each</p>
+						<p class="text-sm text-muted-foreground">{formatPriceCad(item.unitPrice)} each</p>
 					</div>
 
 					<div class="flex items-center gap-2">
@@ -60,7 +61,7 @@
 					</div>
 
 					<p class="w-20 text-right font-semibold text-foreground">
-						${item.lineTotal.toFixed(2)}
+						{formatPriceCad(item.lineTotal)}
 					</p>
 
 					<button
@@ -78,18 +79,18 @@
 			<div class="flex flex-col gap-2 text-sm">
 				<div class="flex justify-between text-muted-foreground">
 					<span>Subtotal</span>
-					<span>${$cart.subtotal.toFixed(2)}</span>
+					<span>{formatPriceCad($cart.subtotal)}</span>
 				</div>
 				{#if $cart.discount > 0}
 					<div class="flex justify-between text-accent">
 						<span>Discount</span>
-						<span>−${$cart.discount.toFixed(2)}</span>
+						<span>{formatDiscountCad($cart.discount)}</span>
 					</div>
 				{/if}
 				<hr class="my-2 border-border" />
 				<div class="flex justify-between text-base font-bold text-foreground">
 					<span>Total</span>
-					<span>${$cart.total.toFixed(2)}</span>
+					<span>{formatPriceCad($cart.total)}</span>
 				</div>
 			</div>
 

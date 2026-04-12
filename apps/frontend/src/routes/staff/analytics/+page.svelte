@@ -18,6 +18,7 @@
 		getTopProducts,
 		getSalesByEmployee
 	} from '$lib/services/analytics.js';
+	import { formatPriceCad } from '$lib/utils/money';
 
 	const today = new Date().toISOString().split('T')[0];
 	const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
@@ -81,7 +82,7 @@
 
 	function formatCurrency(val: number | null) {
 		if (val == null) return '—';
-		return `$${Number(val).toFixed(2)}`;
+		return formatPriceCad(val);
 	}
 
 	function formatPercent(val: number | null) {
