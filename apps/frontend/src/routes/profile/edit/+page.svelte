@@ -304,7 +304,13 @@
 							{#if photoPreview}
 								<img src={photoPreview} alt="" class="h-full w-full object-cover" />
 							{:else if profile?.profilePhotoPath}
-								<img src={profile.profilePhotoPath} alt="" class="h-full w-full object-cover" />
+								<img
+									src={profile.profilePhotoPath}
+									alt=""
+									class="h-full w-full object-cover {profile.photoApprovalPending
+										? 'opacity-60 grayscale'
+										: ''}"
+								/>
 							{:else}
 								<div
 									class="flex h-full w-full items-center justify-center text-2xl font-bold text-muted-foreground"

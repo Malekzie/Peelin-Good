@@ -30,123 +30,121 @@
 	});
 </script>
 
+<!-- Green “AI zone” — distinct from warm bakery chrome; no gradients -->
 <div class="md:col-span-4">
 	<div
-		class="relative h-full overflow-hidden rounded-2xl border border-amber-200/60 bg-gradient-to-b from-amber-50/60 to-orange-50/40 dark:border-amber-900/30 dark:from-amber-950/20 dark:to-orange-950/10"
+		class="h-full overflow-hidden rounded-2xl border-2 border-emerald-600 bg-emerald-100 shadow-md dark:border-emerald-500 dark:bg-emerald-950/45"
 	>
-		<div
-			class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-amber-300/70 via-orange-300 to-amber-400"
-		/>
-
-		<div class="flex flex-col gap-1 p-5 pt-6">
-			<!-- Header -->
-			<div class="mb-1 flex items-center gap-2">
-				<div
-					class="flex h-7 w-7 items-center justify-center rounded-full bg-amber-100/70 text-amber-600 dark:bg-amber-900/50 dark:text-amber-500"
+		<div class="flex flex-col gap-1 p-5">
+			<div class="mb-0.5 flex items-center gap-2">
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					width="20"
+					height="20"
+					viewBox="0 0 24 24"
+					fill="currentColor"
+					class="shrink-0 text-emerald-900 dark:text-emerald-200"
+					aria-hidden="true"
 				>
-					<!-- Sparkle icon -->
-					<div
-						class="flex h-7 w-7 items-center justify-center rounded-full bg-amber-100/70 dark:bg-amber-900/50"
-					>
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							width="16"
-							height="16"
-							viewBox="0 0 32 32"
-							fill="none"
-						>
-							<!-- Orange body -->
-							<circle cx="16" cy="18" r="11" fill="#F97316" />
-							<!-- Shine -->
-							<circle cx="12" cy="13" r="2.5" fill="#FED7AA" opacity="0.5" />
-							<!-- Leaf -->
-							<path d="M16 7 C16 7 18 3 22 4 C22 4 19 6 18 9" fill="#65A30D" />
-							<!-- Stem -->
-							<line
-								x1="16"
-								y1="7"
-								x2="16"
-								y2="9"
-								stroke="#92400E"
-								stroke-width="1.5"
-								stroke-linecap="round"
-							/>
-						</svg>
-					</div>
-				</div>
-				<span class="text-sm font-semibold text-amber-900 dark:text-amber-200"
-					>AI Recommendations</span
+					<path
+						d="M12 2l2.4 7.4h7.6l-6 4.6 2.3 7-6.3-4.6-6.3 4.6 2.3-7-6-4.6h7.6L12 2z"
+					/>
+				</svg>
+				<span class="text-sm font-bold tracking-tight text-emerald-950 dark:text-emerald-50"
+					>AI-powered recommendations</span
 				>
 			</div>
-			<p class="mb-4 text-xs text-amber-700/70 dark:text-amber-400/70">Picked just for you</p>
+			<p
+				class="text-[10px] font-bold tracking-widest text-emerald-700 uppercase dark:text-emerald-400"
+			>
+				AI suggestions
+			</p>
+			<p class="mb-3 text-xs leading-snug text-emerald-900/90 dark:text-emerald-100/90">
+				Set your taste preferences first, then we can suggest products tailored to you.
+			</p>
 
-			<!-- Content -->
 			{#if loading}
-				{#each Array(3) as _, i}
-					<div class="flex items-center gap-3 rounded-lg px-2 py-2.5">
-						<Skeleton class="h-4 w-full bg-amber-200/60 dark:bg-amber-800/30" />
-					</div>
-					{#if i < 2}
-						<Separator class="bg-amber-200/60 dark:bg-amber-800/30" />
-					{/if}
-				{/each}
+				<div class="-mx-1 flex gap-3 overflow-x-auto pb-2 [scrollbar-width:thin]">
+					{#each Array(4) as _, i (i)}
+						<Skeleton
+							class="h-28 min-w-[148px] shrink-0 rounded-xl border border-emerald-300/70 bg-emerald-200/50 dark:border-emerald-700/50 dark:bg-emerald-900/40"
+						/>
+					{/each}
+				</div>
 			{:else if error}
-				<p class="px-2 py-4 text-sm text-amber-800/60 dark:text-amber-400/60">
+				<p class="rounded-xl border border-emerald-400/50 bg-white/70 px-3 py-4 text-sm text-emerald-950/85 dark:border-emerald-700/50 dark:bg-emerald-900/35 dark:text-emerald-100/85">
 					Could not load recommendations.
 				</p>
 			{:else if needsPreferences}
-				<p class="px-2 py-4 text-sm text-amber-800/70 dark:text-amber-300/70">
+				<p class="rounded-xl border border-emerald-400/50 bg-white/70 px-3 py-4 text-sm text-emerald-950/90 dark:border-emerald-700/50 dark:bg-emerald-900/35 dark:text-emerald-100/90">
 					Set your taste preferences first, then we can suggest products tailored to you.
 				</p>
 				<Button
 					variant="secondary"
 					href={resolve('/profile/preferences')}
-					class="mt-1 w-full bg-amber-100 text-amber-900 hover:bg-amber-200 dark:bg-amber-900/40 dark:text-amber-200 dark:hover:bg-amber-900/60"
+					class="mt-3 w-full border-emerald-500 bg-emerald-200/90 text-emerald-950 hover:bg-emerald-300 dark:border-emerald-600 dark:bg-emerald-900/55 dark:text-emerald-50 dark:hover:bg-emerald-800/60"
 				>
 					Edit preferences
 				</Button>
 			{:else if recommendations.length === 0}
-				<p class="px-2 py-4 text-sm text-amber-800/70 dark:text-amber-300/70">
+				<p class="rounded-xl border border-emerald-400/50 bg-white/70 px-3 py-4 text-sm text-emerald-950/90 dark:border-emerald-700/50 dark:bg-emerald-900/35 dark:text-emerald-100/90">
 					No recommendations yet. Order something to get started!
 				</p>
 			{:else}
-				{#each recommendations as rec, i (rec.productId)}
-					<a
-						href={resolve(`/menu?search=${encodeURIComponent(rec.productName ?? '')}`)}
-						class="group flex items-center justify-between rounded-lg px-2 py-2.5 transition-colors hover:bg-amber-100/80 dark:hover:bg-amber-900/30"
-					>
-						<p class="text-sm font-medium text-amber-900 dark:text-amber-200">{rec.productName}</p>
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							width="14"
-							height="14"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2"
-							class="shrink-0 text-amber-400 opacity-0 transition-opacity group-hover:opacity-100 dark:text-amber-500"
+				<div
+					class="-mx-1 flex gap-3 overflow-x-auto pb-2 [scrollbar-width:thin] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-emerald-500/50"
+				>
+					{#each recommendations as rec (rec.productId)}
+						<a
+							href={resolve(`/menu?search=${encodeURIComponent(rec.productName ?? '')}`)}
+							class="group flex min-w-[148px] max-w-[180px] shrink-0 flex-col justify-between rounded-xl border border-emerald-500/70 bg-emerald-50/95 p-3 shadow-sm transition hover:border-emerald-600 hover:shadow-md dark:border-emerald-600/55 dark:bg-emerald-900/40 dark:hover:border-emerald-500"
 						>
-							<path d="M5 12h14M12 5l7 7-7 7" />
-						</svg>
-					</a>
-					{#if i < recommendations.length - 1}
-						<Separator class="bg-amber-200/50 dark:bg-amber-800/30" />
-					{/if}
-				{/each}
+							<p
+								class="text-sm font-semibold leading-snug text-emerald-950 dark:text-emerald-50"
+							>
+								{rec.productName}
+							</p>
+							<div class="mt-3 flex items-center justify-end">
+								<svg
+									xmlns="http://www.w3.org/2000/svg"
+									width="14"
+									height="14"
+									viewBox="0 0 24 24"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="2"
+									class="text-emerald-600 opacity-75 transition-opacity group-hover:opacity-100 dark:text-emerald-400"
+								>
+									<path d="M5 12h14M12 5l7 7-7 7" />
+								</svg>
+							</div>
+						</a>
+					{/each}
+				</div>
 			{/if}
+
+			<Separator class="mt-4 bg-emerald-400/45 dark:bg-emerald-700/45" />
 
 			<Button
 				variant="outline"
 				href={resolve('/menu')}
-				class="mt-4 w-full border-amber-300 text-amber-900 hover:bg-amber-100 dark:border-amber-700 dark:text-amber-200 dark:hover:bg-amber-900/30"
+				class="mt-4 w-full border-emerald-600 text-emerald-950 hover:bg-emerald-200/80 dark:border-emerald-500 dark:text-emerald-50 dark:hover:bg-emerald-900/50"
 			>
 				View all products
 			</Button>
 
-			<p class="mt-2 text-center text-[10px] text-amber-700/50 dark:text-amber-500/50">
-				Recommendations are generated by AI using your preferences and past orders. Update your
-				preferences at anytime to improve your suggestions.
-			</p>
+			<div class="mt-3 text-center">
+				<p
+					class="text-[10px] font-bold tracking-widest text-emerald-950 uppercase dark:text-emerald-100"
+				>
+					Disclaimer
+				</p>
+				<p
+					class="mt-1 text-[10px] leading-snug text-emerald-800/90 dark:text-emerald-300/85"
+				>
+					Suggestions use AI and may be inaccurate. Not dietary or medical advice.
+				</p>
+			</div>
 		</div>
 	</div>
 </div>

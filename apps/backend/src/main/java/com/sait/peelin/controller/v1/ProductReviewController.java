@@ -47,13 +47,10 @@ public class ProductReviewController {
         return reviewService.averageForProduct(productId);
     }
 
-    @Operation(summary = "Submit a review", description = "Submit a customer review for a product. Requires authentication.")
+    @Operation(summary = "List reviews for bakery", description = "Returns all approved reviews for a bakery location.")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Review submitted"),
-            @ApiResponse(responseCode = "400", description = "Validation error", content = @Content),
-            @ApiResponse(responseCode = "401", description = "Not authenticated", content = @Content)
+            @ApiResponse(responseCode = "200", description = "Reviews returned")
     })
-    @SecurityRequirement(name = "bearer-jwt")
     @GetMapping("/bakeries/{bakeryId}/reviews")
     public List<ReviewDto> listForBakery(@PathVariable Integer bakeryId) {
         return reviewService.forBakery(bakeryId);
@@ -64,6 +61,12 @@ public class ProductReviewController {
         return reviewService.averageForBakery(bakeryId);
     }
 
+    @Operation(summary = "Submit a product review", description = "Submit a review for a product. Signed-in customers use their profile; guests may send optional guestName in the body.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Review submitted"),
+            @ApiResponse(responseCode = "400", description = "Validation error", content = @Content),
+            @ApiResponse(responseCode = "409", description = "Conflict (e.g. rare DB constraint)", content = @Content)
+    })
     @PostMapping("/products/{productId}/reviews")
     public ReviewDto create(@PathVariable Integer productId, @Valid @RequestBody ReviewCreateRequest req) {
         return reviewService.create(productId, req);
@@ -102,6 +105,11 @@ public class ProductReviewController {
         return reviewService.topReviews(limit);
     }
 
+    @Operation(summary = "Submit a bakery / location review", description = "Submit a review for a location. Optional guestName when not authenticated.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Review submitted"),
+            @ApiResponse(responseCode = "400", description = "Validation error", content = @Content)
+    })
     @PostMapping("/bakeries/{bakeryId}/reviews")
     public ReviewDto createForBakery(@PathVariable Integer bakeryId,
                                      @Valid @RequestBody ReviewCreateRequest req) {

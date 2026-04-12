@@ -7,18 +7,31 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 @Repository("coreUserRepository")
 public interface UserRepository extends JpaRepository<User, UUID> {
     Optional<User> findByUsername(String username);
+
+    Optional<User> findByUsernameIgnoreCase(String username);
     Optional<User> findByProviderAndProviderId(String provider, String providerId);
     Optional<User> findByUserEmail(String userEmail);
     Optional<User> findByUsernameOrUserEmail(String username, String userEmail);
 
     /** Same identifier for both args matches either username or email (login field). */
     Optional<User> findByUsernameIgnoreCaseOrUserEmailIgnoreCase(String username, String userEmail);
+
+    @Query("""
+            SELECT u FROM User u
+            WHERE u.active = true
+              AND (
+                lower(trim(u.username)) = lower(trim(:principal))
+                OR lower(trim(u.userEmail)) = lower(trim(:principal))
+              )
+            """)
+    List<User> findAllActiveByLoginPrincipal(@Param("principal") String principal);
 
     boolean existsByUsername(String username);
     boolean existsByUserEmail(String userEmail);

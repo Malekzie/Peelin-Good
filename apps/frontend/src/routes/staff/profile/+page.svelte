@@ -147,7 +147,11 @@
 			>
 				<div class="relative">
 					<Avatar class="h-20 w-20">
-						<AvatarImage src={profile.profilePhotoPath} alt={fullName} />
+						<AvatarImage
+							src={profile.profilePhotoPath}
+							alt={fullName}
+							class={profile.photoApprovalPending ? 'opacity-60 grayscale' : ''}
+						/>
 						<AvatarFallback class="bg-primary text-2xl font-bold text-primary-foreground">
 							{initials}
 						</AvatarFallback>

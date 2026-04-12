@@ -11,6 +11,9 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class ReviewModerationService {
 
+    /** When rejecting, the model must keep "reason" at most this many characters (concise for mobile UI). */
+    public static final int MAX_REJECTION_REASON_CHARS = 80;
+
     /** Which review flow is being moderated (prompts differ for on-topic expectations). */
     public enum ModerationKind {
         PRODUCT,
@@ -60,10 +63,10 @@ public class ReviewModerationService {
                 - It is not written in English.
 
                 Return JSON in exactly this format:
-                {"approved": true/false, "reason": "brief reason or null if approved"}
+                {"approved": true/false, "reason": "if rejected: one concise phrase, at most %d characters, plain English; if approved: null"}
 
                 Review: "%s"
-                """.formatted(escapeForPrompt(reviewText));
+                """.formatted(MAX_REJECTION_REASON_CHARS, escapeForPrompt(reviewText));
     }
 
     private static String bakeryServiceModerationPrompt(String reviewText) {
@@ -80,10 +83,24 @@ public class ReviewModerationService {
                 - It is not written in English.
 
                 Return JSON in exactly this format:
-                {"approved": true/false, "reason": "brief reason or null if approved"}
+                {"approved": true/false, "reason": "if rejected: one concise phrase, at most %d characters, plain English; if approved: null"}
 
                 Review: "%s"
-                """.formatted(escapeForPrompt(reviewText));
+                """.formatted(MAX_REJECTION_REASON_CHARS, escapeForPrompt(reviewText));
+    }
+
+    private static String clampRejectionReason(String reason) {
+        if (reason == null) {
+            return null;
+        }
+        String t = reason.trim();
+        if (t.isEmpty()) {
+            return null;
+        }
+        if (t.length() <= MAX_REJECTION_REASON_CHARS) {
+            return t;
+        }
+        return t.substring(0, MAX_REJECTION_REASON_CHARS - 1).trim() + "…";
     }
 
     /** Avoid breaking the prompt string if the review contains quotes or newlines. */
@@ -100,6 +117,7 @@ public class ReviewModerationService {
             JsonObject obj = JsonParser.parseString(json).getAsJsonObject();
             boolean approved = obj.get("approved").getAsBoolean();
             String reason = obj.has("reason") && !obj.get("reason").isJsonNull() ? obj.get("reason").getAsString() : null;
+            reason = clampRejectionReason(reason);
 
             return new ModerationResult(approved, reason);
         } catch (Exception e) {

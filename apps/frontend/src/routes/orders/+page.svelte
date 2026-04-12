@@ -6,7 +6,9 @@
 	import { getMyOrders } from '$lib/services/orders';
 	import { getProducts } from '$lib/services/products';
 	import { createProductReview, createOrderReview } from '$lib/services/review';
+	import ReviewSubmissionOverlay from '$lib/components/review/ReviewSubmissionOverlay.svelte';
 	import { apiFetch } from '$lib/utils/api';
+	import { truncateModerationMessage } from '$lib/utils/reviewMessage';
 	import { resolve } from '$app/paths';
 	import { ChevronDown, ShoppingBag } from '@lucide/svelte';
 
@@ -164,6 +166,7 @@
 		}
 		reviewSubmitting = true;
 		reviewError = null;
+		reviewSuccess = false;
 		const pickerType = activeModal.pickerItemType;
 		const pickerId = activeModal.pickerItemId;
 		try {
@@ -191,7 +194,7 @@
 
 			const st = (submitted?.status ?? '').toLowerCase();
 			if (st === 'rejected') {
-				const shortReason = submitted.moderationMessage?.trim();
+				const shortReason = truncateModerationMessage(submitted.moderationMessage);
 				showToast(shortReason ? `Couldn't post review: ${shortReason}` : "Couldn't post review.");
 				if (reviewPicker) {
 					reviewPicker = {
@@ -235,17 +238,7 @@
 			const status = e?.status;
 			if (status === 409) {
 				showToast(msg.length > 120 ? `${msg.slice(0, 117)}…` : msg);
-				if (reviewPicker) {
-					reviewPicker = {
-						...reviewPicker,
-						items: reviewPicker.items.map((i) =>
-							i.type === pickerType && i.id === pickerId ? { ...i, done: true, failed: true } : i
-						)
-					};
-				}
-				closeModal();
-				closePicker();
-				await refreshOrdersList();
+				reviewError = msg;
 			} else {
 				reviewError = msg;
 			}
@@ -522,12 +515,14 @@
 
 {#if toastMessage}
 	<div
-		class="fixed bottom-6 left-1/2 z-[100] max-w-md -translate-x-1/2 rounded-xl border border-border bg-card px-4 py-3 text-sm text-foreground shadow-lg"
+		class="fixed bottom-6 left-1/2 z-[200] max-w-md -translate-x-1/2 rounded-xl border border-border bg-card px-4 py-3 text-sm text-foreground shadow-lg"
 		role="status"
 	>
 		{toastMessage}
 	</div>
 {/if}
+
+<ReviewSubmissionOverlay visible={reviewSubmitting} />
 
 <!-- Review Modal -->
 {#if reviewModal}
@@ -602,7 +597,7 @@
 				</button>
 				<button
 					onclick={submitReview}
-					disabled={reviewSubmitting || reviewSuccess}
+					disabled={reviewSubmitting}
 					class="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-50"
 				>
 					{reviewSubmitting ? 'Submitting...' : 'Submit'}

@@ -215,12 +215,19 @@
 						<img
 							src={customer.profilePhotoPath}
 							alt=""
-							class="h-24 w-24 rounded-full border border-border object-cover"
+							class="h-24 w-24 rounded-full border border-border object-cover saturate-100 opacity-100"
 						/>
 					{/if}
 					<div class="flex gap-2">
-						<Button size="sm" variant="outline" onclick={handleApprovePhoto}>Approve</Button>
-						<Button size="sm" variant="destructive" onclick={handleRejectPhoto}>Reject</Button>
+						<Button size="sm" onclick={handleApprovePhoto}>Approve</Button>
+						<Button
+							size="sm"
+							variant="outline"
+							class="border-2 border-primary text-primary hover:bg-primary/10"
+							onclick={handleRejectPhoto}
+						>
+							Reject
+						</Button>
 					</div>
 				</div>
 			{/if}
