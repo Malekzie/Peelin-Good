@@ -27,6 +27,12 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
 		throw new Error('Unauthorized');
 	}
 
+	if (response.status === 403) {
+		const redirectTo = encodeURIComponent(window.location.pathname + window.location.search);
+		window.location.href = `/login?redirectTo=${redirectTo}`;
+		throw new Error('Forbidden');
+	}
+
 	if (!response.ok) {
 		throw new Error(`HTTP ${response.status}`);
 	}

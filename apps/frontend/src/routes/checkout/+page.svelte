@@ -632,10 +632,9 @@
 			pendingTaxAmount = session.taxAmount ?? null;
 			pendingGrandTotal = session.grandTotal ?? null;
 
-			// Dev mode: no real Stripe configured — skip straight to confirmation
-			if (!stripePublishableKey || pendingClientSecret.startsWith('dev_pi_')) {
-				cart.clear();
-				goto(resolve(`/orders/${pendingOrderNumber}/confirmation`));
+			// Stripe must be configured to process payments
+			if (!stripePublishableKey) {
+				submitError = 'Payment processing is not available. Stripe is not configured.';
 				return;
 			}
 
