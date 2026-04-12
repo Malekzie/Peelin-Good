@@ -4,8 +4,10 @@ import com.sait.peelin.dto.v1.auth.AccountProfilePatchRequest;
 import com.sait.peelin.dto.v1.auth.AuthResponse;
 import com.sait.peelin.dto.v1.auth.ChangePasswordRequest;
 import com.sait.peelin.dto.v1.auth.DeactivateAccountRequest;
+import com.sait.peelin.dto.v1.auth.LoginAccountChoice;
 import com.sait.peelin.dto.v1.auth.LoginRequest;
 import com.sait.peelin.dto.v1.auth.RegisterRequest;
+import com.sait.peelin.exception.AmbiguousLinkedLoginException;
 import com.sait.peelin.model.Customer;
 import com.sait.peelin.model.Employee;
 import com.sait.peelin.model.User;
@@ -18,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.util.StringUtils;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -26,6 +29,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
@@ -51,35 +57,83 @@ public class AuthService {
     private final EmployeeCustomerLinkService employeeCustomerLinkService;
 
     public AuthResponse login(LoginRequest request) {
+        String rawPassword = request.getPassword();
+        String explicitUsername = Optional.ofNullable(request.getUsername())
+                .map(String::trim)
+                .filter(StringUtils::hasText)
+                .orElse(null);
         String email = Optional.ofNullable(request.getEmail())
                 .map(String::trim)
-                .filter(s -> !s.isEmpty())
+                .filter(StringUtils::hasText)
                 .orElse(null);
 
-        String principal = Optional.ofNullable(request.getUsername())
-                .map(String::trim)
-                .filter(s -> !s.isEmpty())
-                .orElse(email);
+        if (explicitUsername != null) {
+            User user = userRepository.findByUsernameIgnoreCase(explicitUsername)
+                    .orElseThrow(() -> new BadCredentialsException("Bad credentials"));
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(user.getUsername(), rawPassword));
+            return buildAuthResponse(user, mintJwtForUser(user));
+        }
 
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        principal,
-                        request.getPassword()
-                )
-        );
+        if (email == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "username or email required");
+        }
 
-        User user = userRepository.findByUsernameIgnoreCaseOrUserEmailIgnoreCase(principal, principal)
-                .orElseThrow();
+        List<User> candidates = userRepository.findAllActiveByLoginPrincipal(email);
+        List<User> passwordMatches = new ArrayList<>();
+        for (User u : candidates) {
+            if (StringUtils.hasText(u.getUserPasswordHash())
+                    && passwordEncoder.matches(rawPassword, u.getUserPasswordHash())) {
+                passwordMatches.add(u);
+            }
+        }
 
+        if (passwordMatches.isEmpty()) {
+            throw new BadCredentialsException("Bad credentials");
+        }
+        if (passwordMatches.size() == 1) {
+            User user = passwordMatches.get(0);
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(user.getUsername(), rawPassword));
+            return buildAuthResponse(user, mintJwtForUser(user));
+        }
+
+        if (passwordMatches.size() == 2
+                && employeeCustomerLinkService.areLinkedUserIds(
+                        passwordMatches.get(0).getUserId(), passwordMatches.get(1).getUserId())) {
+            List<LoginAccountChoice> choices = passwordMatches.stream()
+                    .map(u -> new LoginAccountChoice(
+                            u.getUsername(),
+                            u.getUserRole().name(),
+                            roleChoiceLabel(u.getUserRole())))
+                    .sorted(Comparator.comparing(LoginAccountChoice::role))
+                    .toList();
+            throw new AmbiguousLinkedLoginException(
+                    "Your sign-in matches both your employee and customer accounts. Choose one to continue.",
+                    choices);
+        }
+
+        throw new BadCredentialsException("Bad credentials");
+    }
+
+    private static String roleChoiceLabel(UserRole role) {
+        if (role == null) {
+            return "Account";
+        }
+        return switch (role) {
+            case customer -> "Customer account";
+            case employee -> "Employee account";
+            case admin -> "Admin account";
+        };
+    }
+
+    private String mintJwtForUser(User user) {
         UserDetails userDetails = org.springframework.security.core.userdetails.User
                 .withUsername(user.getUsername())
                 .password(user.getUserPasswordHash())
                 .authorities("ROLE_" + user.getUserRole().name().toUpperCase())
                 .build();
-
-        String token = jwtService.generateToken(userDetails);
-
-        return buildAuthResponse(user, token);
+        return jwtService.generateToken(userDetails);
     }
 
     @Transactional

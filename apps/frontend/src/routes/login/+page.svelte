@@ -18,6 +18,10 @@
 
 	let rememberMe = $state(false);
 
+	/** @type {{ message: string, choices: { username: string, role: string, label: string }[] } | null} */
+	let roleChoiceDialog = $state(null);
+	let roleChoiceLoading = $state(false);
+
 	function validateIdentifier(value) {
 		if (!value.trim()) return 'Email or username is required.';
 		return '';
@@ -63,14 +67,36 @@
 
 		if (emailError || passwordError) return;
 
-		const { ok, message } = await loginUser(identifier, password, rememberMe);
+		const result = await loginUser(identifier, password, rememberMe);
 
-		if (!ok) {
-			emailError = message ?? 'Invalid email or password.';
+		if (!result.ok) {
+			if (result.roleChoiceRequired && result.choices?.length) {
+				roleChoiceDialog = { message: result.message ?? '', choices: result.choices };
+				return;
+			}
+			emailError = result.message ?? 'Invalid email or password.';
 			passwordError = ' ';
 			return;
 		}
 
+		const redirectTo = page.url.searchParams.get('redirectTo');
+		goto(resolve(redirectTo ?? getDefaultPostAuthRoute($user?.role)));
+	}
+
+	async function completeLoginAsChosen(username) {
+		if (!username?.trim()) return;
+		roleChoiceLoading = true;
+		const result = await loginUser(identifier, password, rememberMe, {
+			resolvedUsername: username.trim()
+		});
+		roleChoiceLoading = false;
+		if (!result.ok) {
+			roleChoiceDialog = null;
+			emailError = result.message ?? 'Could not sign in. Try again.';
+			passwordError = ' ';
+			return;
+		}
+		roleChoiceDialog = null;
 		const redirectTo = page.url.searchParams.get('redirectTo');
 		goto(resolve(redirectTo ?? getDefaultPostAuthRoute($user?.role)));
 	}
@@ -257,4 +283,48 @@
 			</div>
 		</div>
 	</section>
+
+	{#if roleChoiceDialog}
+		<div
+			class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+			role="presentation"
+			onclick={(e) => {
+				if (e.target === e.currentTarget && !roleChoiceLoading) roleChoiceDialog = null;
+			}}
+		>
+			<div
+				class="bg-card w-full max-w-md rounded-2xl border border-border p-6 shadow-lg"
+				role="dialog"
+				aria-modal="true"
+				aria-labelledby="role-choice-title"
+			>
+				<h2 id="role-choice-title" class="text-lg font-semibold text-foreground">
+					How do you want to sign in?
+				</h2>
+				<p class="mt-2 text-sm text-muted-foreground">
+					{roleChoiceDialog.message}
+				</p>
+				<div class="mt-6 flex flex-col gap-2">
+					{#each roleChoiceDialog.choices as c (c.username)}
+						<button
+							type="button"
+							disabled={roleChoiceLoading}
+							onclick={() => completeLoginAsChosen(c.username)}
+							class="text-on-primary w-full rounded-full bg-primary py-3 text-sm font-semibold transition hover:opacity-95 disabled:opacity-50"
+						>
+							{c.label ?? c.role}
+						</button>
+					{/each}
+					<button
+						type="button"
+						disabled={roleChoiceLoading}
+						onclick={() => (roleChoiceDialog = null)}
+						class="mt-1 w-full rounded-full border border-border py-3 text-sm font-semibold text-foreground transition hover:bg-muted disabled:opacity-50"
+					>
+						Cancel
+					</button>
+				</div>
+			</div>
+		</div>
+	{/if}
 </main>

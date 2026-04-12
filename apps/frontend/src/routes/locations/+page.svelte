@@ -8,7 +8,9 @@
 		createBakeryReview
 	} from '$lib/services/bakeries';
 	import { MapPin, Phone, Mail } from '@lucide/svelte';
+	import ReviewSubmissionOverlay from '$lib/components/review/ReviewSubmissionOverlay.svelte';
 	import { user } from '$lib/stores/authStore';
+	import { truncateModerationMessage } from '$lib/utils/reviewMessage';
 
 	let bakeries = $state([]);
 	let loading = $state(true);
@@ -60,6 +62,7 @@
 		}
 		reviewSubmitting = true;
 		reviewError = null;
+		reviewSuccess = false;
 		try {
 			const submitted = await createBakeryReview(
 				reviewModal.bakeryId,
@@ -69,8 +72,9 @@
 			);
 			const status = (submitted?.status ?? '').toLowerCase();
 			if (status === 'rejected') {
-				reviewError = submitted?.moderationMessage
-					? `Couldn't post review: ${submitted.moderationMessage}`
+				const short = truncateModerationMessage(submitted?.moderationMessage);
+				reviewError = short
+					? `Couldn't post review: ${short}`
 					: "We couldn't post that review. Try different wording.";
 			} else {
 				reviewSuccess = true;
@@ -193,7 +197,7 @@
 												</p>
 												{#if review.verifiedAccount}
 													<span
-														class="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-semibold text-blue-700"
+														class="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-800"
 														>✓ Verified</span
 													>
 												{/if}
@@ -281,7 +285,7 @@
 				>
 				<button
 					onclick={submitBakeryReview}
-					disabled={reviewSubmitting || reviewSuccess}
+					disabled={reviewSubmitting}
 					class="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-50"
 					>{reviewSubmitting ? 'Submitting...' : 'Submit'}</button
 				>
@@ -289,3 +293,5 @@
 		</div>
 	</div>
 {/if}
+
+<ReviewSubmissionOverlay visible={reviewSubmitting} />

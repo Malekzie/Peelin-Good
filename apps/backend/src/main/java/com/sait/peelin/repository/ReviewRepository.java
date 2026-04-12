@@ -28,8 +28,8 @@ public interface ReviewRepository extends JpaRepository<Review, UUID> {
     @Query("SELECT AVG(r.reviewRating) FROM Review r WHERE r.product.id = :productId AND r.reviewStatus = 'approved'")
     Optional<Double> averageRatingForProduct(@Param("productId") Integer productId);
 
-    /** Location / service reviews only: tied to an order. Excludes product-detail reviews for the same bakery. */
-    @Query("SELECT AVG(r.reviewRating) FROM Review r WHERE r.bakery.id = :bakeryId AND r.reviewStatus = 'approved' AND r.order IS NOT NULL")
+    /** All approved reviews for this bakery (order-linked, product-only at location, and bakery-only rows). */
+    @Query("SELECT AVG(r.reviewRating) FROM Review r WHERE r.bakery.id = :bakeryId AND r.reviewStatus = 'approved'")
     Optional<Double> averageRatingForBakery(@Param("bakeryId") Integer bakeryId);
 
     List<Review> findByReviewStatusOrderByReviewRatingDescReviewSubmittedDateDesc(ReviewStatus status);

@@ -169,7 +169,7 @@
 								<img
 									src={c.profilePhotoPath}
 									alt="Profile"
-									class="h-12 w-12 rounded-full border border-border object-cover"
+									class="h-12 w-12 rounded-full border border-border object-cover saturate-100 opacity-100"
 								/>
 							{/if}
 							<div>
@@ -181,17 +181,13 @@
 							</div>
 						</div>
 						<div class="flex gap-2">
-							<Button
-								size="sm"
-								variant="outline"
-								onclick={() => handleApprove(c.id)}
-								disabled={!!actioning[c.id]}
-							>
+							<Button size="sm" onclick={() => handleApprove(c.id)} disabled={!!actioning[c.id]}>
 								{actioning[c.id] === 'approve' ? '...' : 'Approve'}
 							</Button>
 							<Button
 								size="sm"
-								variant="destructive"
+								variant="outline"
+								class="border-2 border-primary text-primary hover:bg-primary/10"
 								onclick={() => handleReject(c.id)}
 								disabled={!!actioning[c.id]}
 							>

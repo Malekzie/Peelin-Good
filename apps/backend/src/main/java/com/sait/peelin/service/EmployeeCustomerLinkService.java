@@ -7,7 +7,6 @@ import com.sait.peelin.model.User;
 import com.sait.peelin.repository.CustomerRepository;
 import com.sait.peelin.repository.EmployeeCustomerLinkRepository;
 import com.sait.peelin.repository.EmployeeRepository;
-import com.sait.peelin.support.GuestContactFiller;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,7 +60,8 @@ public class EmployeeCustomerLinkService {
     }
 
     /**
-     * Creates a link when the customer’s email or phone matches exactly one employee and neither side is already linked.
+     * Creates a link when the customer’s profile email matches exactly one employee (work email) and neither side is already linked.
+     * Phone is not used for matching.
      *
      * @return true if a new link row was created
      */
@@ -74,7 +74,7 @@ public class EmployeeCustomerLinkService {
         if (linkRepository.existsByCustomer_Id(customer.getId())) {
             return false;
         }
-        Employee match = findSingleUnlinkedEmployeeByContact(customer);
+        Employee match = findSingleUnlinkedEmployeeByEmail(customer);
         if (match == null) {
             return false;
         }
@@ -92,27 +92,26 @@ public class EmployeeCustomerLinkService {
         return true;
     }
 
-    private Employee findSingleUnlinkedEmployeeByContact(Customer customer) {
-        if (StringUtils.hasText(customer.getCustomerEmail())) {
-            List<Employee> byEmail = employeeRepository.findByWorkEmailNormalized(customer.getCustomerEmail().trim());
-            List<Employee> unlinkedEmail = byEmail.stream()
-                    .filter(e -> !linkRepository.existsByEmployee_Id(e.getId()))
-                    .toList();
-            if (unlinkedEmail.size() == 1) {
-                return unlinkedEmail.get(0);
-            }
+    private Employee findSingleUnlinkedEmployeeByEmail(Customer customer) {
+        if (!StringUtils.hasText(customer.getCustomerEmail())) {
+            return null;
         }
-        String digits = GuestContactFiller.normalizeDigits(customer.getCustomerPhone());
-        if (digits.length() >= 10) {
-            List<Employee> byPhone = employeeRepository.findByPhoneDigits(digits);
-            List<Employee> unlinkedPhone = byPhone.stream()
-                    .filter(e -> !linkRepository.existsByEmployee_Id(e.getId()))
-                    .toList();
-            if (unlinkedPhone.size() == 1) {
-                return unlinkedPhone.get(0);
-            }
+        List<Employee> byEmail = employeeRepository.findByWorkEmailNormalized(customer.getCustomerEmail().trim());
+        List<Employee> unlinkedEmail = byEmail.stream()
+                .filter(e -> !linkRepository.existsByEmployee_Id(e.getId()))
+                .toList();
+        if (unlinkedEmail.size() == 1) {
+            return unlinkedEmail.get(0);
         }
         return null;
+    }
+
+    /** True when the two users are the customer and employee sides of the same link row. */
+    public boolean areLinkedUserIds(UUID userIdA, UUID userIdB) {
+        if (userIdA == null || userIdB == null || userIdA.equals(userIdB)) {
+            return false;
+        }
+        return linkRepository.countLinkBetweenUserIds(userIdA, userIdB) > 0;
     }
 
     @Transactional

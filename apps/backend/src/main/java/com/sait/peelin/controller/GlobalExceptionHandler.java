@@ -1,6 +1,8 @@
 package com.sait.peelin.controller;
 
 import com.sait.peelin.dto.ApiError;
+import com.sait.peelin.dto.v1.auth.LoginRoleChoiceResponse;
+import com.sait.peelin.exception.AmbiguousLinkedLoginException;
 import com.sait.peelin.exception.ResourceNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -56,6 +58,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiError> badCredentials(BadCredentialsException ex) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body(apiError(HttpStatus.UNAUTHORIZED, "Bad credentials", List.of()));
+    }
+
+    @ExceptionHandler(AmbiguousLinkedLoginException.class)
+    public ResponseEntity<LoginRoleChoiceResponse> ambiguousLinkedLogin(AmbiguousLinkedLoginException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(new LoginRoleChoiceResponse(ex.getMessage(), ex.getChoices()));
     }
 
     @ExceptionHandler(Exception.class)

@@ -12,9 +12,11 @@
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
 	import { getProductReviews, createProductReview } from '$lib/services/review';
+	import ReviewSubmissionOverlay from '$lib/components/review/ReviewSubmissionOverlay.svelte';
 	import { user } from '$lib/stores/authStore';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
+	import { truncateModerationMessage } from '$lib/utils/reviewMessage';
 
 	let activeTagId = $state(null);
 	let searchQuery = $state('');
@@ -78,6 +80,7 @@
 		}
 		reviewSubmitting = true;
 		reviewError = null;
+		reviewSuccess = false;
 		try {
 			const submitted = await createProductReview(
 				selectedProduct.id,
@@ -88,8 +91,9 @@
 			);
 			const status = (submitted?.status ?? '').toLowerCase();
 			if (status === 'rejected') {
-				reviewError = submitted?.moderationMessage
-					? `Couldn't post review: ${submitted.moderationMessage}`
+				const short = truncateModerationMessage(submitted?.moderationMessage);
+				reviewError = short
+					? `Couldn't post review: ${short}`
 					: "We couldn't post that review. Try different wording.";
 			} else {
 				reviewSuccess = true;
@@ -394,7 +398,7 @@
 										</p>
 										{#if review.verifiedAccount}
 											<span
-												class="rounded-full bg-blue-100 px-1.5 py-0.5 text-[9px] font-semibold text-blue-700"
+												class="rounded-full bg-emerald-100 px-1.5 py-0.5 text-[9px] font-semibold text-emerald-800"
 												>✓ Verified</span
 											>
 										{/if}
@@ -529,7 +533,7 @@
 				>
 				<button
 					onclick={submitProductReview}
-					disabled={reviewSubmitting || reviewSuccess}
+					disabled={reviewSubmitting}
 					class="rounded-full bg-[#C25F1A] px-4 py-2 text-sm font-semibold text-white hover:bg-[#C25F1A]/90 disabled:opacity-50"
 					>{reviewSubmitting ? 'Submitting...' : 'Submit'}</button
 				>
@@ -537,6 +541,8 @@
 		</div>
 	</div>
 {/if}
+
+<ReviewSubmissionOverlay visible={reviewSubmitting} />
 
 <style>
 	.product-card {

@@ -3,15 +3,35 @@ import * as Sentry from '@sentry/sveltekit';
 
 const API_BASE = '/api/v1/auth';
 
-// Log in with email and password, returns {ok: boolean, message?: string}
-export async function loginUser(identifier, password, rememberMe = false) {
+/**
+ * @param {string} identifier - email or username (first step)
+ * @param {object} [opts]
+ * @param {string} [opts.resolvedUsername] - after 409 linked-account prompt; sends username + password only
+ */
+export async function loginUser(identifier, password, rememberMe = false, opts = {}) {
+	const resolvedUsername = opts.resolvedUsername?.trim?.() || '';
+	const body = resolvedUsername
+		? { username: resolvedUsername, password, rememberMe }
+		: { email: identifier, password, rememberMe };
+
 	try {
 		const res = await fetch(`${API_BASE}/login`, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ email: identifier, password, rememberMe }),
+			body: JSON.stringify(body),
 			credentials: 'include'
 		});
+
+		if (res.status === 409) {
+			const data = await res.json().catch(() => ({}));
+			const choices = Array.isArray(data.choices) ? data.choices : [];
+			return {
+				ok: false,
+				roleChoiceRequired: true,
+				message: typeof data.message === 'string' ? data.message : 'Choose how to sign in.',
+				choices
+			};
+		}
 
 		if (!res.ok) {
 			const err = await res.json().catch(() => ({}));

@@ -29,9 +29,6 @@ public class ReviewService {
     /** Short text for mobile/web toasts; full reason stays in {@code moderation_rejection_reason}. */
     private static final int MODERATION_MESSAGE_CLIENT_MAX_LEN = 100;
 
-    private static final List<ReviewStatus> BLOCKING_REVIEW_STATUSES =
-            List.of(ReviewStatus.approved, ReviewStatus.pending, ReviewStatus.rejected);
-
     private final ReviewRepository reviewRepository;
     private final ProductRepository productRepository;
     private final CustomerRepository customerRepository;
@@ -97,19 +94,6 @@ public class ReviewService {
         if (isAuthenticated) {
             customer = customerRepository.findByUser_UserId(u.getUserId())
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Customer profile required"));
-
-            UUID orderId = req.getOrderId();
-            if (orderId != null) {
-                if (reviewRepository.existsByCustomer_IdAndProduct_IdAndOrder_IdAndReviewStatusIn(
-                        customer.getId(), productId, orderId, BLOCKING_REVIEW_STATUSES)) {
-                    throw new ResponseStatusException(HttpStatus.CONFLICT, "You already reviewed this product for this order");
-                }
-            } else {
-                if (reviewRepository.existsByCustomer_IdAndProduct_IdAndOrderIsNullAndReviewStatusIn(
-                        customer.getId(), productId, BLOCKING_REVIEW_STATUSES)) {
-                    throw new ResponseStatusException(HttpStatus.CONFLICT, "You already submitted a review for this product");
-                }
-            }
         } else {
             customer = resolveOrCreateAnonymousReviewer(req.getGuestName());
         }
@@ -167,10 +151,6 @@ public class ReviewService {
         if (order.getCustomer() == null || !order.getCustomer().getId().equals(customer.getId())) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Order does not belong to customer");
         }
-        if (reviewRepository.existsByOrder_IdAndCustomer_IdAndReviewStatusIn(
-                order.getId(), customer.getId(), BLOCKING_REVIEW_STATUSES)) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "You already submitted a location review for this order");
-        }
         if (!hasFullName(customer)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "First and last name are required in your profile before leaving a location review.");
@@ -216,8 +196,8 @@ public class ReviewService {
     }
 
     /**
-     * AI rejection is stored so each customer/order gets only one review attempt.
-     * The rejection reason is persisted in {@code moderation_rejection_reason}.
+     * Persists an AI-rejected review attempt; customers may submit again after adjusting wording.
+     * The rejection reason is stored in {@code moderation_rejection_reason}.
      */
     private ReviewDto persistModerationRejectedReview(
             Customer customer,
