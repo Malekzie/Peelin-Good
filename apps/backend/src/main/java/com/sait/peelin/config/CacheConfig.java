@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.ApplicationRunner;
 import org.springframework.cache.Cache;
 import org.springframework.cache.annotation.CachingConfigurer;
 import org.springframework.cache.annotation.EnableCaching;
@@ -71,6 +72,17 @@ public class CacheConfig implements CachingConfigurer {
                 .cacheDefaults(defaultConfig)
                 .withInitialCacheConfigurations(cacheConfigurations)
                 .build();
+    }
+
+    @Bean
+    public ApplicationRunner cacheFlushOnStartup(RedisCacheManager cacheManager) {
+        return args -> {
+            cacheManager.getCacheNames().forEach(name -> {
+                Cache cache = cacheManager.getCache(name);
+                if (cache != null) cache.clear();
+            });
+            log.info("Redis caches flushed on startup");
+        };
     }
 
     @Override
