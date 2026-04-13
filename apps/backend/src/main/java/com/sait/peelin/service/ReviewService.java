@@ -88,17 +88,20 @@ public class ReviewService {
             @CacheEvict(value = "orders", allEntries = true)
     })
     public ReviewDto create(Integer productId, ReviewCreateRequest req) {
-        User u = currentUserService.requireUser();
-        if (u.getUserRole() != UserRole.customer) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
-        }
-        Customer customer = customerLookupCacheService.findByUserId(u.getUserId());
-        if (customer == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Customer profile required");
+        User u = currentUserService.currentUserOrNull();
+        boolean isAuthenticated = u != null && u.getUserRole() == UserRole.customer;
+        Customer customer;
+        if (isAuthenticated) {
+            customer = customerLookupCacheService.findByUserId(u.getUserId());
+            if (customer == null) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Customer profile required");
+            }
+        } else {
+            customer = resolveOrCreateAnonymousReviewer(req.getGuestName());
         }
         Product product = productRepository.findById(productId).orElseThrow(() -> new ResourceNotFoundException("Product not found"));
 
-        if (!orderItemRepository.existsPurchasedByCustomer(customer.getId(), productId)) {
+        if (isAuthenticated && !orderItemRepository.existsPurchasedByCustomer(customer.getId(), productId)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "You can only review products you have purchased");
         }
         if (reviewRepository.existsByCustomer_IdAndProduct_IdAndOrderIsNullAndReviewStatusIn(
