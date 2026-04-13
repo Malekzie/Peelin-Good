@@ -12,7 +12,7 @@
 		updateProduct,
 		deleteProduct,
 		uploadProductImage
-	} from '$lib/services/staff-products.js';
+	} from '$lib/services/staff-products';
 	import { getTags } from '$lib/services/tags';
 	import { formatPriceCad } from '$lib/utils/money';
 
@@ -154,9 +154,9 @@
 				<Input bind:value={createDraft.description} placeholder="Description (optional)" />
 
 				<div class="flex flex-col gap-1">
-					<label class="text-xs font-medium text-muted-foreground">
+					<p class="text-xs font-medium text-muted-foreground">
 						Product Image <span class="font-normal">(optional)</span>
-					</label>
+					</p>
 					<input
 						type="file"
 						accept="image/jpeg,image/png,image/webp"
@@ -167,7 +167,7 @@
 
 				{#if tags.length > 0}
 					<div class="flex flex-col gap-1">
-						<label class="text-xs font-medium text-muted-foreground">Categories</label>
+						<p class="text-xs font-medium text-muted-foreground">Categories</p>
 						<div class="flex flex-wrap gap-2">
 							{#each tags as tag (tag.id)}
 								<label
@@ -238,9 +238,9 @@
 									<Input bind:value={editDraft.description} placeholder="Description" />
 
 									<div class="flex flex-col gap-1">
-										<label class="text-xs font-medium text-muted-foreground">
+										<p class="text-xs font-medium text-muted-foreground">
 											Replace Image <span class="font-normal">(optional)</span>
-										</label>
+										</p>
 										<input
 											type="file"
 											accept="image/jpeg,image/png,image/webp"
@@ -251,7 +251,7 @@
 
 									{#if tags.length > 0}
 										<div class="flex flex-col gap-1">
-											<label class="text-xs font-medium text-muted-foreground">Categories</label>
+											<p class="text-xs font-medium text-muted-foreground">Categories</p>
 											<div class="flex flex-wrap gap-2">
 												{#each tags as tag (tag.id)}
 													<label

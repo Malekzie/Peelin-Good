@@ -5,7 +5,7 @@
 	import { user } from '$lib/stores/authStore';
 	import { Skeleton } from '$lib/components/ui/skeleton';
 	import { Badge } from '$lib/components/ui/badge';
-	import { listStaff } from '$lib/services/staff-employees.js';
+	import { listStaff } from '$lib/services/staff-employees';
 
 	let employees = $state([]);
 	let loading = $state(true);

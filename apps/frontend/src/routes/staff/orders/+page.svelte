@@ -3,8 +3,8 @@
 	import { Skeleton } from '$lib/components/ui/skeleton';
 	import { Badge } from '$lib/components/ui/badge';
 	import { Button } from '$lib/components/ui/button';
-	import { getDashboardSummary } from '$lib/services/dashboard.js';
-	import { updateOrderStatus, markDelivered } from '$lib/services/staff-orders.js';
+	import { getDashboardSummary } from '$lib/services/dashboard';
+	import { updateOrderStatus, markDelivered } from '$lib/services/staff-orders';
 	import { formatPriceCad } from '$lib/utils/money';
 
 	let orders = $state([]);

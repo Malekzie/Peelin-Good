@@ -283,7 +283,7 @@
 								bind:value={province}
 								class="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:ring-2 focus:ring-ring focus:outline-none"
 							>
-								{#each provinces as p}
+								{#each provinces as p (p.value)}
 									<option value={p.value}>{p.label}</option>
 								{/each}
 							</select>

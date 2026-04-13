@@ -40,9 +40,11 @@
 				getProducts()
 			]);
 			order = orderData;
-			const map: Record<number, string | null> = {};
+			const map: Record<string | number, string | null> = {};
 			for (const p of productsData ?? []) {
-				map[p.id] = p.imageUrl ?? null;
+				if (p.id !== undefined) {
+					map[p.id] = p.imageUrl ?? null;
+				}
 			}
 			productImages = map;
 		} catch (err: unknown) {

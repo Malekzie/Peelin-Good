@@ -17,7 +17,7 @@
 		getRevenueByBakery,
 		getTopProducts,
 		getSalesByEmployee
-	} from '$lib/services/analytics.js';
+	} from '$lib/services/analytics';
 	import { formatPriceCad } from '$lib/utils/money';
 
 	const today = new Date().toISOString().split('T')[0];

@@ -1,5 +1,6 @@
 <script>
 	import { Search } from '@lucide/svelte';
+	import Button from '$lib/components/ui/button/button.svelte';
 
 	let { onReset = () => {} } = $props();
 </script>
@@ -10,10 +11,10 @@
 	</div>
 	<h2 class="mt-4 text-lg font-semibold text-foreground">Nothing found</h2>
 	<p class="mt-1 text-sm text-muted-foreground">Try a different search or browse all categories.</p>
-	<button
+	<Button
 		onclick={onReset}
 		class="mt-5 rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
 	>
 		Show all items
-	</button>
+	</Button>
 </div>

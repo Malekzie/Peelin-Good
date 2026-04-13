@@ -12,6 +12,7 @@
 	import { resolve } from '$app/paths';
 	import { formatPriceCad } from '$lib/utils/money';
 	import { ChevronDown, ShoppingBag } from '@lucide/svelte';
+	import { SvelteSet } from 'svelte/reactivity';
 
 	const API = '/api/v1';
 
@@ -19,7 +20,6 @@
 	let productImages = $state({});
 	let loading = $state(true);
 	let error = $state(null);
-	let openOrders = $state(new Set());
 
 	// Accept delivery dialog state
 	let acceptDialog = $state(null);
@@ -64,7 +64,7 @@
 			orders = ordersData ?? [];
 			const map = {};
 			for (const p of productsData ?? []) {
-				map[p.id] = p.imageUrl ?? null;
+				map[String(p.id)] = p.imageUrl ?? null;
 			}
 			productImages = map;
 		} catch {
@@ -74,14 +74,14 @@
 		}
 	});
 
+	const openOrders = new SvelteSet();
+
 	function toggle(orderId) {
-		const next = new Set(openOrders);
-		if (next.has(orderId)) {
-			next.delete(orderId);
+		if (openOrders.has(orderId)) {
+			openOrders.delete(orderId);
 		} else {
-			next.add(orderId);
+			openOrders.add(orderId);
 		}
-		openOrders = next;
 	}
 
 	/** @param {any} order */
@@ -297,7 +297,7 @@
 
 			{#if loading}
 				<div class="space-y-4">
-					{#each Array(3) as _item, i (i)}
+					{#each Array(3) as i (i)}
 						<Skeleton class="h-28 w-full rounded-xl" />
 					{/each}
 				</div>
@@ -516,7 +516,7 @@
 
 {#if toastMessage}
 	<div
-		class="fixed bottom-6 left-1/2 z-[200] max-w-md -translate-x-1/2 rounded-xl border border-border bg-card px-4 py-3 text-sm text-foreground shadow-lg"
+		class="fixed bottom-6 left-1/2 z-200 max-w-md -translate-x-1/2 rounded-xl border border-border bg-card px-4 py-3 text-sm text-foreground shadow-lg"
 		role="status"
 	>
 		{toastMessage}

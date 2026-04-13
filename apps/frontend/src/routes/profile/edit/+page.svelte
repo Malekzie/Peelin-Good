@@ -758,8 +758,9 @@
 						Your account will be deactivated and you will be logged out. Contact support to
 						reactivate it. Enter your password to confirm.
 					</p>
-					<label class="mt-4 block text-sm font-medium">Password</label>
+					<label for="deactivate-password" class="mt-4 block text-sm font-medium">Password</label>
 					<input
+						id="deactivate-password"
 						type="password"
 						class="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
 						bind:value={deactivatePassword}

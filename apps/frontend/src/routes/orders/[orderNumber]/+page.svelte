@@ -53,9 +53,9 @@
 				getProducts()
 			]);
 			order = orderData;
-			const map: Record<number, string | null> = {};
+			const map: Record<string, string | null> = {};
 			for (const p of productsData ?? []) {
-				map[p.id] = p.imageUrl ?? null;
+				map[String(p.id)] = p.imageUrl ?? null;
 			}
 			productImages = map;
 		} catch (err: unknown) {
@@ -134,7 +134,7 @@
 								</div>
 								<p
 									title={statusLabel(step)}
-									class="w-full text-center text-[7px] leading-tight text-balance break-words hyphens-auto sm:text-[8px] {current
+									class="w-full text-center text-[7px] leading-tight text-balance wrap-break-word hyphens-auto sm:text-[8px] {current
 										? 'font-semibold text-foreground'
 										: active
 											? 'font-medium text-foreground/85'
@@ -145,11 +145,11 @@
 							</div>
 							{#if i < STATUS_STEPS.length - 1}
 								<div
-									class="flex min-w-0 flex-1 basis-0 items-center self-stretch pt-[9px] sm:pt-[11px]"
+									class="flex min-w-0 flex-1 basis-0 items-center self-stretch pt-2.25 sm:pt-2.75"
 									aria-hidden="true"
 								>
 									<div
-										class="h-0.5 w-full min-w-[2px] rounded-full {i < idx
+										class="h-0.5 w-full min-w-0.5 rounded-full {i < idx
 											? 'bg-primary'
 											: 'bg-border'}"
 									></div>

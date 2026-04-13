@@ -5,8 +5,8 @@
 
 	let { name, description, price, discountPercent, imageUrl, productId } = $props();
 
-	const discountedPrice = discountPercent ? price * (1 - discountPercent / 100) : null;
-	const finalPrice = discountedPrice ?? price;
+	const discountedPrice = $derived(discountPercent ? price * (1 - discountPercent / 100) : null);
+	const finalPrice = $derived(discountedPrice ?? price);
 
 	let added = $state(false);
 

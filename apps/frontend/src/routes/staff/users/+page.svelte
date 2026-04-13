@@ -6,7 +6,7 @@
 	import { Skeleton } from '$lib/components/ui/skeleton';
 	import { Badge } from '$lib/components/ui/badge';
 	import { Button } from '$lib/components/ui/button';
-	import { listUsers, setUserActive } from '$lib/services/staff-users.js';
+	import { listUsers, setUserActive } from '$lib/services/staff-users';
 
 	let users = $state([]);
 	let loading = $state(true);

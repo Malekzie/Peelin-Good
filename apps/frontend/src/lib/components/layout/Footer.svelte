@@ -2,13 +2,9 @@
 	import { resolve } from '$app/paths';
 	import { onMount } from 'svelte';
 	import { getTags } from '$lib/services/tags';
+	import type { TagRecord } from '$lib/services/types';
 
-	interface FooterTag {
-		id: string;
-		name: string;
-	}
-
-	let tags = $state<FooterTag[]>([]);
+	let tags = $state<TagRecord[]>([]);
 
 	onMount(async () => {
 		tags = await getTags().catch(() => []);

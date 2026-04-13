@@ -10,11 +10,14 @@
 	import ReviewSubmissionOverlay from '$lib/components/review/ReviewSubmissionOverlay.svelte';
 	import { Separator } from '$lib/components/ui/separator';
 	import { cart } from '$lib/stores/cart';
-	import { getProducts } from '$lib/services/products';
-	import { getTags } from '$lib/services/tags';
-	import { getProductReviews, createProductReview } from '$lib/services/review';
+	import {
+		filterMenuProducts,
+		loadMenuCatalog,
+		loadMenuProductReviews,
+		resolveInitialMenuState,
+		submitMenuProductReview
+	} from '$lib/services/menu';
 	import { user } from '$lib/stores/authStore';
-	import { truncateModerationMessage } from '$lib/utils/reviewMessage';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { resolve } from '$app/paths';
@@ -52,7 +55,7 @@
 		showAllReviews = false;
 
 		try {
-			productReviews = await getProductReviews(product.id);
+			productReviews = await loadMenuProductReviews(product.id);
 		} catch {
 			productReviews = [];
 		} finally {
@@ -85,24 +88,19 @@
 		reviewSuccess = false;
 
 		try {
-			const submitted = await createProductReview(
-				selectedProduct.id,
-				reviewRating,
-				reviewComment,
-				null,
-				reviewGuestName || null
-			);
+			const result = await submitMenuProductReview({
+				productId: selectedProduct.id,
+				rating: reviewRating,
+				comment: reviewComment,
+				guestName: reviewGuestName || ''
+			});
 
-			const status = (submitted?.status ?? '').toLowerCase();
-			if (status === 'rejected') {
-				const short = truncateModerationMessage(submitted?.moderationMessage);
-				reviewError = short
-					? `Couldn't post review: ${short}`
-					: "We couldn't post that review. Try different wording.";
-			} else {
+			if (result.ok) {
 				reviewSuccess = true;
-				productReviews = await getProductReviews(selectedProduct.id);
+				productReviews = await loadMenuProductReviews(selectedProduct.id);
 				setTimeout(() => closeReviewModal(), 1500);
+			} else {
+				reviewError = result.error;
 			}
 		} catch (error) {
 			reviewError = error?.message ?? 'Failed to submit review.';
@@ -128,21 +126,12 @@
 
 	onMount(async () => {
 		try {
-			[products, tags] = await Promise.all([getProducts(), getTags()]);
+			[products, tags] = await loadMenuCatalog();
+			const initialState = resolveInitialMenuState($page.url, tags);
+			activeTagId = initialState.activeTagId;
+			searchQuery = initialState.searchQuery;
 
-			const tagParam = $page.url.searchParams.get('tag');
-			if (tagParam && tags.some((tag) => String(tag.id) === tagParam)) {
-				const byId = tags.find((tag) => String(tag.id) === tagParam);
-				const byName = tags.find((tag) => tag.name.toLowerCase() === tagParam.toLowerCase());
-				activeTagId = (byId ?? byName)?.id ?? null;
-			}
-
-			const searchParam = $page.url.searchParams.get('search');
-			if (searchParam) {
-				searchQuery = searchParam;
-			}
-
-			const productParam = $page.url.searchParams.get('product');
+			const productParam = initialState.productId;
 			if (productParam) {
 				const product = products.find((item) => String(item.id) === productParam);
 				if (product) openSheet(product);
@@ -154,17 +143,7 @@
 		}
 	});
 
-	const filtered = $derived(
-		products.filter((product) => {
-			const matchesTag = activeTagId === null || product.tagIds?.includes(activeTagId);
-			const query = searchQuery.toLowerCase();
-			const matchesSearch =
-				!query ||
-				(product.name ?? '').toLowerCase().includes(query) ||
-				(product.description ?? '').toLowerCase().includes(query);
-			return matchesTag && matchesSearch;
-		})
-	);
+	const filtered = $derived(filterMenuProducts(products, activeTagId, searchQuery));
 
 	const activeTagName = $derived(tags.find((tag) => tag.id === activeTagId)?.name ?? null);
 </script>

@@ -12,8 +12,8 @@
 		patchCustomer,
 		approvePhoto,
 		rejectPhoto
-	} from '$lib/services/staff-customers.js';
-	import { listUsers, setUserActive } from '$lib/services/staff-users.js';
+	} from '$lib/services/staff-customers';
+	import { listUsers, setUserActive } from '$lib/services/staff-users';
 
 	const id = page.params.id;
 	const isAdmin = $derived($user?.role === 'admin');
@@ -215,7 +215,7 @@
 						<img
 							src={customer.profilePhotoPath}
 							alt=""
-							class="h-24 w-24 rounded-full border border-border object-cover saturate-100 opacity-100"
+							class="h-24 w-24 rounded-full border border-border object-cover opacity-100 saturate-100"
 						/>
 					{/if}
 					<div class="flex gap-2">

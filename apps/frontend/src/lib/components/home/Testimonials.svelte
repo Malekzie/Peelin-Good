@@ -1,16 +1,11 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { getTopReviews } from '$lib/services/review';
+	import type { ReviewRecord } from '$lib/services/types';
 
-	interface Review {
-		id: string;
-		rating: number;
-		comment: string;
-		reviewerDisplayName: string;
-		bakeryName: string | null;
-	}
+	type ReviewWithBakery = ReviewRecord & { bakeryName?: string | null };
 
-	let reviews = $state<Review[]>([]);
+	let reviews = $state<ReviewWithBakery[]>([]);
 
 	function stars(n: number) {
 		return Array(n).fill('★').join('');
@@ -18,7 +13,11 @@
 
 	onMount(async () => {
 		try {
-			reviews = await getTopReviews(3);
+			const topReviews = await getTopReviews(3);
+			reviews = topReviews.map((r) => ({
+				...r,
+				bakeryName: (r as any).bakeryName ?? null
+			}));
 		} catch (e) {
 			console.error('Failed to load reviews:', e);
 		}

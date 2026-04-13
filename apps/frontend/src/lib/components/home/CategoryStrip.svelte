@@ -3,6 +3,7 @@
 	import { onMount } from 'svelte';
 	import { getTags } from '$lib/services/tags';
 	import { Button } from '$lib/components/ui/button/index';
+	import type { TagRecord } from '$lib/services/types';
 
 	interface Category {
 		name: string;
@@ -17,8 +18,8 @@
 		const tags = await getTags();
 
 		categories = tags
-			.map((tag: { id: string; name: string; description?: string; isFeatured: boolean }) => ({
-				id: tag.id,
+			.map((tag: TagRecord) => ({
+				id: String(tag.id ?? ''),
 				name: tag.name,
 				desc: tag.description ?? 'Freshly baked goods',
 				badge: tag.isFeatured ? 'Featured' : undefined

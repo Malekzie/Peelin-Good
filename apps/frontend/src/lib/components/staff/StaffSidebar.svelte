@@ -3,7 +3,7 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { user } from '$lib/stores/authStore';
-	import { logoutUser } from '$lib/services/auth.js';
+	import { logoutUser } from '$lib/services/auth';
 	import { Avatar, AvatarFallback } from '$lib/components/ui/avatar';
 	import { Separator } from '$lib/components/ui/separator';
 	import { Button } from '$lib/components/ui/button';

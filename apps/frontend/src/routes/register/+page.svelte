@@ -1,6 +1,6 @@
 <script>
-	import { registerUser } from '$lib/services/auth.js';
-	import { updateProfile } from '$lib/services/profile.js';
+	import { registerUser } from '$lib/services/auth';
+	import { updateProfile } from '$lib/services/profile';
 	import { resolve } from '$app/paths';
 	import { goto } from '$app/navigation';
 	import { user } from '$lib/stores/authStore';

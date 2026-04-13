@@ -3,7 +3,7 @@
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import { Eye, EyeOff } from '@lucide/svelte';
-	import { loginUser } from '$lib/services/auth.js';
+	import { loginUser } from '$lib/services/auth';
 	import { user } from '$lib/stores/authStore';
 
 	let identifier = $state('');

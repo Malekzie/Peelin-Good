@@ -1,21 +1,25 @@
 import { clearAuth, setAuth } from '$lib/stores/authStore.js';
 import * as Sentry from '@sentry/sveltekit';
+import { AUTH_API } from '$lib/services/constants';
+import type { AuthResponse, LoginResult, RegisterResult } from '$lib/services/types';
 
-const API_BASE = '/api/v1/auth';
+type LoginOptions = {
+	resolvedUsername?: string;
+};
 
-/**
- * @param {string} identifier - email or username (first step)
- * @param {object} [opts]
- * @param {string} [opts.resolvedUsername] - after 409 linked-account prompt; sends username + password only
- */
-export async function loginUser(identifier, password, rememberMe = false, opts = {}) {
+export async function loginUser(
+	identifier: string,
+	password: string,
+	rememberMe = false,
+	opts: LoginOptions = {}
+): Promise<LoginResult> {
 	const resolvedUsername = opts.resolvedUsername?.trim?.() || '';
 	const body = resolvedUsername
 		? { username: resolvedUsername, password, rememberMe }
 		: { email: identifier, password, rememberMe };
 
 	try {
-		const res = await fetch(`${API_BASE}/login`, {
+		const res = await fetch(`${AUTH_API}/login`, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify(body),
@@ -23,7 +27,7 @@ export async function loginUser(identifier, password, rememberMe = false, opts =
 		});
 
 		if (res.status === 409) {
-			const data = await res.json().catch(() => ({}));
+			const data = (await res.json().catch(() => ({}))) as { message?: string; choices?: unknown[] };
 			const choices = Array.isArray(data.choices) ? data.choices : [];
 			return {
 				ok: false,
@@ -34,12 +38,11 @@ export async function loginUser(identifier, password, rememberMe = false, opts =
 		}
 
 		if (!res.ok) {
-			const err = await res.json().catch(() => ({}));
+			const err = (await res.json().catch(() => ({}))) as { message?: string };
 			const message = err.message?.toLowerCase().includes('disabled')
 				? 'Your account has been deactivated.'
 				: 'Invalid email or password.';
 
-			// Spring returns 401 for bad credentials
 			Sentry.withScope((scope) => {
 				scope.setTag('action', 'LOGIN_FAILED');
 				scope.setTag('reason', 'invalid_credentials');
@@ -49,9 +52,7 @@ export async function loginUser(identifier, password, rememberMe = false, opts =
 			return { ok: false, message };
 		}
 
-		const data = await res.json();
-
-		// saves to store + localStorage
+		const data = (await res.json()) as AuthResponse;
 		setAuth(data);
 		return { ok: true };
 	} catch {
@@ -64,23 +65,21 @@ export async function loginUser(identifier, password, rememberMe = false, opts =
 	}
 }
 
-// logs out the current user, invalidating the token on the server
-export async function logoutUser() {
+export async function logoutUser(): Promise<void> {
 	try {
-		await fetch(`${API_BASE}/logout`, {
+		await fetch(`${AUTH_API}/logout`, {
 			method: 'POST',
 			credentials: 'include'
 		});
-	} catch (e) {
-		Sentry.captureException(e);
+	} catch (error) {
+		Sentry.captureException(error);
 	}
 	clearAuth();
 }
 
-// registers a new user
-export async function registerUser(payload) {
+export async function registerUser(payload: Record<string, unknown>): Promise<RegisterResult> {
 	try {
-		const res = await fetch(`${API_BASE}/register`, {
+		const res = await fetch(`${AUTH_API}/register`, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify(payload),
@@ -88,7 +87,7 @@ export async function registerUser(payload) {
 		});
 
 		if (!res.ok) {
-			const err = await res.json().catch(() => ({}));
+			const err = (await res.json().catch(() => ({}))) as { message?: string };
 			Sentry.withScope((scope) => {
 				scope.setTag('action', 'REGISTER_FAILED');
 				scope.setTag('reason', res.status === 409 ? 'duplicate_account' : 'api_error');
@@ -101,7 +100,7 @@ export async function registerUser(payload) {
 			return { ok: false, message: err.message ?? 'Registration failed.' };
 		}
 
-		const data = await res.json();
+		const data = (await res.json()) as AuthResponse;
 		setAuth(data);
 		return {
 			ok: true,
@@ -121,9 +120,9 @@ export async function registerUser(payload) {
 	}
 }
 
-export async function forgotPassword(email) {
+export async function forgotPassword(email: string): Promise<void> {
 	try {
-		await fetch(`${API_BASE}/forgot-password`, {
+		await fetch(`${AUTH_API}/forgot-password`, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({ email })

@@ -1,0 +1,19 @@
+export const API_V1 = '/api/v1' as const;
+
+export const AUTH_API = `${API_V1}/auth` as const;
+export const ACCOUNT_API = `${API_V1}/account` as const;
+export const BAKERIES_API = `${API_V1}/bakeries` as const;
+export const DASHBOARD_API = `${API_V1}/admin/dashboard` as const;
+export const ORDERS_API = `${API_V1}/orders` as const;
+export const PASSWORD_RESET_API = `${AUTH_API}/reset-password` as const;
+export const PREFERENCES_API = `${API_V1}/customers/me/preferences` as const;
+export const PRODUCT_SPECIALS_API = `${API_V1}/product-specials` as const;
+export const PRODUCTS_API = `${API_V1}/products` as const;
+export const EMPLOYEE_API = `${API_V1}/employee` as const;
+export const PROFILE_API = `${API_V1}/customers/me` as const;
+export const REVIEWS_API = `${API_V1}/reviews` as const;
+export const TAGS_API = `${API_V1}/tags` as const;
+export const ADMIN_ANALYTICS_API = `${API_V1}/admin/analytics` as const;
+export const ADMIN_CUSTOMERS_API = `${API_V1}/admin/customers` as const;
+export const ADMIN_USERS_API = `${API_V1}/admin/users` as const;
+export const EMPLOYEE_STAFF_API = `${API_V1}/employee/staff` as const;

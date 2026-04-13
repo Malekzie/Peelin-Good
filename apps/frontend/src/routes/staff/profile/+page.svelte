@@ -6,7 +6,7 @@
 	import { Separator } from '$lib/components/ui/separator';
 	import { Badge } from '$lib/components/ui/badge';
 	import { Avatar, AvatarImage, AvatarFallback } from '$lib/components/ui/avatar';
-	import { getProfile, uploadProfilePhoto } from '$lib/services/profile.js';
+	import { getProfile, uploadProfilePhoto } from '$lib/services/profile';
 
 	let profile = $state(null);
 	let bakeryName = $state(null);

@@ -11,7 +11,7 @@
 		approvePhoto,
 		rejectPhoto,
 		patchCustomer
-	} from '$lib/services/staff-customers.js';
+	} from '$lib/services/staff-customers';
 
 	let tab = $state('all');
 	let customers = $state([]);
@@ -169,7 +169,7 @@
 								<img
 									src={c.profilePhotoPath}
 									alt="Profile"
-									class="h-12 w-12 rounded-full border border-border object-cover saturate-100 opacity-100"
+									class="h-12 w-12 rounded-full border border-border object-cover opacity-100 saturate-100"
 								/>
 							{/if}
 							<div>
