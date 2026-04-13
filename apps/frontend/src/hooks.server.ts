@@ -7,9 +7,7 @@ type Role = (typeof VALID_ROLES)[number];
 
 function toRole(raw: string): Role | null {
 	const normalized = raw.replace('ROLE_', '').toLowerCase();
-	return (VALID_ROLES as readonly string[]).includes(normalized)
-		? (normalized as Role)
-		: null;
+	return (VALID_ROLES as readonly string[]).includes(normalized) ? (normalized as Role) : null;
 }
 
 export const handle: Handle = sequence(Sentry.sentryHandle(), async ({ event, resolve }) => {

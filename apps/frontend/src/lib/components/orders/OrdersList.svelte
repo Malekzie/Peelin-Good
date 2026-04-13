@@ -57,18 +57,14 @@
 				<div class="space-y-4">
 					{#each orders as order (order.id)}
 						<div class="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
-							<OrderCard
-								{order}
-								isOpen={openOrders.has(order.id)}
-								onToggle={onToggleOrder}
-							/>
+							<OrderCard {order} isOpen={openOrders.has(order.id)} onToggle={onToggleOrder} />
 
 							{#if openOrders.has(order.id)}
 								<OrderDetailsPanel
 									order={{ ...order, hasReviewableSlot: orderHasAnyReviewableSlot(order) }}
 									{productImages}
-									onAcceptDelivery={onAcceptDelivery}
-									onLeaveReview={onLeaveReview}
+									{onAcceptDelivery}
+									{onLeaveReview}
 									onToggle={onToggleOrder}
 								/>
 							{/if}

@@ -29,8 +29,8 @@
 		<div
 			class="mb-4 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 text-sm font-medium text-primary"
 		>
-			20% employee discount applies to your order after today's specials and your loyalty
-			tier discount. Final amounts are calculated when you place the order.
+			20% employee discount applies to your order after today's specials and your loyalty tier
+			discount. Final amounts are calculated when you place the order.
 		</div>
 	{/if}
 	{#each items as item (item.productId)}
@@ -41,8 +41,8 @@
 	{/each}
 	<hr class="my-3 border-border" />
 	<p class="text-xs text-muted-foreground">
-		Line totals use menu prices. Today's specials, loyalty tier, tax, and any employee
-		discount are applied on the server when you confirm.
+		Line totals use menu prices. Today's specials, loyalty tier, tax, and any employee discount are
+		applied on the server when you confirm.
 	</p>
 	<div class="mt-3 flex justify-between text-sm text-muted-foreground">
 		<span>Subtotal</span>

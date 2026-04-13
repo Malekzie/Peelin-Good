@@ -62,7 +62,12 @@
 	<div class="flex items-center justify-between">
 		<h2 class="text-lg font-semibold text-foreground">Schedule</h2>
 		<label class="flex cursor-pointer items-center gap-2 text-sm text-muted-foreground">
-			<input type="checkbox" checked={scheduleEnabled} onchange={handleScheduleToggle} class="accent-primary" />
+			<input
+				type="checkbox"
+				checked={scheduleEnabled}
+				onchange={handleScheduleToggle}
+				class="accent-primary"
+			/>
 			Schedule for later
 		</label>
 	</div>
@@ -76,8 +81,12 @@
 					<span class="font-medium text-foreground">{getAsapEstimateLabel()}</span>.
 				</p>
 			{:else if nextOpenTime}
-				<div class="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm text-amber-800">
-					This location is currently closed. It will open <span class="font-medium">{nextOpenTime}</span>.
+				<div
+					class="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm text-amber-800"
+				>
+					This location is currently closed. It will open <span class="font-medium"
+						>{nextOpenTime}</span
+					>.
 				</div>
 			{:else}
 				<p class="mt-2 text-sm text-muted-foreground">
@@ -105,7 +114,9 @@
 			<div class="flex flex-col gap-1">
 				<label for="schedTime" class="text-sm font-medium text-foreground">Time</label>
 				{#if bakeryHoursLoading}
-					<p class="rounded-lg border border-border bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
+					<p
+						class="rounded-lg border border-border bg-muted/50 px-3 py-2 text-sm text-muted-foreground"
+					>
 						Loading...
 					</p>
 				{:else if availableTimeSlots.length > 0}
@@ -113,18 +124,22 @@
 						id="schedTime"
 						value={scheduleTime}
 						onchange={handleTimeChange}
-						class="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+						class="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:ring-2 focus:ring-ring focus:outline-none"
 					>
 						{#each availableTimeSlots as slot (slot)}
 							<option value={slot}>{slot}</option>
 						{/each}
 					</select>
 				{:else if scheduleDate}
-					<p class="rounded-lg border border-border bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
+					<p
+						class="rounded-lg border border-border bg-muted/50 px-3 py-2 text-sm text-muted-foreground"
+					>
 						No available slots
 					</p>
 				{:else}
-					<p class="rounded-lg border border-border bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
+					<p
+						class="rounded-lg border border-border bg-muted/50 px-3 py-2 text-sm text-muted-foreground"
+					>
 						Select a date first
 					</p>
 				{/if}
@@ -132,7 +147,9 @@
 		</div>
 
 		{#if closedNotice}
-			<div class="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm text-amber-800">
+			<div
+				class="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm text-amber-800"
+			>
 				{closedNotice}
 			</div>
 		{/if}

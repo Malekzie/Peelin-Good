@@ -57,7 +57,8 @@
 					orderMethod = val as 'pickup' | 'delivery';
 					onMethodChange(val as 'pickup' | 'delivery');
 				}}
-				class="flex-1 rounded-lg border py-2 text-sm font-medium transition-colors {orderMethod === val
+				class="flex-1 rounded-lg border py-2 text-sm font-medium transition-colors {orderMethod ===
+				val
 					? 'border-primary bg-primary text-primary-foreground'
 					: 'border-border bg-background text-foreground hover:bg-muted'}"
 			>
@@ -80,7 +81,7 @@
 			bind:value={selectedBakeryId}
 			onchange={() => onBakeryChange(selectedBakeryId ?? 0)}
 			required
-			class="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+			class="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:ring-2 focus:ring-ring focus:outline-none"
 		>
 			{#each bakeries as b (b.id)}
 				<option value={b.id}>{formatBakeryOption(b, userLat, userLng)}</option>
@@ -91,7 +92,7 @@
 	<!-- Selected bakery address -->
 	{#if selectedBakery?.address}
 		<div class="mb-4 rounded-lg border border-border bg-muted/50 p-3 text-sm">
-			<p class="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+			<p class="mb-1 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
 				{orderMethod === 'pickup' ? 'Pickup address' : 'Bakery address'}
 			</p>
 			<p class="text-foreground">
@@ -104,7 +105,7 @@
 				{selectedBakery.address.postalCode}
 			</p>
 			{#if selectedBakery.latitude && selectedBakery.longitude && userLat !== null}
-				<p class="mt-1 text-xs text-primary font-medium">
+				<p class="mt-1 text-xs font-medium text-primary">
 					{distanceLabel(selectedBakery, userLat, userLng)}
 				</p>
 			{/if}
@@ -117,7 +118,9 @@
 			<div class="rounded-lg border border-border bg-muted/50 p-3 text-sm">
 				<div class="flex items-start justify-between gap-2">
 					<div>
-						<p class="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Delivering to</p>
+						<p class="mb-1 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+							Delivering to
+						</p>
 						<p class="text-foreground">
 							{customer.address.line1}{customer.address.line2 ? `, ${customer.address.line2}` : ''}
 						</p>
@@ -136,7 +139,7 @@
 				</div>
 			</div>
 		{:else}
-			<div class="flex items-center justify-between mb-2">
+			<div class="mb-2 flex items-center justify-between">
 				<p class="text-sm font-medium text-foreground">Delivery address</p>
 				<button
 					type="button"

@@ -3,16 +3,16 @@
 	 * Dialog for confirming delivery acceptance
 	 * Offers two paths: accept and review, or just accept
 	 */
-	let { dialog = null, onClose = () => {}, onAccept = () => {}, onAcceptAndReview = () => {} } =
-		$props();
+	let {
+		dialog = null,
+		onClose = () => {},
+		onAccept = () => {},
+		onAcceptAndReview = () => {}
+	} = $props();
 </script>
 
 {#if dialog}
-	<div
-		class="fixed inset-0 z-40 bg-black/50"
-		onclick={() => onClose()}
-		role="presentation"
-	></div>
+	<div class="fixed inset-0 z-40 bg-black/50" onclick={() => onClose()} role="presentation"></div>
 	<div class="fixed inset-0 z-50 flex items-center justify-center p-4">
 		<div class="w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-xl">
 			<h2 class="text-lg font-bold text-foreground">Order Received?</h2>

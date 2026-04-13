@@ -34,7 +34,9 @@ export async function createBakeryReview(
 	if (!res) return;
 	if (!res.ok) {
 		const err = (await res.json().catch(() => ({}))) as { message?: string };
-		const error = new Error(err.message ?? `Failed to submit review: ${res.status}`) as ErrorWithStatus;
+		const error = new Error(
+			err.message ?? `Failed to submit review: ${res.status}`
+		) as ErrorWithStatus;
 		error.status = res.status;
 		throw error;
 	}

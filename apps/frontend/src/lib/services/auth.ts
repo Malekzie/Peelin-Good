@@ -27,7 +27,10 @@ export async function loginUser(
 		});
 
 		if (res.status === 409) {
-			const data = (await res.json().catch(() => ({}))) as { message?: string; choices?: unknown[] };
+			const data = (await res.json().catch(() => ({}))) as {
+				message?: string;
+				choices?: unknown[];
+			};
 			const choices = Array.isArray(data.choices) ? data.choices : [];
 			return {
 				ok: false,

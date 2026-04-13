@@ -96,7 +96,7 @@
 			id="dProvince"
 			bind:value={province}
 			onblur={() => onBlur('deliveryProvince')}
-			class="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring {errors.deliveryProvince &&
+			class="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:ring-2 focus:ring-ring focus:outline-none {errors.deliveryProvince &&
 			touched.deliveryProvince
 				? 'ring-2 ring-red-400'
 				: ''}"

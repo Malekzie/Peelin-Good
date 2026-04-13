@@ -88,9 +88,7 @@
 				class="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
 			>
 				Your profile is incomplete. Add your address and phone number to place orders.
-				<a href={resolve('/profile/edit')} class="ml-2 font-semibold underline"
-					>Complete profile</a
-				>
+				<a href={resolve('/profile/edit')} class="ml-2 font-semibold underline">Complete profile</a>
 			</div>
 		{/if}
 
@@ -131,8 +129,7 @@
 								<Badge variant="secondary">No loyalty tier</Badge>
 							{/if}
 							{#if profile.rewardBalance != null}
-								<Badge variant="outline"
-									>{Number(profile.rewardBalance).toLocaleString()} pts</Badge
+								<Badge variant="outline">{Number(profile.rewardBalance).toLocaleString()} pts</Badge
 								>
 							{/if}
 						</div>

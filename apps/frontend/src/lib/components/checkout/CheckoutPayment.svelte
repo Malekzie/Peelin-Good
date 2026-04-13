@@ -39,7 +39,7 @@
 
 <div class="flex flex-col gap-6">
 	<div class="rounded-xl border border-border bg-card p-6 shadow-sm">
-		<p class="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Order</p>
+		<p class="mb-1 text-xs font-semibold tracking-wider text-muted-foreground uppercase">Order</p>
 		<p class="mb-4 font-semibold text-foreground">#{orderNumber}</p>
 		<div class="flex flex-col gap-1 text-sm">
 			<div class="flex justify-between text-muted-foreground">
@@ -84,7 +84,9 @@
 		<div bind:this={paymentContainer} class="min-h-16"></div>
 
 		{#if paymentError}
-			<p class="mt-3 rounded-lg border border-destructive bg-destructive/10 px-4 py-3 text-sm text-destructive">
+			<p
+				class="mt-3 rounded-lg border border-destructive bg-destructive/10 px-4 py-3 text-sm text-destructive"
+			>
 				{paymentError}
 			</p>
 		{/if}

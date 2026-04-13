@@ -99,7 +99,7 @@
 		</div>
 		<div class="flex flex-col gap-1">
 			<label for="guestPhone" class="text-sm font-medium text-foreground">
-				Phone <span class="text-muted-foreground text-xs">(or email)</span>
+				Phone <span class="text-xs text-muted-foreground">(or email)</span>
 			</label>
 			<input
 				id="guestPhone"

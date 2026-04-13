@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
 	import ProfileSidebar from '$lib/components/profile/ProfileSidebar.svelte';
 
 	let { children } = $props();

@@ -7,9 +7,13 @@
 	import { resolve } from '$app/paths';
 	import { formatPrice } from '$lib/utils/OrdersHelper';
 
-	let { order = null, productImages = {}, onAcceptDelivery = () => {}, onLeaveReview = () => {}, onToggle = () => {} } =
-		$props();
-
+	let {
+		order = null,
+		productImages = {},
+		onAcceptDelivery = () => {},
+		onLeaveReview = () => {},
+		onToggle = () => {}
+	} = $props();
 </script>
 
 {#if order}

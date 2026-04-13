@@ -62,7 +62,9 @@
 		<div class="flex-1">
 			<h2 class="text-sm leading-snug font-bold text-foreground">{product.name}</h2>
 			{#if product.description}
-				<p class="mt-1 hidden line-clamp-2 text-xs text-muted-foreground sm:block">{product.description}</p>
+				<p class="mt-1 line-clamp-2 hidden text-xs text-muted-foreground sm:block">
+					{product.description}
+				</p>
 			{/if}
 		</div>
 
