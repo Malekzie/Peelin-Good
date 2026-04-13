@@ -64,41 +64,70 @@ public class ChatService {
     public List<ChatMessageDto> messages(Integer threadId) {
         ChatThread thread = requireThread(threadId);
         User user = currentUserService.requireUser();
-        assertUserCanAccessThread(thread, user);
-
-        return chatMessageRepository.findByThread_IdOrderBySentAtAsc(threadId)
-                .stream()
-                .map(this::msgDto)
-                .toList();
+        return messages(thread, user);
     }
 
     @Transactional(readOnly = true)
     public List<ChatMessageDto> messages(Integer threadId, User user) {
         ChatThread thread = requireThread(threadId);
-        assertUserCanAccessThread(thread, user);
-
-        return chatMessageRepository.findByThread_IdOrderBySentAtAsc(threadId)
-                .stream()
-                .map(this::msgDto)
-                .toList();
+        return messages(thread, user);
     }
 
     @Transactional
     public ChatMessageDto postMessage(Integer threadId, PostChatMessageRequest req) {
+        ChatThread thread = requireThread(threadId);
         User sender = currentUserService.requireUser();
-        return postMessage(threadId, req.getText(), sender);
+        return postMessage(thread, req.getText(), sender);
     }
 
     @Transactional
     public ChatMessageDto postMessage(Integer threadId, String rawText, User sender) {
         ChatThread thread = requireThread(threadId);
+        return postMessage(thread, rawText, sender);
+    }
+
+    @Transactional
+    public ChatThreadDto assignEmployee(Integer threadId) {
+        User staff = currentUserService.requireUser();
+        ChatThread thread = requireThread(threadId);
+        return assignEmployee(thread, staff);
+    }
+
+    @Transactional
+    public boolean markRead(Integer threadId) {
+        User viewer = currentUserService.requireUser();
+        ChatThread thread = requireThread(threadId);
+        return markRead(thread, viewer);
+    }
+
+    @Transactional
+    public boolean markRead(Integer threadId, User viewer) {
+        ChatThread thread = requireThread(threadId);
+        return markRead(thread, viewer);
+    }
+
+    @Transactional(readOnly = true)
+    public void assertUserCanAccessThread(Integer threadId, User user) {
+        ChatThread thread = requireThread(threadId);
+        assertUserCanAccessThread(thread, user);
+    }
+
+    private List<ChatMessageDto> messages(ChatThread thread, User user) {
+        assertUserCanAccessThread(thread, user);
+
+        return chatMessageRepository.findByThread_IdOrderBySentAtAsc(thread.getId())
+                .stream()
+                .map(this::msgDto)
+                .toList();
+    }
+
+    private ChatMessageDto postMessage(ChatThread thread, String rawText, User sender) {
         assertUserCanAccessThread(thread, sender);
         assertThreadOpen(thread);
 
         String text = normalizeAndValidateMessageText(rawText);
 
-        if ((sender.getUserRole() == UserRole.employee || sender.getUserRole() == UserRole.admin)
-                && thread.getEmployeeUser() == null) {
+        if (isStaff(sender) && thread.getEmployeeUser() == null) {
             thread.setEmployeeUser(sender);
         }
 
@@ -115,12 +144,9 @@ public class ChatService {
         return msgDto(chatMessageRepository.save(message));
     }
 
-    @Transactional
-    public ChatThreadDto assignEmployee(Integer threadId) {
-        User staff = currentUserService.requireUser();
+    private ChatThreadDto assignEmployee(ChatThread thread, User staff) {
         assertStaff(staff);
 
-        ChatThread thread = requireThread(threadId);
         if (thread.getEmployeeUser() == null) {
             thread.setEmployeeUser(staff);
             thread.setUpdatedAt(OffsetDateTime.now());
@@ -129,18 +155,10 @@ public class ChatService {
         return threadDto(chatThreadRepository.save(thread));
     }
 
-    @Transactional
-    public boolean markRead(Integer threadId) {
-        User viewer = currentUserService.requireUser();
-        return markRead(threadId, viewer);
-    }
-
-    @Transactional
-    public boolean markRead(Integer threadId, User viewer) {
-        ChatThread thread = requireThread(threadId);
+    private boolean markRead(ChatThread thread, User viewer) {
         assertUserCanAccessThread(thread, viewer);
 
-        List<ChatMessage> messages = chatMessageRepository.findByThread_IdOrderBySentAtAsc(threadId);
+        List<ChatMessage> messages = chatMessageRepository.findByThread_IdOrderBySentAtAsc(thread.getId());
         List<ChatMessage> dirty = new ArrayList<>();
 
         for (ChatMessage message : messages) {
@@ -159,12 +177,6 @@ public class ChatService {
         thread.setUpdatedAt(OffsetDateTime.now());
         chatThreadRepository.save(thread);
         return true;
-    }
-
-    @Transactional(readOnly = true)
-    public void assertUserCanAccessThread(Integer threadId, User user) {
-        ChatThread thread = requireThread(threadId);
-        assertUserCanAccessThread(thread, user);
     }
 
     private ChatThread requireThread(Integer threadId) {
@@ -188,9 +200,13 @@ public class ChatService {
     }
 
     private void assertStaff(User user) {
-        if (user.getUserRole() != UserRole.employee && user.getUserRole() != UserRole.admin) {
+        if (!isStaff(user)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
+    }
+
+    private boolean isStaff(User user) {
+        return user.getUserRole() == UserRole.employee || user.getUserRole() == UserRole.admin;
     }
 
     private void assertThreadOpen(ChatThread thread) {

@@ -23,6 +23,7 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
 
     private static final String THREAD_ID_ATTR = "threadId";
     private static final String USER_ATTR = "user";
+    private static final String THREAD_ID_PARAM = "threadId";
 
     private final ChatService chatService;
     private final ObjectMapper objectMapper;
@@ -162,22 +163,49 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
     }
 
     private Integer extractThreadId(URI uri) {
-        if (uri == null || uri.getQuery() == null || uri.getQuery().isBlank()) {
+        String query = extractQuery(uri);
+        if (query == null) {
             return null;
         }
 
-        String[] parts = uri.getQuery().split("&");
-        for (String part : parts) {
-            String[] kv = part.split("=", 2);
-            if (kv.length == 2 && "threadId".equals(kv[0])) {
-                try {
-                    return Integer.valueOf(kv[1]);
-                } catch (NumberFormatException ignored) {
-                    return null;
-                }
+        for (String part : query.split("&")) {
+            Integer threadId = parseThreadIdParam(part);
+            if (threadId != null) {
+                return threadId;
             }
         }
+
         return null;
+    }
+
+    private String extractQuery(URI uri) {
+        if (uri == null) {
+            return null;
+        }
+
+        String query = uri.getQuery();
+        return isBlank(query) ? null : query;
+    }
+
+    private Integer parseThreadIdParam(String part) {
+        String[] kv = part.split("=", 2);
+        if (!isThreadIdParam(kv)) {
+            return null;
+        }
+
+        try {
+            return Integer.valueOf(kv[1]);
+        } catch (NumberFormatException ignored) {
+            return null;
+        }
+    }
+
+    private boolean isThreadIdParam(String[] kv) {
+        return kv.length == 2 && THREAD_ID_PARAM.equals(kv[0]);
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.isBlank();
     }
 
     private int resolveCloseCode(HttpStatusCode status) {
