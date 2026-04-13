@@ -7,6 +7,7 @@ import com.sait.peelin.model.Address;
 import com.sait.peelin.model.Bakery;
 import com.sait.peelin.model.Employee;
 import com.sait.peelin.model.User;
+import com.sait.peelin.model.UserRole;
 import com.sait.peelin.repository.AddressRepository;
 import com.sait.peelin.repository.BakeryRepository;
 import com.sait.peelin.repository.EmployeeRepository;
@@ -38,6 +39,7 @@ public class EmployeeAdminService {
         }
         User user = userRepository.findById(req.userId())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        requireAdminOrEmployeeUser(user);
         Address address = addressRepository.findById(req.addressId())
                 .orElseThrow(() -> new ResourceNotFoundException("Address not found"));
         Bakery bakery = bakeryRepository.findById(req.bakeryId())
@@ -67,6 +69,7 @@ public class EmployeeAdminService {
                 .orElseThrow(() -> new ResourceNotFoundException("Employee not found"));
         User user = userRepository.findById(req.userId())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        requireAdminOrEmployeeUser(user);
         Address address = addressRepository.findById(req.addressId())
                 .orElseThrow(() -> new ResourceNotFoundException("Address not found"));
         Bakery bakery = bakeryRepository.findById(req.bakeryId())
@@ -99,5 +102,14 @@ public class EmployeeAdminService {
             throw new ResourceNotFoundException("Employee not found");
         }
         employeeRepository.deleteById(id);
+    }
+
+    /** Admins are staff; employee rows may be linked to either an admin or an employee login. */
+    private static void requireAdminOrEmployeeUser(User user) {
+        UserRole r = user.getUserRole();
+        if (r != UserRole.admin && r != UserRole.employee) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Employee profile must be linked to a user with role admin or employee");
+        }
     }
 }

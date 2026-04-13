@@ -1,5 +1,6 @@
 package com.sait.peelin.controller.v1;
 
+import com.sait.peelin.dto.v1.CustomerAdminCreateRequest;
 import com.sait.peelin.dto.v1.CustomerDto;
 import com.sait.peelin.dto.v1.CustomerPatchRequest;
 import com.sait.peelin.service.CustomerService;
@@ -59,6 +60,20 @@ public class AdminCustomerController {
     @PreAuthorize("hasAnyRole('ADMIN','EMPLOYEE')")
     public CustomerDto get(@PathVariable UUID id) {
         return customerService.get(id);
+    }
+
+    @Operation(summary = "Create customer", description = "Create a guest customer or link a customer-role user that has no profile yet. Requires ADMIN role.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Customer created"),
+            @ApiResponse(responseCode = "400", description = "Validation error", content = @Content),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions", content = @Content),
+            @ApiResponse(responseCode = "409", description = "User already has a profile or is an employee", content = @Content)
+    })
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("hasRole('ADMIN')")
+    public CustomerDto create(@Valid @RequestBody CustomerAdminCreateRequest req) {
+        return customerService.createAdmin(req);
     }
 
     @Operation(summary = "Patch customer", description = "Partially update a customer record. Requires ADMIN role.")

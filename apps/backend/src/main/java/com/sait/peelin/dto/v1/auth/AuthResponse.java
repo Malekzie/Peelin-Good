@@ -27,6 +27,21 @@ public class AuthResponse {
     @Setter
     private String email;
 
+    /** Public URL of profile photo (e.g. DigitalOcean Spaces) when set on the user account. */
+    @Getter
+    @Setter
+    private String profilePhotoPath;
+
+    /** Employee first name when the user has an employee profile; otherwise typically null. */
+    @Getter
+    @Setter
+    private String firstName;
+
+    /** Employee last name when the user has an employee profile; otherwise typically null. */
+    @Getter
+    @Setter
+    private String lastName;
+
     /** True when a guest customer row exists with this email or optional registration phone. */
     @Getter
     @Setter

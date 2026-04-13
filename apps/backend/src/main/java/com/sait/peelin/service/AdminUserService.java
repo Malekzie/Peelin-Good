@@ -5,6 +5,8 @@ import com.sait.peelin.dto.v1.UserSummaryDto;
 import com.sait.peelin.exception.ResourceNotFoundException;
 import com.sait.peelin.model.User;
 import com.sait.peelin.model.UserRole;
+import com.sait.peelin.repository.CustomerRepository;
+import com.sait.peelin.repository.EmployeeRepository;
 import com.sait.peelin.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -14,7 +16,10 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -22,10 +27,11 @@ import java.util.UUID;
 public class AdminUserService {
 
     private final UserRepository userRepository;
+    private final EmployeeRepository employeeRepository;
+    private final CustomerRepository customerRepository;
     private final CurrentUserService currentUserService;
     private final UserLookupCacheService userLookupCacheService;
     private final PasswordEncoder passwordEncoder;
-    private final CustomerService customerService;
 
     public List<UserSummaryDto> list() {
         User actor = currentUserService.requireUser();
@@ -54,6 +60,26 @@ public class AdminUserService {
                 .filter(u -> u.getUserRole() == UserRole.admin || u.getUserRole() == UserRole.employee)
                 .map(this::toDto)
                 .toList();
+    }
+
+    /**
+     * User ids that already have an employee or customer profile (for admin UI pickers).
+     * Lightweight — does not load full customer/employee rows.
+     */
+    public List<String> listProfileLinkedUserIds() {
+        currentUserService.requireUser();
+        Set<String> ids = new LinkedHashSet<>();
+        for (UUID id : employeeRepository.findDistinctLinkedUserIds()) {
+            if (id != null) {
+                ids.add(id.toString());
+            }
+        }
+        for (UUID id : customerRepository.findDistinctLinkedUserIds()) {
+            if (id != null) {
+                ids.add(id.toString());
+            }
+        }
+        return new ArrayList<>(ids);
     }
 
     @Transactional
@@ -110,9 +136,8 @@ public class AdminUserService {
         user.setPhotoApprovalPending(false);
         User saved = userRepository.save(user);
 
-        if (role == UserRole.customer) {
-            customerService.createRegisteredCustomer(saved, null);
-        }
+        // Customer-role accounts get their profile from self-registration, OAuth, or admin "New Customer"
+        // in the desktop app — not an empty stub row here.
 
         return toDto(saved);
     }

@@ -1,6 +1,7 @@
 package com.sait.peelin.service;
 
 import com.sait.peelin.dto.v1.AddressUpsertRequest;
+import com.sait.peelin.dto.v1.CustomerAdminCreateRequest;
 import com.sait.peelin.dto.v1.CustomerBootstrapRequest;
 import com.sait.peelin.dto.v1.CustomerDto;
 import com.sait.peelin.dto.v1.CustomerPatchRequest;
@@ -11,9 +12,11 @@ import com.sait.peelin.model.Address;
 import com.sait.peelin.model.Customer;
 import com.sait.peelin.model.RewardTier;
 import com.sait.peelin.model.User;
+import com.sait.peelin.model.UserRole;
 import com.sait.peelin.repository.AddressRepository;
 import com.sait.peelin.repository.CustomerPreferenceRepository;
 import com.sait.peelin.repository.CustomerRepository;
+import com.sait.peelin.repository.EmployeeRepository;
 import com.sait.peelin.repository.RewardTierRepository;
 import com.sait.peelin.repository.UserRepository;
 import com.sait.peelin.support.GuestContactFiller;
@@ -44,6 +47,7 @@ public class CustomerService {
     private final RewardTierRepository rewardTierRepository;
     private final RewardTierService rewardTierService;
     private final AddressRepository addressRepository;
+    private final EmployeeRepository employeeRepository;
     private final UserRepository userRepository;
     private final ProfilePhotoStorageService profilePhotoStorageService;
     private final CurrentUserService currentUserService;
@@ -261,6 +265,59 @@ public class CustomerService {
         if (saved.getUser() != null && saved.getUser().getUserId() != null) {
             customerLookupCacheService.evictByUserId(saved.getUser().getUserId());
         }
+        linkedProfileSyncService.afterCustomerProfilePatch(saved);
+        return toDto(saved);
+    }
+
+    /**
+     * Admin creates a guest profile or links a {@link UserRole#customer} account that does not yet have a profile.
+     */
+    @Transactional
+    @CacheEvict(value = "customers", allEntries = true)
+    public CustomerDto createAdmin(CustomerAdminCreateRequest req) {
+        Address address = addressRepository.findById(req.addressId())
+                .orElseThrow(() -> new ResourceNotFoundException("Address not found"));
+        int balance = req.rewardBalance() != null ? req.rewardBalance() : 0;
+        if (balance < 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Reward balance cannot be negative");
+        }
+        RewardTier tier = rewardTierService.tierForBalance(balance).orElse(lowestRewardTier());
+
+        if (req.userId() != null) {
+            User user = userRepository.findById(req.userId())
+                    .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+            if (user.getUserRole() != UserRole.customer) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Linked user must have customer role");
+            }
+            if (employeeRepository.findByUser_UserId(user.getUserId()).isPresent()) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "User is already linked as an employee");
+            }
+            if (customerRepository.existsByUser_UserId(user.getUserId())) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "User already has a customer profile");
+            }
+            Customer c = new Customer();
+            c.setUser(user);
+            c.setAddress(address);
+            c.setRewardTier(tier);
+            applyCustomerIdentity(c, req.firstName(), req.middleInitial(), req.lastName(), req.phone(), req.businessPhone(), req.email());
+            c.setCustomerRewardBalance(balance);
+            c.setGuestExpiryDate(null);
+            c.setCustomerTierAssignedDate(LocalDate.now());
+            Customer saved = customerRepository.save(c);
+            customerLookupCacheService.evictByUserId(user.getUserId());
+            linkedProfileSyncService.afterCustomerProfilePatch(saved);
+            return toDto(saved);
+        }
+
+        Customer c = new Customer();
+        c.setUser(null);
+        c.setAddress(address);
+        c.setRewardTier(tier);
+        applyCustomerIdentity(c, req.firstName(), req.middleInitial(), req.lastName(), req.phone(), req.businessPhone(), req.email());
+        c.setCustomerRewardBalance(balance);
+        c.setGuestExpiryDate(LocalDate.now().plusYears(1));
+        c.setCustomerTierAssignedDate(LocalDate.now());
+        Customer saved = customerRepository.save(c);
         linkedProfileSyncService.afterCustomerProfilePatch(saved);
         return toDto(saved);
     }

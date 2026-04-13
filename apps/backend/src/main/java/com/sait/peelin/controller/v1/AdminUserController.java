@@ -50,6 +50,17 @@ public class AdminUserController {
         return adminUserService.listStaff();
     }
 
+    @Operation(summary = "Profile-linked user ids", description = "Returns user UUIDs that already have an employee or customer profile. For dropdown filtering in admin tools.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Id list returned"),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions", content = @Content)
+    })
+    @GetMapping("/profile-linked-ids")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPLOYEE')")
+    public List<String> listProfileLinkedUserIds() {
+        return adminUserService.listProfileLinkedUserIds();
+    }
+
     @Operation(summary = "Create user", description = "Create a new employee or customer account. Admin only.")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "User created"),

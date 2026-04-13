@@ -23,4 +23,7 @@ public interface EmployeeRepository extends JpaRepository<Employee, UUID> {
             WHERE regexp_replace(btrim(e.employee_phone), '\\\\D', '', 'g') = :digits
             """, nativeQuery = true)
     List<Employee> findByPhoneDigits(@Param("digits") String digits);
+
+    @Query("select distinct e.user.userId from Employee e where e.user is not null")
+    List<UUID> findDistinctLinkedUserIds();
 }

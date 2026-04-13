@@ -323,6 +323,7 @@ public class AuthService {
         res.setRole(user.getUserRole().name());
         res.setUserId(user.getUserId());
         res.setEmail(user.getUserEmail());
+        populateProfileDisplayFields(res, user);
         return res;
     }
 
@@ -333,6 +334,20 @@ public class AuthService {
         res.setRole(user.getUserRole().name());
         res.setUserId(user.getUserId());
         res.setEmail(user.getUserEmail());
+        populateProfileDisplayFields(res, user);
         return res;
+    }
+
+    /**
+     * Adds profile photo URL (from user) and, for employees, first/last name from the employee row.
+     */
+    private void populateProfileDisplayFields(AuthResponse res, User user) {
+        res.setProfilePhotoPath(user.getProfilePhotoPath());
+        if (user.getUserRole() == UserRole.employee) {
+            employeeRepository.findByUser_UserId(user.getUserId()).ifPresent(emp -> {
+                res.setFirstName(emp.getEmployeeFirstName());
+                res.setLastName(emp.getEmployeeLastName());
+            });
+        }
     }
 }

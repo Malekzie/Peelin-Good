@@ -128,4 +128,7 @@ public interface CustomerRepository extends JpaRepository<Customer, UUID> {
             WHERE regexp_replace(btrim(c.customer_phone), '\\D', '', 'g') = :digits
             """, nativeQuery = true)
     long countCustomersWithPhoneDigits(@Param("digits") String digits);
+
+    @Query("select distinct c.user.userId from Customer c where c.user is not null")
+    List<UUID> findDistinctLinkedUserIds();
 }
