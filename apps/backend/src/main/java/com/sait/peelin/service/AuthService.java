@@ -55,6 +55,9 @@ public class AuthService {
     private final WelcomeEmailService welcomeEmailService;
     private final LinkedProfileSyncService linkedProfileSyncService;
     private final EmployeeCustomerLinkService employeeCustomerLinkService;
+    private final UserLookupCacheService userLookupCacheService;
+    private final CustomerLookupCacheService customerLookupCacheService;
+
 
     public AuthResponse login(LoginRequest request) {
         String rawPassword = request.getPassword();
@@ -92,7 +95,7 @@ public class AuthService {
             throw new BadCredentialsException("Bad credentials");
         }
         if (passwordMatches.size() == 1) {
-            User user = passwordMatches.get(0);
+            User user = passwordMatches.getFirst();
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(user.getUsername(), rawPassword));
             return buildAuthResponse(user, mintJwtForUser(user));
@@ -205,6 +208,8 @@ public class AuthService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Nothing to update");
         }
         User u = currentUserService.requireUser();
+        String oldUsername = u.getUsername();
+        String oldEmail = u.getUserEmail();
         boolean dirty = false;
 
         if (req.getUsername() != null) {
@@ -243,6 +248,7 @@ public class AuthService {
                     Customer c = cust.get();
                     c.setCustomerEmail(ne);
                     customerRepository.save(c);
+                    customerLookupCacheService.evictByUserId(u.getUserId());
                 }
                 Optional<Employee> emp = employeeRepository.findByUser_UserId(u.getUserId());
                 if (emp.isPresent()) {
@@ -256,6 +262,14 @@ public class AuthService {
 
         if (dirty) {
             userRepository.save(u);
+            if (oldUsername != null) {
+                userLookupCacheService.evictByIdentifier(oldUsername);
+            }
+            if (oldEmail != null) {
+                userLookupCacheService.evictByIdentifier(oldEmail);
+            }
+            userLookupCacheService.evictByIdentifier(u.getUsername());
+            userLookupCacheService.evictByIdentifier(u.getUserEmail());
         }
 
         UserDetails userDetails = org.springframework.security.core.userdetails.User
@@ -295,6 +309,8 @@ public class AuthService {
         }
         u.setUserPasswordHash(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(u);
+        userLookupCacheService.evictByIdentifier(u.getUsername());
+        userLookupCacheService.evictByIdentifier(u.getUserEmail());
     }
 
     public AuthResponse getUserInfoFromToken(String token) {

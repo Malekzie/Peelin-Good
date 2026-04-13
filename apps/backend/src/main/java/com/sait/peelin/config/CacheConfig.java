@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.ApplicationRunner;
 import org.springframework.cache.Cache;
 import org.springframework.cache.annotation.CachingConfigurer;
 import org.springframework.cache.annotation.EnableCaching;
@@ -56,8 +57,12 @@ public class CacheConfig implements CachingConfigurer {
         cacheConfigurations.put("analytics",        defaultConfig.entryTtl(Duration.ofHours(2)));
         cacheConfigurations.put("dashboard",        defaultConfig.entryTtl(Duration.ofMinutes(30)));
         cacheConfigurations.put("customers",        defaultConfig.entryTtl(Duration.ofMinutes(30)));
+        cacheConfigurations.put("customer-by-user-id", defaultConfig.entryTtl(Duration.ofMinutes(30)));
         cacheConfigurations.put("employees",        defaultConfig.entryTtl(Duration.ofMinutes(30)));
         cacheConfigurations.put("current-users",    defaultConfig.entryTtl(Duration.ofMinutes(15)));
+        cacheConfigurations.put("chat-open-threads", defaultConfig.entryTtl(Duration.ofSeconds(15)));
+        cacheConfigurations.put("chat-open-thread-by-customer", defaultConfig.entryTtl(Duration.ofSeconds(15)));
+        cacheConfigurations.put("chat-messages",    defaultConfig.entryTtl(Duration.ofSeconds(15)));
         cacheConfigurations.put("reward-tiers",     defaultConfig.entryTtl(Duration.ofHours(6)));
         cacheConfigurations.put("reviews",          defaultConfig.entryTtl(Duration.ofMinutes(30)));
         // recommendations: List<String> from RecommendationAiCacheService (legacy-compatible shape).
@@ -67,6 +72,17 @@ public class CacheConfig implements CachingConfigurer {
                 .cacheDefaults(defaultConfig)
                 .withInitialCacheConfigurations(cacheConfigurations)
                 .build();
+    }
+
+    @Bean
+    public ApplicationRunner cacheFlushOnStartup(RedisCacheManager cacheManager) {
+        return args -> {
+            cacheManager.getCacheNames().forEach(name -> {
+                Cache cache = cacheManager.getCache(name);
+                if (cache != null) cache.clear();
+            });
+            log.info("Redis caches flushed on startup");
+        };
     }
 
     @Override

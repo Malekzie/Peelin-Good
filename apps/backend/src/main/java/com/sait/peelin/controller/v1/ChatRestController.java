@@ -33,7 +33,6 @@ public class ChatRestController {
             @ApiResponse(responseCode = "403", description = "Insufficient permissions", content = @Content)
     })
     @GetMapping("/threads")
-    @PreAuthorize("hasAnyRole('ADMIN','EMPLOYEE')")
     public List<ChatThreadDto> openThreads() {
         return chatService.openThreads();
     }

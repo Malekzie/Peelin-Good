@@ -28,6 +28,9 @@ public class ReviewService {
 
     /** Short text for mobile/web toasts; full reason stays in {@code moderation_rejection_reason}. */
     private static final int MODERATION_MESSAGE_CLIENT_MAX_LEN = 100;
+    private static final List<ReviewStatus> BLOCKING_REVIEW_STATUSES =
+            List.of(ReviewStatus.approved, ReviewStatus.pending, ReviewStatus.rejected);
+    boolean isAuthenticated = true;
 
     private final ReviewRepository reviewRepository;
     private final ProductRepository productRepository;
@@ -36,6 +39,7 @@ public class ReviewService {
     private final OrderItemRepository orderItemRepository;
     private final EmployeeRepository employeeRepository;
     private final CurrentUserService currentUserService;
+    private final CustomerLookupCacheService customerLookupCacheService;
     private final ReviewModerationService reviewModerationService;
     private final RewardTierRepository rewardTierRepository;
     private final BakeryRepository bakeryRepository;
@@ -84,18 +88,22 @@ public class ReviewService {
             @CacheEvict(value = "orders", allEntries = true)
     })
     public ReviewDto create(Integer productId, ReviewCreateRequest req) {
-        User u = currentUserService.currentUserOrNull();
-        Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
+        User u = currentUserService.requireUser();
+        if (u.getUserRole() != UserRole.customer) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+        Customer customer = customerLookupCacheService.findByUserId(u.getUserId());
+        if (customer == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Customer profile required");
+        }
+        Product product = productRepository.findById(productId).orElseThrow(() -> new ResourceNotFoundException("Product not found"));
 
-        Customer customer;
-        boolean isAuthenticated = u != null && u.getUserRole() == UserRole.customer;
-
-        if (isAuthenticated) {
-            customer = customerRepository.findByUser_UserId(u.getUserId())
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Customer profile required"));
-        } else {
-            customer = resolveOrCreateAnonymousReviewer(req.getGuestName());
+        if (!orderItemRepository.existsPurchasedByCustomer(customer.getId(), productId)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "You can only review products you have purchased");
+        }
+        if (reviewRepository.existsByCustomer_IdAndProduct_IdAndOrderIsNullAndReviewStatusIn(
+                customer.getId(), productId, BLOCKING_REVIEW_STATUSES)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "You already submitted a review for this product");
         }
 
         Bakery bakery = resolveBakeryForProductReview(customer.getId(), productId);
@@ -142,8 +150,10 @@ public class ReviewService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Order id is required");
         }
 
-        Customer customer = customerRepository.findByUser_UserId(u.getUserId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Customer profile required"));
+        Customer customer = customerLookupCacheService.findByUserId(u.getUserId());
+        if (customer == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Customer profile required");
+        }
 
         Order order = orderRepository.findById(req.getOrderId())
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
@@ -178,11 +188,11 @@ public class ReviewService {
         Review r = new Review();
         r.setCustomer(customer);
         r.setProduct(product);
-        r.setOrder(order);
-        r.setBakery(order.getBakery());
         r.setReviewRating(req.getRating());
         r.setReviewComment(req.getComment());
         r.setReviewSubmittedDate(OffsetDateTime.now());
+        r.setOrder(null);  // Always null for product reviews
+        r.setBakery(order.getBakery());
         r.setReviewStatus(ReviewStatus.approved);
         r.setReviewApprovalDate(OffsetDateTime.now());
 

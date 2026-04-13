@@ -46,6 +46,7 @@ public class OrderService {
     private final TaxRateRepository taxRateRepository;
     private final CustomerService customerService;
     private final CurrentUserService currentUserService;
+    private final CustomerLookupCacheService customerLookupCacheService;
     private final StripeService stripeService;
     private final StripePaymentFulfillmentService stripePaymentFulfillmentService;
     private final RewardAccrualService rewardAccrualService;
@@ -116,8 +117,10 @@ public class OrderService {
             customer = customerService.resolveOrCreateGuestCustomer(req.getGuest());
             guestCheckout = true;
         } else if (user.getUserRole() == UserRole.customer) {
-            customer = customerRepository.findByUser_UserId(user.getUserId())
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Customer profile not found"));
+            customer = customerLookupCacheService.findByUserId(user.getUserId());
+            if (customer == null) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Customer profile not found");
+            }
         } else if (user.getUserRole() == UserRole.admin || user.getUserRole() == UserRole.employee) {
             if (req.getCustomerId() == null) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "customerId is required for staff checkout");
@@ -331,6 +334,7 @@ public class OrderService {
      * Use when webhooks are unavailable (e.g. local dev without {@code stripe listen}); production may still rely on webhooks.
      */
     @Transactional
+    @CacheEvict(value = {"orders", "analytics", "dashboard"}, allEntries = true)
     public OrderDto confirmStripePayment(UUID orderId, ConfirmStripePaymentRequest req) {
         Order order = orderRepository.findById(orderId).orElseThrow(() -> new ResourceNotFoundException("Order not found"));
 
@@ -478,7 +482,9 @@ public class OrderService {
         if (bakeryAddr != null && hasProvince(bakeryAddr)) {
             return bakeryAddr.getAddressProvince();
         }
-        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Province is required for tax calculation");
+        // Default to Alberta when no province is determinable (staff-created orders, incomplete data)
+        log.warn("No province found for order (customer={}, bakery={}); defaulting to AB", customer.getId(), bakery.getId());
+        return "AB";
     }
 
     private static boolean hasProvince(Address address) {
@@ -613,6 +619,9 @@ public class OrderService {
         customer.setCustomerRewardBalance(newBalance);
         recalculateCustomerTier(customer);
         customerRepository.save(customer);
+        if (customer.getUser() != null && customer.getUser().getUserId() != null) {
+            customerLookupCacheService.evictByUserId(customer.getUser().getUserId());
+        }
         log.info("Awarded {} points to customer {} for order {}", points, customer.getId(), order.getId());
     }
 
