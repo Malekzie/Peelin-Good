@@ -104,10 +104,7 @@ public class ReviewService {
         if (isAuthenticated && !orderItemRepository.existsPurchasedByCustomer(customer.getId(), productId)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "You can only review products you have purchased");
         }
-        if (reviewRepository.existsByCustomer_IdAndProduct_IdAndOrderIsNullAndReviewStatusIn(
-                customer.getId(), productId, BLOCKING_REVIEW_STATUSES)) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "You already submitted a review for this product");
-        }
+
 
         Bakery bakery = resolveBakeryForProductReview(customer.getId(), productId);
         String comment = req.getComment();
