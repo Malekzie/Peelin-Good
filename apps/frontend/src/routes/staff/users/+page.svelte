@@ -1,8 +1,5 @@
 <script>
 	import { onMount } from 'svelte';
-	import { goto } from '$app/navigation';
-	import { resolve } from '$app/paths';
-	import { user } from '$lib/stores/authStore';
 	import { Skeleton } from '$lib/components/ui/skeleton';
 	import { Badge } from '$lib/components/ui/badge';
 	import { Button } from '$lib/components/ui/button';
@@ -14,10 +11,6 @@
 	let toggling = $state({});
 
 	onMount(async () => {
-		if ($user?.role !== 'admin') {
-			goto(resolve('/staff/dashboard'), { replaceState: true });
-			return;
-		}
 		try {
 			users = await listUsers();
 		} catch {

@@ -25,6 +25,7 @@ vite.config.ts.timestamp-*
 # Misc
 /docs
 CLAUDE.md
+.claude
 # Sentry Config File
 .env.sentry-build-plugin
 # W're using npm, Im only personally using bun (robbie)

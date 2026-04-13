@@ -1,8 +1,5 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { goto } from '$app/navigation';
-	import { resolve } from '$app/paths';
-	import { user } from '$lib/stores/authStore';
 	import { Skeleton } from '$lib/components/ui/skeleton';
 	import * as Chart from '$lib/components/ui/chart/index.js';
 	import { BarChart, LineChart } from 'layerchart';
@@ -44,10 +41,6 @@
 	} satisfies Chart.ChartConfig;
 
 	onMount(async () => {
-		if ($user?.role !== 'admin') {
-			goto(resolve('/staff/dashboard'), { replaceState: true });
-			return;
-		}
 		await Promise.all([getBakeryNames().then((n) => (bakeryNames = n)), loadData()]);
 	});
 

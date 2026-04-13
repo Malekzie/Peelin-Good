@@ -1,7 +1,16 @@
 import { sequence } from '@sveltejs/kit/hooks';
 import * as Sentry from '@sentry/sveltekit';
-import { redirect } from '@sveltejs/kit';
 import type { Handle } from '@sveltejs/kit';
+
+const VALID_ROLES = ['admin', 'employee', 'customer'] as const;
+type Role = (typeof VALID_ROLES)[number];
+
+function toRole(raw: string): Role | null {
+	const normalized = raw.replace('ROLE_', '').toLowerCase();
+	return (VALID_ROLES as readonly string[]).includes(normalized)
+		? (normalized as Role)
+		: null;
+}
 
 export const handle: Handle = sequence(Sentry.sentryHandle(), async ({ event, resolve }) => {
 	const jwt = event.cookies.get('token');
@@ -9,10 +18,19 @@ export const handle: Handle = sequence(Sentry.sentryHandle(), async ({ event, re
 	if (jwt) {
 		try {
 			const payload = JSON.parse(atob(jwt.split('.')[1]));
-			const roles: string[] = payload.roles ?? [];
-			const rawRole = roles[0] ?? '';
-			const role = rawRole.replace('ROLE_', '').toLowerCase() as 'admin' | 'employee' | 'customer';
-			event.locals.user = { username: payload.sub, role };
+			const now = Math.floor(Date.now() / 1000);
+			if (payload.exp && payload.exp < now) {
+				event.locals.user = null;
+			} else {
+				const roles: string[] = payload.roles ?? [];
+				const rawRole = roles[0] ?? '';
+				const role = toRole(rawRole);
+				if (!role) {
+					event.locals.user = null;
+				} else {
+					event.locals.user = { username: payload.sub, role };
+				}
+			}
 		} catch {
 			event.locals.user = null;
 		}
@@ -20,35 +38,7 @@ export const handle: Handle = sequence(Sentry.sentryHandle(), async ({ event, re
 		event.locals.user = null;
 	}
 
-	const { pathname } = event.url;
-	const user = event.locals.user;
-
-	const customerRoutes = ['/cart', '/checkout', '/orders', '/profile'];
-	const isProtected = customerRoutes.some((r) => pathname === r || pathname.startsWith(r + '/'));
-
-	const isStaff = pathname === '/staff' || pathname.startsWith('/staff/');
-
-	if (pathname === '/deactivated') {
-		return resolve(event);
-	}
-
-	if (isProtected && !user) {
-		throw redirect(303, `/login?redirectTo=${encodeURIComponent(pathname)}`);
-	} else if (isStaff) {
-		if (!user) throw redirect(303, `/login?redirectTo=${encodeURIComponent(pathname)}`);
-		if (user.role !== 'employee' && user.role !== 'admin') {
-			throw redirect(303, '/?error=forbidden');
-		}
-	} else if (pathname.startsWith('/employee')) {
-		if (!user || (user.role !== 'employee' && user.role !== 'admin')) {
-			throw redirect(303, '/?error=forbidden');
-		}
-	} else if (pathname.startsWith('/admin')) {
-		if (!user || user.role !== 'admin') {
-			throw redirect(303, '/?error=forbidden');
-		}
-	}
-
 	return resolve(event);
 });
+
 export const handleError = Sentry.handleErrorWithSentry();

@@ -3,6 +3,9 @@
 	import { cart } from '$lib/stores/cart';
 	import { formatDiscountCad, formatPriceCad } from '$lib/utils/money';
 	import { ShoppingCart, Trash2, Plus, Minus } from '@lucide/svelte';
+
+	let { data } = $props();
+	const checkoutHref = $derived(data.user ? resolve('/checkout') : resolve('/checkout/guest'));
 </script>
 
 <main class="mx-auto max-w-4xl px-6 py-16">
@@ -102,7 +105,7 @@
 					Continue Shopping
 				</a>
 				<a
-					href={resolve('/checkout')}
+					href={checkoutHref}
 					class="rounded-lg bg-primary px-6 py-3 text-center text-sm font-semibold text-primary-foreground transition-colors hover:opacity-90"
 				>
 					Proceed to Checkout
