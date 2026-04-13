@@ -1,5 +1,5 @@
 <script>
-	import ProfileSidebar from '$lib/components/profile/ProfileSidebar.svelte';
+	import { Skeleton } from '$lib/components/ui/skeleton';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
@@ -79,12 +79,7 @@
 	}
 </script>
 
-<div
-	class="flex h-[calc(100dvh-var(--app-navbar-height))] flex-col overflow-hidden bg-background md:flex-row"
->
-	<ProfileSidebar />
-
-	<main class="flex-1 overflow-y-auto p-8 lg:p-10">
+<main class="flex-1 overflow-y-auto p-8 lg:p-10">
 		<div class="mx-auto max-w-3xl space-y-8">
 			<div>
 				<h1 class="text-2xl font-bold tracking-tight text-foreground">Preferences</h1>
@@ -94,10 +89,19 @@
 			</div>
 
 			{#if loading}
-				<div class="flex justify-center py-24">
-					<div
-						class="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"
-					></div>
+				<div class="space-y-8">
+					<div class="space-y-3">
+						<Skeleton class="h-4 w-32" />
+						{#each Array(4) as _, i (i)}
+							<Skeleton class="h-14 w-full rounded-xl" />
+						{/each}
+					</div>
+					<div class="space-y-3">
+						<Skeleton class="h-4 w-32" />
+						{#each Array(5) as _, i (i)}
+							<Skeleton class="h-14 w-full rounded-xl" />
+						{/each}
+					</div>
 				</div>
 			{:else if error}
 				<p class="text-sm text-destructive">Failed to load preferences.</p>
@@ -184,5 +188,4 @@
 				</div>
 			{/if}
 		</div>
-	</main>
-</div>
+</main>

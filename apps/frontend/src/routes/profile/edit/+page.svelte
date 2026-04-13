@@ -252,8 +252,8 @@
 	}
 </script>
 
-<div class="flex min-h-screen bg-background">
-	<main class="mx-auto w-full max-w-2xl px-6 py-10">
+<main class="flex-1 overflow-y-auto px-6 py-10">
+	<div class="mx-auto w-full max-w-2xl">
 		<div class="mb-8 flex items-center justify-between">
 			<div>
 				<h1 class="text-2xl font-bold tracking-tight text-foreground">Edit Profile</h1>
@@ -811,5 +811,5 @@
 				</div>
 			</div>
 		{/if}
-	</main>
-</div>
+	</div>
+</main>
