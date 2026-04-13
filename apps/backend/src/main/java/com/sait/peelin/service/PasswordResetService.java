@@ -114,19 +114,42 @@ public class PasswordResetService {
         String resetLink = frontendUrl + "/login/reset-password?token=" + token;
 
         String htmlBody = """
-            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-                <img src="cid:logo" alt="Peelin' Good" style="max-height: 80px; display: block; margin: 0 auto 16px;" />
-                <h2 style="color: #703210;">Reset Your Password</h2>
-                <p>Hi %s,</p>
-                <p>We received a request to reset your password for your Peelin' Good account.</p>
-                <p>Click the button below to reset your password. This link expires in %d hour(s).</p>
-                <a href="%s" style="display: inline-block; background-color: #703210; color: white; padding: 12px 24px; border-radius: 999px; text-decoration: none; font-weight: bold; margin: 16px 0;">
-                    Reset Password
-                </a>
-                <p>If you didn't request a password reset, you can safely ignore this email.</p>
-                <p style="color: #999; font-size: 12px;">This link will expire in %d hour(s).</p>
-            </div>
-            """.formatted(user.getUsername(), EXPIRY_HOURS, resetLink, EXPIRY_HOURS);
+    <!DOCTYPE html><html><head><meta charset='UTF-8'></head>
+    <body style='margin:0;padding:0;background:#f5f0eb;font-family:Arial,Helvetica,sans-serif;'>
+    <table width='100%%' cellpadding='0' cellspacing='0' style='background:#f5f0eb;padding:32px 0;'>
+    <tr><td align='center'>
+    <table width='600' cellpadding='0' cellspacing='0' style='max-width:600px;width:100%%;'>
+
+    <tr><td style='background:#5c3d2e;padding:32px 40px;border-radius:8px 8px 0 0;text-align:center;'>
+    <img src='cid:logo' alt="Peelin' Good" style='max-height:80px;max-width:240px;display:block;margin:0 auto 12px;' />
+    <p style='margin:8px 0 0;color:#e0cfc4;font-size:14px;'>Reset your password</p>
+    </td></tr>
+
+    <tr><td style='background:#fff;padding:40px;'>
+    <p style='margin:0 0 24px;font-size:16px;color:#333;'>Hi %s,</p>
+    <p style='margin:0 0 16px;font-size:15px;color:#555;line-height:1.6;'>
+    We received a request to reset your password for your Peelin&apos; Good account.</p>
+    <p style='margin:0 0 32px;font-size:15px;color:#555;line-height:1.6;'>
+    Click the button below to reset your password. This link expires in %d hour(s).</p>
+
+    <div style='text-align:center;margin-bottom:32px;'>
+    <a href='%s' style='display:inline-block;background:#5c3d2e;color:#fff;text-decoration:none;
+    font-size:14px;font-weight:bold;padding:12px 32px;border-radius:6px;'>Reset Password</a>
+    </div>
+
+    <p style='margin:0 0 16px;font-size:13px;color:#555;line-height:1.6;'>
+    If you didn&apos;t request a password reset, you can safely ignore this email.</p>
+    <p style='margin:0;font-size:12px;color:#999;'>This link will expire in %d hour(s).</p>
+    </td></tr>
+
+    <tr><td style='background:#e8e0d8;padding:16px 40px;border-radius:0 0 8px 8px;text-align:center;'>
+    <p style='margin:0;font-size:12px;color:#888;'>
+    &copy; Peelin&apos; Good &mdash; This email was sent to %s because you requested a password reset.
+    </p></td></tr>
+
+    </table></td></tr></table>
+    </body></html>
+    """.formatted(user.getUsername(), EXPIRY_HOURS, resetLink, EXPIRY_HOURS, user.getUserEmail());
 
         Thread.ofVirtual().start(() -> {
             try {
