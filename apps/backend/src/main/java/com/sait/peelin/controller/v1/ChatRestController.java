@@ -67,7 +67,7 @@ public class ChatRestController {
     })
     @GetMapping("/threads/{threadId}/messages")
     public List<ChatMessageDto> messages(@PathVariable Integer threadId) {
-        return chatService.messages(threadId);
+        return chatService.messages(new ChatService.ThreadRef(threadId));
     }
 
     @Operation(summary = "Post message", description = "Send a message to a chat thread.")
@@ -80,7 +80,7 @@ public class ChatRestController {
     @PostMapping("/threads/{threadId}/messages")
     @ResponseStatus(HttpStatus.CREATED)
     public ChatMessageDto post(@PathVariable Integer threadId, @Valid @RequestBody PostChatMessageRequest req) {
-        return chatService.postMessage(threadId, req);
+        return chatService.postMessage(new ChatService.ThreadRef(threadId), req);
     }
 
     @Operation(summary = "Assign thread to employee", description = "Assign the authenticated employee to a support thread. Requires ADMIN or EMPLOYEE role.")
@@ -92,7 +92,7 @@ public class ChatRestController {
     @PostMapping("/threads/{threadId}/assign")
     @PreAuthorize("hasAnyRole('ADMIN','EMPLOYEE')")
     public ChatThreadDto assign(@PathVariable Integer threadId) {
-        return chatService.assignEmployee(threadId);
+        return chatService.assignEmployee(new ChatService.ThreadRef(threadId));
     }
 
     @Operation(summary = "Mark thread as read", description = "Mark all messages in a thread as read by the current user.")
@@ -103,6 +103,6 @@ public class ChatRestController {
     @PostMapping("/threads/{threadId}/read")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void markRead(@PathVariable Integer threadId) {
-        chatService.markRead(threadId);
+        chatService.markRead(new ChatService.ThreadRef(threadId));
     }
 }
