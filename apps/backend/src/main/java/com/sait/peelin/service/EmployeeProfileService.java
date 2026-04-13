@@ -79,6 +79,7 @@ public class EmployeeProfileService {
         return toDto(saved);
     }
     @Transactional(readOnly = true)
+    @Cacheable(value = "employees", key = "'all'")
     public List<EmployeeDto> listAll() {
         return employeeRepository.findAll().stream().map(this::toDto).toList();
     }
