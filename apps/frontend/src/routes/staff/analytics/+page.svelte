@@ -1,12 +1,10 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import { Skeleton } from '$lib/components/ui/skeleton';
 	import * as Chart from '$lib/components/ui/chart/index.js';
 	import { BarChart, LineChart } from 'layerchart';
 	import { scaleBand } from 'd3-scale';
 	import KpiCard from '$lib/components/staff/KpiCard.svelte';
 	import {
-		getBakeryNames,
 		getTotalRevenue,
 		getAverageOrderValue,
 		getCompletionRate,
@@ -17,60 +15,50 @@
 	} from '$lib/services/analytics';
 	import { formatPriceCad } from '$lib/utils/money';
 
-	const today = new Date().toISOString().split('T')[0];
-	const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+	type AnalyticsPoint = { label: string; value: number };
+	type AnalyticsData = {
+		bakeryNames: Promise<string[]>;
+		initialData: { startDate: string; endDate: string };
+		totalRevenue: Promise<number>;
+		aov: Promise<number>;
+		completionRate: Promise<number>;
+		revenueOverTime: Promise<AnalyticsPoint[]>;
+		revenueByBakery: Promise<AnalyticsPoint[]>;
+		topProducts: Promise<AnalyticsPoint[]>;
+		salesByEmployee: Promise<AnalyticsPoint[]>;
+	};
 
-	let startDate = $state(thirtyDaysAgo);
-	let endDate = $state(today);
+	interface Props {
+		data: AnalyticsData;
+	}
+
+	let { data }: Props = $props();
+	const initialStartDate = () => data.initialData.startDate;
+	const initialEndDate = () => data.initialData.endDate;
+	const initialData = () => data;
+
+	let startDate = $state(initialStartDate());
+	let endDate = $state(initialEndDate());
 	let selectedBakery = $state('');
-	let bakeryNames = $state<string[]>([]);
-
-	let totalRevenue = $state<number | null>(null);
-	let aov = $state<number | null>(null);
-	let completionRate = $state<number | null>(null);
-	let revenueOverTime = $state<{ label: string; value: number }[]>([]);
-	let revenueByBakery = $state<{ label: string; value: number }[]>([]);
-	let topProducts = $state<{ label: string; value: number }[]>([]);
-	let salesByEmployee = $state<{ label: string; value: number }[]>([]);
-
-	let loading = $state(true);
-	let error = $state(false);
+	let filteredData = $state<AnalyticsData>(initialData());
 
 	const chartConfig = {
 		value: { label: 'Value', color: '#C25F1A' }
 	} satisfies Chart.ChartConfig;
 
-	onMount(async () => {
-		await Promise.all([getBakeryNames().then((n) => (bakeryNames = n)), loadData()]);
-	});
-
-	async function loadData() {
-		loading = true;
-		error = false;
+	function loadData() {
 		const bakery = selectedBakery || undefined;
-		try {
-			[
-				totalRevenue,
-				aov,
-				completionRate,
-				revenueOverTime,
-				revenueByBakery,
-				topProducts,
-				salesByEmployee
-			] = await Promise.all([
-				getTotalRevenue(startDate, endDate, bakery),
-				getAverageOrderValue(startDate, endDate, bakery),
-				getCompletionRate(startDate, endDate, bakery),
-				getRevenueOverTime(startDate, endDate, bakery),
-				getRevenueByBakery(startDate, endDate),
-				getTopProducts(startDate, endDate, bakery),
-				getSalesByEmployee(startDate, endDate, bakery)
-			]);
-		} catch {
-			error = true;
-		} finally {
-			loading = false;
-		}
+		filteredData = {
+			bakeryNames: data.bakeryNames,
+			initialData: data.initialData,
+			totalRevenue: getTotalRevenue(startDate, endDate, bakery),
+			aov: getAverageOrderValue(startDate, endDate, bakery),
+			completionRate: getCompletionRate(startDate, endDate, bakery),
+			revenueOverTime: getRevenueOverTime(startDate, endDate, bakery),
+			revenueByBakery: getRevenueByBakery(startDate, endDate),
+			topProducts: getTopProducts(startDate, endDate, bakery),
+			salesByEmployee: getSalesByEmployee(startDate, endDate, bakery)
+		};
 	}
 
 	function formatCurrency(val: number | null) {
@@ -91,7 +79,6 @@
 			<p class="mt-1 text-sm text-muted-foreground">Revenue and performance metrics</p>
 		</div>
 
-		<!-- Filters -->
 		<div class="flex flex-wrap items-end gap-3">
 			<div class="flex flex-col gap-1">
 				<label
@@ -128,16 +115,22 @@
 				>
 					Bakery
 				</label>
-				<select
-					id="bakerySelectInput"
-					bind:value={selectedBakery}
-					class="rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground"
-				>
-					<option value="">All Bakeries</option>
-					{#each bakeryNames as name (name)}
-						<option value={name}>{name}</option>
-					{/each}
-				</select>
+				{#await filteredData.bakeryNames}
+					<Skeleton class="h-10 w-32 rounded-md" />
+				{:then bakeryNames}
+					<select
+						id="bakerySelectInput"
+						bind:value={selectedBakery}
+						class="rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground"
+					>
+						<option value="">All Bakeries</option>
+						{#each bakeryNames as name (name)}
+							<option value={name}>{name}</option>
+						{/each}
+					</select>
+				{:catch}
+					<p class="text-xs text-destructive">Failed to load bakeries</p>
+				{/await}
 			</div>
 			<button
 				onclick={loadData}
@@ -147,32 +140,26 @@
 			</button>
 		</div>
 
-		{#if loading}
-			<div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-				{#each Array(3) as _, i (i)}
+		<div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+			{#await Promise.all( [filteredData.totalRevenue, filteredData.aov, filteredData.completionRate] )}
+				{#each [0, 1, 2] as i (i)}
 					<Skeleton class="h-28 rounded-xl" />
 				{/each}
-			</div>
-			<div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-				{#each Array(4) as _, i (i)}
-					<Skeleton class="h-64 rounded-xl" />
-				{/each}
-			</div>
-		{:else if error}
-			<p class="text-sm text-destructive">Failed to load analytics.</p>
-		{:else}
-			<!-- KPI row -->
-			<div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+			{:then [totalRevenue, aov, completionRate]}
 				<KpiCard label="Total Revenue" value={formatCurrency(totalRevenue)} />
 				<KpiCard label="Avg Order Value" value={formatCurrency(aov)} />
 				<KpiCard label="Completion Rate" value={formatPercent(completionRate)} />
-			</div>
+			{:catch}
+				<p class="text-sm text-destructive">Failed to load KPI metrics.</p>
+			{/await}
+		</div>
 
-			<!-- Charts -->
-			<div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-				<!-- Revenue over time -->
-				<div class="rounded-xl border border-border bg-card p-5">
-					<p class="mb-4 text-sm font-semibold text-foreground">Revenue Over Time</p>
+		<div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+			<div class="rounded-xl border border-border bg-card p-5">
+				<p class="mb-4 text-sm font-semibold text-foreground">Revenue Over Time</p>
+				{#await filteredData.revenueOverTime}
+					<Skeleton class="h-48 rounded-xl" />
+				{:then revenueOverTime}
 					{#if revenueOverTime.length === 0}
 						<p class="py-8 text-center text-xs text-muted-foreground">No data</p>
 					{:else}
@@ -186,11 +173,16 @@
 							/>
 						</Chart.Container>
 					{/if}
-				</div>
+				{:catch}
+					<p class="py-4 text-center text-xs text-destructive">Failed to load chart</p>
+				{/await}
+			</div>
 
-				<!-- Revenue by bakery -->
-				<div class="rounded-xl border border-border bg-card p-5">
-					<p class="mb-4 text-sm font-semibold text-foreground">Revenue by Bakery</p>
+			<div class="rounded-xl border border-border bg-card p-5">
+				<p class="mb-4 text-sm font-semibold text-foreground">Revenue by Bakery</p>
+				{#await filteredData.revenueByBakery}
+					<Skeleton class="h-48 rounded-xl" />
+				{:then revenueByBakery}
 					{#if revenueByBakery.length === 0}
 						<p class="py-8 text-center text-xs text-muted-foreground">No data</p>
 					{:else}
@@ -204,11 +196,16 @@
 							/>
 						</Chart.Container>
 					{/if}
-				</div>
+				{:catch}
+					<p class="py-4 text-center text-xs text-destructive">Failed to load chart</p>
+				{/await}
+			</div>
 
-				<!-- Top products -->
-				<div class="rounded-xl border border-border bg-card p-5">
-					<p class="mb-4 text-sm font-semibold text-foreground">Top Products</p>
+			<div class="rounded-xl border border-border bg-card p-5">
+				<p class="mb-4 text-sm font-semibold text-foreground">Top Products</p>
+				{#await filteredData.topProducts}
+					<Skeleton class="h-48 rounded-xl" />
+				{:then topProducts}
 					{#if topProducts.length === 0}
 						<p class="py-8 text-center text-xs text-muted-foreground">No data</p>
 					{:else}
@@ -222,11 +219,16 @@
 							/>
 						</Chart.Container>
 					{/if}
-				</div>
+				{:catch}
+					<p class="py-4 text-center text-xs text-destructive">Failed to load chart</p>
+				{/await}
+			</div>
 
-				<!-- Sales by employee -->
-				<div class="rounded-xl border border-border bg-card p-5">
-					<p class="mb-4 text-sm font-semibold text-foreground">Sales by Employee</p>
+			<div class="rounded-xl border border-border bg-card p-5">
+				<p class="mb-4 text-sm font-semibold text-foreground">Sales by Employee</p>
+				{#await filteredData.salesByEmployee}
+					<Skeleton class="h-48 rounded-xl" />
+				{:then salesByEmployee}
 					{#if salesByEmployee.length === 0}
 						<p class="py-8 text-center text-xs text-muted-foreground">No data</p>
 					{:else}
@@ -240,8 +242,10 @@
 							/>
 						</Chart.Container>
 					{/if}
-				</div>
+				{:catch}
+					<p class="py-4 text-center text-xs text-destructive">Failed to load chart</p>
+				{/await}
 			</div>
-		{/if}
+		</div>
 	</div>
 </main>

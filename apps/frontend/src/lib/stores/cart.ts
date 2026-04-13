@@ -17,12 +17,18 @@ export interface CartState {
 	itemCount: number;
 }
 
-const CART_KEY = 'pg_cart';
+const CART_KEY_PREFIX = 'pg_cart';
 
-function loadFromStorage(): CartState {
+function cartKey(userId: string | null): string {
+	return userId ? `${CART_KEY_PREFIX}_${userId}` : `${CART_KEY_PREFIX}_guest`;
+}
+
+let currentKey = cartKey(null);
+
+function loadFromStorage(key = currentKey): CartState {
 	if (typeof localStorage === 'undefined') return emptyCart();
 	try {
-		const raw = localStorage.getItem(CART_KEY);
+		const raw = localStorage.getItem(key);
 		return raw ? JSON.parse(raw) : emptyCart();
 	} catch {
 		return emptyCart();
@@ -46,7 +52,7 @@ function createCartStore() {
 
 	function persist(state: CartState) {
 		if (typeof localStorage !== 'undefined') {
-			localStorage.setItem(CART_KEY, JSON.stringify(state));
+			localStorage.setItem(currentKey, JSON.stringify(state));
 		}
 		return state;
 	}
@@ -101,9 +107,14 @@ function createCartStore() {
 		clear() {
 			const empty = emptyCart();
 			if (typeof localStorage !== 'undefined') {
-				localStorage.removeItem(CART_KEY);
+				localStorage.removeItem(currentKey);
 			}
 			set(empty);
+		},
+
+		switchUser(userId: string | null) {
+			currentKey = cartKey(userId);
+			set(loadFromStorage(currentKey));
 		}
 	};
 }

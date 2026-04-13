@@ -1,9 +1,7 @@
-import { redirect } from '@sveltejs/kit';
 import type { LayoutServerLoad } from './$types';
 
-export const load: LayoutServerLoad = ({ locals, url }) => {
-	if (!locals.user) {
-		redirect(303, `/login?redirectTo=${encodeURIComponent(url.pathname)}`);
-	}
+// No auth guard here — /orders/[number]/confirmation must be accessible to guests.
+// Individual pages guard themselves where auth is required.
+export const load: LayoutServerLoad = ({ locals }) => {
 	return { user: locals.user };
 };

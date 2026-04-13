@@ -3,9 +3,15 @@
 	import { cart } from '$lib/stores/cart';
 	import { formatDiscountCad, formatPriceCad } from '$lib/utils/money';
 	import { ShoppingCart, Trash2, Plus, Minus } from '@lucide/svelte';
+	import { user } from '$lib/stores/authStore';
 
 	let { data } = $props();
-	const checkoutHref = $derived(data.user ? resolve('/checkout') : resolve('/checkout/guest'));
+	// data.user comes from the JWT cookie (server-side). Fall back to the localStorage
+	// store in case the cookie isn't readable by SvelteKit (e.g. OAuth flow, cookie path).
+
+	const isUserSignedIn = $derived($user || data.user);
+
+	const checkoutHref = $derived(isUserSignedIn ? '/checkout' : '/checkout/guest');
 </script>
 
 <main class="mx-auto max-w-4xl px-6 py-16">
@@ -16,7 +22,7 @@
 			<ShoppingCart size={48} class="text-muted-foreground" />
 			<p class="text-lg text-muted-foreground">Your cart is empty.</p>
 			<a
-				href={resolve('/')}
+				href={resolve('/menu')}
 				class="rounded-lg bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:opacity-90"
 			>
 				Browse the Menu
@@ -30,11 +36,11 @@
 						<img
 							src={item.productImageUrl}
 							alt={item.productName}
-							class="h-20 w-20 flex-shrink-0 rounded-lg object-cover"
+							class="h-20 w-20 shrink-0 rounded-lg object-cover"
 						/>
 					{:else}
 						<div
-							class="flex h-20 w-20 flex-shrink-0 items-center justify-center rounded-lg bg-muted text-3xl"
+							class="flex h-20 w-20 shrink-0 items-center justify-center rounded-lg bg-muted text-3xl"
 						>
 							🥐
 						</div>
@@ -105,7 +111,7 @@
 					Continue Shopping
 				</a>
 				<a
-					href={checkoutHref}
+					href={resolve(checkoutHref)}
 					class="rounded-lg bg-primary px-6 py-3 text-center text-sm font-semibold text-primary-foreground transition-colors hover:opacity-90"
 				>
 					Proceed to Checkout
