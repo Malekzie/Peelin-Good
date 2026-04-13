@@ -72,7 +72,8 @@
 				map[String(p.id)] = p.imageUrl ?? null;
 			}
 			productImages = map;
-		} catch {
+		} catch (e) {
+			console.error('[orders] failed to load:', e);
 			error = true;
 		} finally {
 			loading = false;

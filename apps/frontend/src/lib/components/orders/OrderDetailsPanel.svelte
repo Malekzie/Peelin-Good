@@ -16,7 +16,7 @@
 	<div class="border-t border-border px-5 pt-4 pb-5">
 		{#if order.items && order.items.length > 0}
 			<div class="mb-4 flex flex-col gap-2">
-				{#each order.items as item (item.id)}
+				{#each order.items as item (item.productId ?? item.id)}
 					<a
 						href={resolve(`/menu?product=${item.productId}`)}
 						class="flex items-center gap-3 rounded-lg border border-border bg-background px-3 py-2 transition-colors hover:bg-muted/60"

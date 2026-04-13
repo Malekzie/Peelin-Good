@@ -36,7 +36,7 @@
 
 			{#if loading}
 				<div class="space-y-4">
-					{#each Array(3) as i (i)}
+					{#each Array(3) as _, i (i)}
 						<Skeleton class="h-28 w-full rounded-xl" />
 					{/each}
 				</div>
