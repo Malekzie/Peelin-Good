@@ -500,8 +500,8 @@
 								bind:value={fields.province}
 								onblur={() => handleBlur('province')}
 								onchange={() => handleInput('province')}
-								class="bg-surface-container-highest mt-1 w-full rounded-xl px-4 py-3 font-medium ring-1 ring-border transition
-									{errors.province && touched.province ? 'ring-2 ring-red-400' : ''}"
+								class="mt-1 w-full rounded-xl bg-background px-4 py-3 font-medium text-foreground ring-1 ring-border transition
+    								{errors.province && touched.province ? 'ring-2 ring-red-400' : ''}"
 							>
 								<option value="AB">Alberta</option>
 								<option value="BC">British Columbia</option>
