@@ -135,7 +135,11 @@
 			<ShoppingCart class="h-4 w-4" />
 			New Order
 		</Button>
-		<Button variant="ghost" class="w-full justify-start gap-2 text-muted-foreground">
+		<Button
+			variant="ghost"
+			href="mailto:peelingoodbakery@gmail.com"
+			class="w-full justify-start gap-2 text-muted-foreground"
+		>
 			<HelpCircle class="h-4 w-4" />
 			Support
 		</Button>
