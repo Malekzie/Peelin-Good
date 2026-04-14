@@ -50,14 +50,14 @@
 	{:else}
 		<div class="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
 			{#each visibleBakeries as bakery (bakery.id)}
-				<div class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-					<h3 class="mb-1 text-lg font-semibold">{bakery.name}</h3>
-					<p class="mb-1 text-sm text-gray-600">{formatAddress(bakery.address)}</p>
-					<p class="mb-1 text-sm text-gray-600">
+				<div class="rounded-xl border bg-card p-6 text-card-foreground shadow-sm">
+					<h3 class="mb-1 text-lg font-semibold text-foreground">{bakery.name}</h3>
+					<p class="mb-1 text-sm text-muted-foreground">{formatAddress(bakery.address)}</p>
+					<p class="mb-1 text-sm text-muted-foreground">
 						<span class="font-medium">Phone:</span>
 						{bakery.phone}
 					</p>
-					<p class="mb-4 text-sm text-gray-600">
+					<p class="mb-4 text-sm text-muted-foreground">
 						<span class="font-medium">Email:</span>
 						{bakery.email}
 					</p>
