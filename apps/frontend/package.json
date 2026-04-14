@@ -52,6 +52,7 @@
 	},
 	"dependencies": {
 		"@sentry/sveltekit": "^10.47.0",
+		"@stomp/stompjs": "^7.3.0",
 		"js-cookie": "^3.0.5",
 		"mode-watcher": "^1.1.0"
 	}
