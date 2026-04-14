@@ -72,22 +72,12 @@ export async function submitMenuProductReview(options: {
 	productId: number | string;
 	rating: number;
 	comment: string;
-	guestName: string;
 }) {
-	const submitReview = createProductReview as (
-		productId: number | string,
-		rating: number,
-		comment: string,
-		orderId: null,
-		guestName?: string | null
-	) => Promise<ReviewSubmissionResult | undefined>;
-
-	const submitted = await submitReview(
+	const submitted = await createProductReview(
 		options.productId,
 		options.rating,
 		options.comment,
-		null,
-		options.guestName || null
+		null
 	);
 
 	const status = (submitted?.status ?? '').toLowerCase();

@@ -9,7 +9,6 @@
 	} from '$lib/services/bakeries';
 	import { MapPin, Phone, Mail } from '@lucide/svelte';
 	import ReviewSubmissionOverlay from '$lib/components/review/ReviewSubmissionOverlay.svelte';
-	import { user } from '$lib/stores/authStore';
 	import { truncateModerationMessage } from '$lib/utils/reviewMessage';
 
 	let bakeries = $state([]);
@@ -17,7 +16,6 @@
 	let reviewModal = $state(null);
 	let reviewRating = $state(0);
 	let reviewComment = $state('');
-	let reviewGuestName = $state('');
 	let reviewSubmitting = $state(false);
 	let reviewError = $state(null);
 	let reviewSuccess = $state(false);
@@ -62,7 +60,6 @@
 		reviewModal = { bakeryId: bakery.id, bakeryName: bakery.name };
 		reviewRating = 0;
 		reviewComment = '';
-		reviewGuestName = '';
 		reviewError = null;
 		reviewSuccess = false;
 	}
@@ -83,8 +80,7 @@
 			const submitted = await createBakeryReview(
 				reviewModal.bakeryId,
 				reviewRating,
-				reviewComment,
-				reviewGuestName || null
+				reviewComment
 			);
 			const status = (submitted?.status ?? '').toLowerCase();
 			if (status === 'rejected') {
@@ -298,21 +294,12 @@
 				{/each}
 			</div>
 
-			{#if !$user}
-				<input
-					type="text"
-					placeholder="Your name (optional)"
-					bind:value={reviewGuestName}
-					class="mt-4 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
-				/>
-			{/if}
-
 			<textarea
 				bind:value={reviewComment}
-				placeholder="Leave a comment (optional)"
+				placeholder="Share your experience (optional)"
 				rows="3"
 				disabled={reviewSubmitting}
-				class="mt-3 w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
+				class="mt-4 w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
 			></textarea>
 
 			{#if reviewError}

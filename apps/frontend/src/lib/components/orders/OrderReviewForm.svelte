@@ -42,7 +42,7 @@
 
 			<textarea
 				bind:value={comment}
-				placeholder="Leave a comment (optional)"
+				placeholder="Share your experience (optional)"
 				rows="3"
 				disabled={submitting}
 				class="mt-4 w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-50"

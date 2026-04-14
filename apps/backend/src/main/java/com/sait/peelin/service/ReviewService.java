@@ -99,7 +99,7 @@ public class ReviewService {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Customer profile required");
             }
         } else {
-            customer = resolveOrCreateAnonymousReviewer(req.getGuestName());
+            customer = resolveOrCreateAnonymousReviewer();
         }
         Product product = productRepository.findById(productId).orElseThrow(() -> new ResourceNotFoundException("Product not found"));
 
@@ -158,10 +158,6 @@ public class ReviewService {
 
         if (order.getCustomer() == null || !order.getCustomer().getId().equals(customer.getId())) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Order does not belong to customer");
-        }
-        if (!hasFullName(customer)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "First and last name are required in your profile before leaving a location review.");
         }
 
         List<OrderItem> items = orderItemRepository.findByOrder_Id(order.getId());
@@ -327,11 +323,15 @@ public class ReviewService {
     }
 
     /**
-     * First name plus last-name initial for public display (e.g. {@code James R.}).
+     * Signed-in customers: first name plus last-name initial (e.g. {@code James R.}).
+     * Guest reviewers (no linked user) always show as {@code Anonymous}.
      */
     static String reviewerDisplayName(Customer c) {
         if (c == null) {
             return "Customer";
+        }
+        if (c.getUser() == null) {
+            return "Anonymous";
         }
         String first = trimName(c.getCustomerFirstName());
         String last = trimName(c.getCustomerLastName());
@@ -374,11 +374,6 @@ public class ReviewService {
         return null;
     }
 
-    private static boolean hasFullName(Customer customer) {
-        return StringUtils.hasText(customer.getCustomerFirstName())
-                && StringUtils.hasText(customer.getCustomerLastName());
-    }
-
     private static String shortenForClientMessage(String text) {
         if (!StringUtils.hasText(text)) {
             return text;
@@ -390,7 +385,7 @@ public class ReviewService {
         return t.substring(0, MODERATION_MESSAGE_CLIENT_MAX_LEN - 1).trim() + "…";
     }
 
-    private Customer resolveOrCreateAnonymousReviewer(String guestName) {
+    private Customer resolveOrCreateAnonymousReviewer() {
         RewardTier lowestTier = rewardTierRepository.findFirstByOrderByRewardTierMinPointsAsc()
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No reward tiers configured"));
 
@@ -398,16 +393,7 @@ public class ReviewService {
         guest.setRewardTier(lowestTier);
         guest.setCustomerRewardBalance(0);
         guest.setGuestExpiryDate(java.time.LocalDate.now().plusYears(1));
-
-        if (StringUtils.hasText(guestName)) {
-            String[] parts = guestName.trim().split("\\s+", 2);
-            guest.setCustomerFirstName(parts[0]);
-            if (parts.length > 1) {
-                guest.setCustomerLastName(parts[1]);
-            }
-        } else {
-            guest.setCustomerFirstName("Anonymous");
-        }
+        guest.setCustomerFirstName("Anonymous");
 
         guest.setCustomerEmail(com.sait.peelin.support.GuestContactFiller.syntheticEmailForPhoneDigits(
                 com.sait.peelin.support.GuestContactFiller.allocateSyntheticPhoneDigits()));
@@ -433,7 +419,7 @@ public class ReviewService {
             customer = customerRepository.findByUser_UserId(u.getUserId())
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Customer profile required"));
         } else {
-            customer = resolveOrCreateAnonymousReviewer(req.getGuestName());
+            customer = resolveOrCreateAnonymousReviewer();
         }
 
         String comment = req.getComment();

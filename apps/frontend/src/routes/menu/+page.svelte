@@ -18,7 +18,6 @@
 		submitMenuProductReview
 	} from '$lib/services/menu';
 	import { getTodaySpecial } from '$lib/services/product-specials';
-	import { user } from '$lib/stores/authStore';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { resolve } from '$app/paths';
@@ -35,7 +34,6 @@
 	let reviewModal = $state(false);
 	let reviewRating = $state(0);
 	let reviewComment = $state('');
-	let reviewGuestName = $state('');
 	let reviewSubmitting = $state(false);
 	let reviewError = $state(null);
 	let reviewSuccess = $state(false);
@@ -69,7 +67,6 @@
 	function openReviewModal() {
 		reviewRating = 0;
 		reviewComment = '';
-		reviewGuestName = '';
 		reviewError = null;
 		reviewSuccess = false;
 		reviewModal = true;
@@ -94,8 +91,7 @@
 			const result = await submitMenuProductReview({
 				productId: selectedProduct.id,
 				rating: reviewRating,
-				comment: reviewComment,
-				guestName: reviewGuestName || ''
+				comment: reviewComment
 			});
 
 			if (result.ok) {
@@ -218,10 +214,8 @@
 <MenuReviewModal
 	bind:open={reviewModal}
 	productName={selectedProduct?.name ?? ''}
-	isLoggedIn={Boolean($user)}
 	bind:rating={reviewRating}
 	bind:comment={reviewComment}
-	bind:guestName={reviewGuestName}
 	bind:submitting={reviewSubmitting}
 	bind:error={reviewError}
 	bind:success={reviewSuccess}

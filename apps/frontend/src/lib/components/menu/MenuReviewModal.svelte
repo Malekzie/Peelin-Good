@@ -2,10 +2,8 @@
 	let {
 		open = $bindable(false),
 		productName = '',
-		isLoggedIn = false,
 		rating = $bindable(0),
 		comment = $bindable(''),
-		guestName = $bindable(''),
 		submitting = $bindable(false),
 		error = $bindable(null),
 		success = $bindable(false),
@@ -32,21 +30,12 @@
 				{/each}
 			</div>
 
-			{#if !isLoggedIn}
-				<input
-					type="text"
-					placeholder="Your name (optional)"
-					bind:value={guestName}
-					class="mt-4 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-				/>
-			{/if}
-
 			<textarea
 				bind:value={comment}
-				placeholder="Leave a comment (optional)"
+				placeholder="Share your experience (optional)"
 				rows="3"
 				disabled={submitting}
-				class="mt-3 w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+				class="mt-4 w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
 			></textarea>
 
 			{#if error}

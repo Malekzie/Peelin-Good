@@ -23,13 +23,12 @@ export async function getBakeryAverage(bakeryId: ApiId): Promise<unknown | null>
 export async function createBakeryReview(
 	bakeryId: ApiId,
 	rating: number,
-	comment: string,
-	guestName: string | null = null
+	comment: string
 ): Promise<ReviewRecord | undefined> {
 	const res = await apiFetch(`${BAKERIES_API}/${bakeryId}/reviews`, {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify({ rating, comment, ...(guestName ? { guestName } : {}) })
+		body: JSON.stringify({ rating, comment })
 	});
 	if (!res) return;
 	if (!res.ok) {
