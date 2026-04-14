@@ -17,13 +17,17 @@
 		UserCog,
 		Shield,
 		User,
-		LogOut
+		LogOut,
+		MessageCircle,
+		MessagesSquare
 	} from '@lucide/svelte';
 
 	const allNavLinks = [
 		{ label: 'Dashboard', href: '/staff/dashboard', icon: LayoutDashboard, roles: null },
 		{ label: 'Orders', href: '/staff/orders', icon: ShoppingBag, roles: null },
 		{ label: 'Customers', href: '/staff/customers', icon: Users, roles: null },
+		{ label: 'Support Chat', href: '/staff/chat', icon: MessageCircle, roles: null },
+		{ label: 'Messages', href: '/staff/messages', icon: MessagesSquare, roles: null },
 		{ label: 'Analytics', href: '/staff/analytics', icon: BarChart2, roles: ['admin'] },
 		{ label: 'Products', href: '/staff/products', icon: Package, roles: ['admin'] },
 		{ label: 'Employees', href: '/staff/staff', icon: UserCog, roles: ['admin'] },

@@ -51,7 +51,7 @@
 
     async function handleOpen() {
         open = true;
-        if (thread) return;
+        if (thread || loading) return;
         loading = true;
         try {
             const threads = await getThreads();
@@ -137,7 +137,7 @@
                         <div class="border-t border-[#2C1A0E]/10 p-4 text-center">
                             <p class="text-xs text-[#2C1A0E]/50">This conversation is closed.</p>
                             <button
-                                onclick={() => { thread = null; messages = []; }}
+                                onclick={() => { unsubMessages?.(); unsubTyping?.(); thread = null; messages = []; }}
                                 class="mt-2 text-xs font-medium text-[#C4714A] hover:underline"
                             >
                                 Start a new conversation
