@@ -6,6 +6,8 @@
 	import { ShoppingBag, Plus, Minus, Check } from '@lucide/svelte';
 	import { formatPriceCad } from '$lib/utils/money';
 
+	let reviewFilter = $state('all');
+
 	let {
 		open = $bindable(false),
 		product = null,
@@ -18,6 +20,14 @@
 		onOpenReviewModal = () => {},
 		onAddToCart = () => {}
 	} = $props();
+
+	const filteredReviews = $derived(
+		reviewFilter === 'verified'
+			? productReviews.filter((r) => r.verifiedAccount)
+			: reviewFilter === 'purchased'
+				? productReviews.filter((r) => r.verifiedPurchase)
+				: productReviews
+	);
 
 	const sheetPrice = $derived(
 		product
@@ -73,10 +83,26 @@
 					</div>
 				{:else if productReviews.length > 0}
 					<div class="space-y-3">
-						<p class="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
-							Customer Reviews
-						</p>
-						{#each showAllReviews ? productReviews : productReviews.slice(0, 3) as review (review.id)}
+						<div class="flex items-center justify-between">
+							<p class="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+								Customer Reviews
+							</p>
+							<div class="flex gap-1">
+								{#each [['all', 'All'], ['verified', 'Verified'], ['purchased', 'Purchased']] as [val, label] (val)}
+									<button
+										type="button"
+										onclick={() => (reviewFilter = val)}
+										class="rounded-full px-2 py-0.5 text-[10px] font-semibold transition-colors {reviewFilter ===
+										val
+											? 'bg-primary text-primary-foreground'
+											: 'bg-muted text-muted-foreground hover:bg-muted/80'}"
+									>
+										{label}
+									</button>
+								{/each}
+							</div>
+						</div>
+						{#each showAllReviews ? filteredReviews : filteredReviews.slice(0, 3) as review (review.id)}
 							<div class="rounded-lg bg-muted/50 px-3 py-2">
 								<div class="flex items-center justify-between">
 									<div class="flex items-center gap-2">
@@ -105,12 +131,12 @@
 								{/if}
 							</div>
 						{/each}
-						{#if productReviews.length > 3}
+						{#if filteredReviews.length > 3}
 							<button
 								onclick={() => (showAllReviews = !showAllReviews)}
 								class="text-xs font-semibold text-primary hover:underline"
 							>
-								{showAllReviews ? 'Show less' : `See all ${productReviews.length} reviews`}
+								{showAllReviews ? 'Show less' : `See all ${filteredReviews.length} reviews`}
 							</button>
 						{/if}
 					</div>
