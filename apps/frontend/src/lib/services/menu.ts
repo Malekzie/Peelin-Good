@@ -22,6 +22,10 @@ type ReviewSubmissionResult = {
 	moderationMessage?: string | null;
 };
 
+/**
+ * Loads products and tags concurrently.
+ * Returns `[products, tags]`.
+ */
 export async function loadMenuCatalog() {
 	return Promise.all([getProducts(), getTags()]);
 }
