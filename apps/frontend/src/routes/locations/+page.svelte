@@ -22,6 +22,7 @@
 	let reviewError = $state(null);
 	let reviewSuccess = $state(false);
 	let expandedBakeries = $state(new Set());
+	let reviewFilters = $state({});
 
 	onMount(async () => {
 		try {
@@ -41,6 +42,21 @@
 			loading = false;
 		}
 	});
+
+	function getFilter(bakeryId) {
+		return reviewFilters[bakeryId] ?? 'all';
+	}
+
+	function setFilter(bakeryId, val) {
+		reviewFilters = { ...reviewFilters, [bakeryId]: val };
+	}
+
+	function getFilteredReviews(bakery) {
+		const filter = getFilter(bakery.id);
+		if (filter === 'verified') return bakery.reviews.filter((r) => r.verifiedAccount);
+
+		return bakery.reviews;
+	}
 
 	function openBakeryReview(bakery) {
 		reviewModal = { bakeryId: bakery.id, bakeryName: bakery.name };
@@ -188,9 +204,26 @@
 
 					<!-- Right: reviews -->
 					<div class="flex flex-col gap-4 bg-muted/30 p-8">
-						<h3 class="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
-							Customer Reviews
-						</h3>
+						<div class="flex items-center justify-between">
+							<h3 class="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
+								Customer Reviews
+							</h3>
+							<div class="flex gap-1">
+								{#each [['all', 'All'], ['verified', 'Verified']] as [val, label] (val)}
+									<button
+										type="button"
+										onclick={() => setFilter(bakery.id, val)}
+										class="rounded-full px-2 py-0.5 text-[10px] font-semibold transition-colors {getFilter(
+											bakery.id
+										) === val
+											? 'bg-primary text-primary-foreground'
+											: 'bg-muted text-muted-foreground hover:bg-muted/80'}"
+									>
+										{label}
+									</button>
+								{/each}
+							</div>
+						</div>
 						<button
 							onclick={() => openBakeryReview(bakery)}
 							class="text-sm font-semibold text-primary hover:underline"
@@ -201,7 +234,7 @@
 							<p class="text-sm text-muted-foreground">No reviews yet — be the first!</p>
 						{:else}
 							<div class="space-y-4">
-								{#each expandedBakeries.has(bakery.id) ? bakery.reviews : bakery.reviews.slice(0, 4) as review (review.id)}
+								{#each expandedBakeries.has(bakery.id) ? getFilteredReviews(bakery) : getFilteredReviews(bakery).slice(0, 4) as review (review.id)}
 									<div class="rounded-xl border border-border bg-background p-4">
 										<div class="mb-1 flex items-center justify-between">
 											<div class="flex items-center gap-2">
@@ -222,7 +255,7 @@
 										{/if}
 									</div>
 								{/each}
-								{#if bakery.reviews.length > 4}
+								{#if getFilteredReviews(bakery).length > 4}
 									<button
 										onclick={() => {
 											const next = new Set(expandedBakeries);
@@ -237,7 +270,7 @@
 									>
 										{expandedBakeries.has(bakery.id)
 											? 'Show less'
-											: `See all ${bakery.reviews.length} reviews`}
+											: `See all ${getFilteredReviews(bakery).length} reviews`}
 									</button>
 								{/if}
 							</div>
