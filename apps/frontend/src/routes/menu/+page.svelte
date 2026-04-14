@@ -17,6 +17,7 @@
 		resolveInitialMenuState,
 		submitMenuProductReview
 	} from '$lib/services/menu';
+	import { getTodaySpecial } from '$lib/services/product-specials';
 	import { user } from '$lib/stores/authStore';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
@@ -44,6 +45,8 @@
 	let sheetQty = $state(1);
 	let sheetAdded = $state(false);
 	let showAllReviews = $state(false);
+
+	let todaySpecial = $state(null);
 
 	async function openSheet(product) {
 		selectedProduct = product;
@@ -126,7 +129,14 @@
 
 	onMount(async () => {
 		try {
-			[products, tags] = await loadMenuCatalog();
+			[[products, tags], todaySpecial] = await Promise.all([
+				loadMenuCatalog(),
+				getTodaySpecial().catch(() => null)
+			]);
+
+			// temporary test - remove after testing
+			todaySpecial = { productId: 6, discountPercent: 10 };
+
 			const initialState = resolveInitialMenuState($page.url, tags);
 			activeTagId = initialState.activeTagId;
 			searchQuery = initialState.searchQuery;
@@ -179,7 +189,14 @@
 				<div class="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3">
 					{#each filtered as product, i (product.id)}
 						<div class="product-card" style="animation-delay: {Math.min(i * 50, 350)}ms">
-							<ProductCard {product} onselect={openSheet} />
+							<ProductCard
+								{product}
+								onselect={openSheet}
+								isSpecial={todaySpecial?.productId === product.id}
+								specialDiscount={todaySpecial?.productId === product.id
+									? todaySpecial.discountPercent
+									: null}
+							/>
 						</div>
 					{/each}
 				</div>

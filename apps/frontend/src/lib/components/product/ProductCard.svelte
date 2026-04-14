@@ -5,7 +5,7 @@
 	import { Plus, Minus, ShoppingBag, Check } from '@lucide/svelte';
 	import { formatPriceCad } from '$lib/utils/money';
 
-	let { product, onselect = () => {} } = $props();
+	let { product, onselect = () => {}, isSpecial = false, specialDiscount = null } = $props();
 
 	let quantity = $state(1);
 	let added = $state(false);
@@ -44,6 +44,13 @@
 >
 	<!-- Image -->
 	<div class="relative h-32 shrink-0 overflow-hidden bg-muted sm:h-48">
+		{#if isSpecial}
+			<div
+				class="absolute top-2 left-2 z-10 rounded-full bg-amber-500 px-2.5 py-0.5 text-xs font-bold text-white shadow"
+			>
+				Today's Special
+			</div>
+		{/if}
 		{#if product.imageUrl}
 			<img
 				src={product.imageUrl}
@@ -68,7 +75,15 @@
 			{/if}
 		</div>
 
-		<p class="text-lg font-bold text-primary">{price}</p>
+		{#if isSpecial && specialDiscount}
+			{@const discountedPrice = formatPriceCad(product.basePrice * (1 - specialDiscount / 100))}
+			<div class="flex items-baseline gap-2">
+				<p class="text-lg font-bold text-primary">{discountedPrice}</p>
+				<p class="text-sm text-muted-foreground line-through">{price}</p>
+			</div>
+		{:else}
+			<p class="text-lg font-bold text-primary">{price}</p>
+		{/if}
 
 		<!-- Stepper + Add — clicks here don't open the sheet -->
 		<!-- svelte-ignore a11y_click_events_have_key_events -->
