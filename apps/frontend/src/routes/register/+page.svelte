@@ -499,10 +499,8 @@
 					{#if employeeLinkOffered}
 					<div class="space-y-5">
 						<p class="text-on-surface-variant text-sm leading-relaxed">
-							This email matches a staff work address on file. Enter the password you use to sign in to
-							your <strong>employee</strong> account (not your new customer password), then confirm it,
-							so we can link your new customer profile to that staff record. Your name, phone, and
-							address will be copied from your employee profile after you register.
+							This matches a staff work email. Enter your <strong>employee</strong> password twice to
+							link. We copy your name, phone, and address from staff records.
 						</p>
 
 						<div class="space-y-1.5">
