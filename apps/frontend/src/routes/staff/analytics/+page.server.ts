@@ -13,7 +13,7 @@ function buildUrl(path: string, start: Date | string, end: Date | string, bakery
 
 export const load: PageServerLoad = async ({ fetch }) => {
 	const today = new Date().toISOString().split('T')[0];
-	const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+	const thirtyDaysAgo = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
 	const get = async <T>(url: string): Promise<T> => {
 		const res = await fetch(url, { credentials: 'include' });

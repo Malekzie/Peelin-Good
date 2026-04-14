@@ -3,6 +3,7 @@ package com.sait.peelin.controller.v1;
 import com.sait.peelin.dto.v1.auth.*;
 import com.sait.peelin.model.User;
 import com.sait.peelin.service.AuthService;
+import com.sait.peelin.service.CurrentUserService;
 import com.sait.peelin.service.JwtService;
 import com.sait.peelin.service.PasswordResetService;
 import com.sait.peelin.service.TokenDenylistService;
@@ -42,6 +43,7 @@ public class AuthController {
     private final PasswordResetService passwordResetService;
     private final JwtService jwtService;
     private final WelcomeEmailService welcomeEmailService;
+    private final CurrentUserService currentUserService;
 
     @Value("${app.frontend.url:http://localhost:5173}")
     private String frontendUrl;
@@ -61,6 +63,20 @@ public class AuthController {
                 .sameSite("Lax")
                 .build();
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+    }
+
+    @GetMapping("/whoami")
+    public ResponseEntity<java.util.Map<String, Object>> whoami() {
+        User u = currentUserService.currentUserOrNull();
+        if (u == null) {
+            return ResponseEntity.ok(java.util.Map.of("authenticated", false));
+        }
+        return ResponseEntity.ok(java.util.Map.of(
+                "authenticated", true,
+                "userId", u.getUserId().toString(),
+                "username", u.getUsername(),
+                "role", u.getUserRole().name()
+        ));
     }
 
     @PostMapping("/login")

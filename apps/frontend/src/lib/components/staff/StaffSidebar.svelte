@@ -19,20 +19,22 @@
 		User,
 		LogOut,
 		MessageCircle,
-		MessagesSquare
+		MessagesSquare,
+		Archive
 	} from '@lucide/svelte';
 
 	const allNavLinks = [
-		{ label: 'Dashboard', href: '/staff/dashboard', icon: LayoutDashboard, roles: null },
-		{ label: 'Orders', href: '/staff/orders', icon: ShoppingBag, roles: null },
-		{ label: 'Customers', href: '/staff/customers', icon: Users, roles: null },
-		{ label: 'Support Chat', href: '/staff/chat', icon: MessageCircle, roles: null },
-		{ label: 'Messages', href: '/staff/messages', icon: MessagesSquare, roles: null },
-		{ label: 'Analytics', href: '/staff/analytics', icon: BarChart2, roles: ['admin'] },
-		{ label: 'Products', href: '/staff/products', icon: Package, roles: ['admin'] },
-		{ label: 'Employees', href: '/staff/staff', icon: UserCog, roles: ['admin'] },
-		{ label: 'Users', href: '/staff/users', icon: Shield, roles: ['admin'] },
-		{ label: 'My Profile', href: '/staff/profile', icon: User, roles: null }
+		{ label: 'Dashboard', href: '/staff/dashboard', icon: LayoutDashboard, roles: null, exact: false },
+		{ label: 'Orders', href: '/staff/orders', icon: ShoppingBag, roles: null, exact: false },
+		{ label: 'Customers', href: '/staff/customers', icon: Users, roles: null, exact: false },
+		{ label: 'Support Chat', href: '/staff/chat', icon: MessageCircle, roles: null, exact: true },
+		{ label: 'Chat Archive', href: '/staff/chat/archived', icon: Archive, roles: ['admin'], exact: true },
+		{ label: 'Messages', href: '/staff/messages', icon: MessagesSquare, roles: null, exact: false },
+		{ label: 'Analytics', href: '/staff/analytics', icon: BarChart2, roles: ['admin'], exact: false },
+		{ label: 'Products', href: '/staff/products', icon: Package, roles: ['admin'], exact: false },
+		{ label: 'Employees', href: '/staff/staff', icon: UserCog, roles: ['admin'], exact: false },
+		{ label: 'Users', href: '/staff/users', icon: Shield, roles: ['admin'], exact: false },
+		{ label: 'My Profile', href: '/staff/profile', icon: User, roles: null, exact: false }
 	];
 
 	const navLinks = $derived(
@@ -54,7 +56,7 @@
 >
 	{#each navLinks as link (link.href)}
 		{@const active =
-			page.url.pathname === link.href || page.url.pathname.startsWith(link.href + '/')}
+			page.url.pathname === link.href || (!link.exact && page.url.pathname.startsWith(link.href + '/'))}
 		<a
 			href={resolve(link.href)}
 			class="flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors

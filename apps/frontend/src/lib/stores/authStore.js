@@ -11,6 +11,33 @@ if (browser && storedUser) {
 	Sentry.setTag('role', (storedUser.role ?? '').toLowerCase());
 }
 
+// Reconcile localStorage with the backend's JWT identity so split-brain sessions
+// (stale localStorage + different cookie) can't cause wrong-user bugs in the UI.
+if (browser) {
+	fetch('/api/v1/auth/whoami', { credentials: 'include' })
+		.then((r) => (r.ok ? r.json() : { authenticated: false }))
+		.then((d) => {
+			if (d.authenticated) {
+				const fresh = { userId: d.userId, username: d.username, role: d.role };
+				const current = JSON.parse(localStorage.getItem('user') ?? 'null');
+				if (!current || String(current.userId) !== String(fresh.userId)) {
+					localStorage.setItem('user', JSON.stringify(fresh));
+					user.set(fresh);
+					Sentry.setUser({ id: fresh.userId, username: fresh.username });
+					Sentry.setTag('role', (fresh.role ?? '').toLowerCase());
+				}
+			} else if (localStorage.getItem('user')) {
+				localStorage.removeItem('user');
+				user.set(null);
+				Sentry.setUser(null);
+				Sentry.setTag('role', '');
+			}
+		})
+		.catch(() => {
+			// Network error — leave stored state alone.
+		});
+}
+
 export const isLoggedIn = derived(user, ($user) => !!$user);
 
 export function setAuth(authResponse) {

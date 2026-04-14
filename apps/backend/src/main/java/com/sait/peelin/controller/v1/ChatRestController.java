@@ -30,6 +30,12 @@ public class ChatRestController {
         return chatService.openThreads(category);
     }
 
+    @GetMapping("/threads/archived")
+    @PreAuthorize("hasRole('ADMIN')")
+    public List<ChatThreadDto> archivedThreads(@RequestParam(required = false) String category) {
+        return chatService.archivedThreads(category);
+    }
+
     @PostMapping("/threads")
     @ResponseStatus(HttpStatus.CREATED)
     public ChatThreadDto createThread(@RequestBody(required = false) CreateThreadRequest req) {

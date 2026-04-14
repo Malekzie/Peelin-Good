@@ -281,7 +281,7 @@
             {:else if selectedThread.status === 'closed'}
                 <ChatMessageList
                     {messages}
-                    currentUserId={$user?.userId ?? ''}
+                    currentUserId={String($user?.userId ?? '')}
                 />
                 <div class="border-t border-border p-4">
                     <div class="rounded-xl bg-[#C4714A]/10 px-4 py-3 text-center">
@@ -291,7 +291,7 @@
             {:else}
                 <ChatMessageList
                     {messages}
-                    currentUserId={$user?.userId ?? ''}
+                    currentUserId={String($user?.userId ?? '')}
                     {typingLabel}
                 />
                 <ChatComposer onsend={handleSend} ontyping={handleTyping} />

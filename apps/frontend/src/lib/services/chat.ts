@@ -56,6 +56,15 @@ export async function closeThread(threadId: number): Promise<ChatThread> {
     return res.json();
 }
 
+export async function getArchivedThreads(category?: string): Promise<ChatThread[]> {
+    const url = category
+        ? `${CHAT_API}/threads/archived?category=${encodeURIComponent(category)}`
+        : `${CHAT_API}/threads/archived`;
+    const res = await fetch(url, { credentials: 'include' });
+    if (!res.ok) throw new Error('Failed to fetch archived threads');
+    return res.json();
+}
+
 export async function markThreadRead(threadId: number): Promise<void> {
     await fetch(`${CHAT_API}/threads/${threadId}/read`, {
         method: 'POST',

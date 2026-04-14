@@ -165,6 +165,13 @@ INSERT INTO "user" (user_id, uuid, username, user_email, user_password_hash, use
     ('10000000-0000-4000-8000-000000000023'::uuid, '10000000-0000-4000-8000-000000000023'::uuid, 'nora.harris',      'nora.harris@bakery.ca',      '$2b$10$QBNjm.PVIpb/6dZjjcbEHuTJdSjcQ9SLirABycucuHbHTw3DFvINe', 'customer'::user_role, TRUE, '2025-11-30 12:00:00+00', NULL, FALSE),
     ('10000000-0000-4000-8000-000000000024'::uuid, '10000000-0000-4000-8000-000000000024'::uuid, 'wyatt.martinez',   'wyatt.martinez@bakery.ca',   '$2b$10$QBNjm.PVIpb/6dZjjcbEHuTJdSjcQ9SLirABycucuHbHTw3DFvINe', 'customer'::user_role, TRUE, '2025-12-02 12:00:00+00', NULL, FALSE);
 
+-- Test accounts — easy-to-remember credentials for manual testing
+-- admin_test / Admin123!    employee_test / Emp123!    customer_test / Cust123!
+INSERT INTO "user" (user_id, uuid, username, user_email, user_password_hash, user_role, is_active, user_created_at, profile_photo_path, photo_approval_pending) VALUES
+    ('10000000-0000-4000-8000-000000000025'::uuid, '10000000-0000-4000-8000-000000000025'::uuid, 'admin_test',    'admin_test@bakery.ca',    '$2b$10$R92cP1dmtXyTDQYq6U53V.fRED4Kb9JHcAscibP8XAc7W1Zzm2hXm', 'admin'::user_role,    TRUE, '2026-01-01 00:00:00+00', NULL, FALSE),
+    ('10000000-0000-4000-8000-000000000026'::uuid, '10000000-0000-4000-8000-000000000026'::uuid, 'employee_test', 'employee_test@bakery.ca', '$2b$10$wxtEMcmy1odu09UvDcA1jOIZrh8Pyzf.sfmwpMuiApWlVYbrpETWy', 'employee'::user_role, TRUE, '2026-01-01 00:00:00+00', NULL, FALSE),
+    ('10000000-0000-4000-8000-000000000027'::uuid, '10000000-0000-4000-8000-000000000027'::uuid, 'customer_test', 'customer_test@bakery.ca', '$2b$10$QBNjm.PVIpb/6dZjjcbEHuTJdSjcQ9SLirABycucuHbHTw3DFvINe', 'customer'::user_role, TRUE, '2026-01-01 00:00:00+00', NULL, FALSE);
+
 -- Bakery hero URLs (V12 canonical /bakery/ paths)
 INSERT INTO bakery (bakery_id, address_id, bakery_name, bakery_phone, bakery_email, status, latitude, longitude, bakery_image_url)
 OVERRIDING SYSTEM VALUE VALUES
@@ -290,6 +297,10 @@ INSERT INTO employee (employee_id, uuid, user_id, address_id, bakery_id, employe
     ('30000000-0000-4000-8000-000000000009'::uuid, '30000000-0000-4000-8000-000000000009'::uuid, '10000000-0000-4000-8000-000000000010'::uuid, 10, 3, 'Jackson', NULL,  'Hall',    'Baker',            '(403) 555-3109', '(403) 555-4109', 'jackson.hall@bakery.ca'),
     ('30000000-0000-4000-8000-000000000011'::uuid, '30000000-0000-4000-8000-000000000011'::uuid, '10000000-0000-4000-8000-000000000001'::uuid, 1,  1, 'John',    NULL,  'Doe',     'Admin',            '(403) 555-3110', '(403) 555-4110', 'john.doe@bakery.ca');
 
+INSERT INTO employee (employee_id, uuid, user_id, address_id, bakery_id, employee_first_name, employee_middle_initial, employee_last_name, employee_position, employee_phone, employee_business_phone, employee_work_email) VALUES
+    ('30000000-0000-4000-8000-000000000012'::uuid, '30000000-0000-4000-8000-000000000012'::uuid, '10000000-0000-4000-8000-000000000025'::uuid, 1, 1, 'Admin',    NULL, 'Test', 'Admin', '(403) 555-9901', '(403) 555-9911', 'admin_test@bakery.ca'),
+    ('30000000-0000-4000-8000-000000000013'::uuid, '30000000-0000-4000-8000-000000000013'::uuid, '10000000-0000-4000-8000-000000000026'::uuid, 2, 1, 'Employee', NULL, 'Test', 'Baker', '(403) 555-9902', '(403) 555-9912', 'employee_test@bakery.ca');
+
 -- reward_tier: 1 Bronze 0–99999, 2 Silver 100k–249999, 3 Gold 250k–499999, 4 Platinum 500k+
 -- Balances = sum of reward rows below (0 if none); tier matches balance.
 INSERT INTO customer (customer_id, uuid, user_id, address_id, reward_tier_id, customer_first_name, customer_middle_initial, customer_last_name, customer_phone, customer_business_phone, customer_email, customer_reward_balance, customer_tier_assigned_date, guest_expiry_date) VALUES
@@ -307,6 +318,9 @@ INSERT INTO customer (customer_id, uuid, user_id, address_id, reward_tier_id, cu
     ('20000000-0000-4000-8000-000000000012'::uuid, '20000000-0000-4000-8000-000000000012'::uuid, '10000000-0000-4000-8000-000000000022'::uuid, 37, 1, 'Sebastian', NULL,  'White',    '(403) 555-1212', NULL, 'sebastian.white@bakery.ca', 16500,   '2025-12-18', NULL),
     ('20000000-0000-4000-8000-000000000013'::uuid, '20000000-0000-4000-8000-000000000013'::uuid, '10000000-0000-4000-8000-000000000023'::uuid, 38, 1, 'Nora',      NULL,  'Harris',   '(403) 555-1213', NULL, 'nora.harris@bakery.ca',    0,       '2025-11-30', NULL),
     ('20000000-0000-4000-8000-000000000014'::uuid, '20000000-0000-4000-8000-000000000014'::uuid, '10000000-0000-4000-8000-000000000024'::uuid, 39, 1, 'Wyatt',     NULL,  'Martinez', '(403) 555-1214', NULL, 'wyatt.martinez@bakery.ca', 0,       '2025-12-02', NULL);
+
+INSERT INTO customer (customer_id, uuid, user_id, address_id, reward_tier_id, customer_first_name, customer_middle_initial, customer_last_name, customer_phone, customer_business_phone, customer_email, customer_reward_balance, customer_tier_assigned_date, guest_expiry_date) VALUES
+    ('20000000-0000-4000-8000-000000000015'::uuid, '20000000-0000-4000-8000-000000000015'::uuid, '10000000-0000-4000-8000-000000000027'::uuid, 21, 1, 'Customer', NULL, 'Test', '(403) 555-9903', NULL, 'customer_test@bakery.ca', 0, '2026-01-01', NULL);
 
 INSERT INTO product_special (product_special_id, product_id, "date", discount_percent)
 OVERRIDING SYSTEM VALUE VALUES

@@ -37,6 +37,21 @@ public class ChatService {
     private final SimpMessagingTemplate messagingTemplate;
 
     @Transactional(readOnly = true)
+    public List<ChatThreadDto> archivedThreads(String category) {
+        User u = currentUserService.requireUser();
+        if (u.getUserRole() != UserRole.admin) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+        if (category != null && !category.isBlank()) {
+            return chatThreadRepository
+                    .findByStatusAndCategoryOrderByUpdatedAtDesc("closed", category)
+                    .stream().map(this::threadDto).toList();
+        }
+        return chatThreadRepository.findByStatusOrderByUpdatedAtDesc("closed")
+                .stream().map(this::threadDto).toList();
+    }
+
+    @Transactional(readOnly = true)
     public List<ChatThreadDto> openThreads(String category) {
         User u = currentUserService.requireUser();
         if (u.getUserRole() == UserRole.admin || u.getUserRole() == UserRole.employee) {

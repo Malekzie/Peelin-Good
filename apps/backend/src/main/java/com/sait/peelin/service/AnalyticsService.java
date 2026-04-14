@@ -181,7 +181,7 @@ public class AnalyticsService {
         StringBuilder sql = new StringBuilder("""
                 SELECT COALESCE(
                     (SUM(CASE WHEN o.order_status::text = 'completed' THEN 1 ELSE 0 END)::numeric
-                     / NULLIF(COUNT(*), 0) * 100.0), 0)
+                     / NULLIF(COUNT(*), 0)), 0)
                 FROM "order" o
                 JOIN bakery b ON b.bakery_id = o.bakery_id
                 WHERE 1=1
@@ -202,7 +202,7 @@ public class AnalyticsService {
         StringBuilder sql = new StringBuilder("""
                 SELECT CAST(o.order_placed_datetime AS date) AS d,
                        (SUM(CASE WHEN o.order_status::text = 'completed' THEN 1 ELSE 0 END)::numeric
-                        / NULLIF(COUNT(*), 0) * 100.0) AS rate
+                        / NULLIF(COUNT(*), 0)) AS rate
                 FROM "order" o
                 JOIN bakery b ON b.bakery_id = o.bakery_id
                 WHERE 1=1
