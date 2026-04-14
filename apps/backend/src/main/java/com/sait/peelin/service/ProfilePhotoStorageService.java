@@ -94,8 +94,8 @@ public class ProfilePhotoStorageService {
     }
 
     /**
-     * Uploads a product image directly into the {@code bakery/} folder with no entity sub-folder.
-     * The object key is {@code bakery/<uuid>.<ext>}. If the product already has an image, the old
+     * Uploads a product image directly into the {@code products/} folder with no entity sub-folder.
+     * The object key is {@code products/<uuid>.<ext>}. If the product already has an image, the old
      * object is deleted from storage after the new one is successfully uploaded.
      *
      * @param file        multipart image file to upload
@@ -110,7 +110,7 @@ public class ProfilePhotoStorageService {
         }
         try {
             String ext = extensionFor(file.getContentType());
-            String key = String.format("bakery/%s%s", UUID.randomUUID(), ext);
+            String key = String.format("products/%s%s", UUID.randomUUID(), ext);
 
             AwsBasicCredentials credentials = AwsBasicCredentials.create(accessKey, secretKey);
             String endpointUrl = endpoint.startsWith("http") ? endpoint : "https://" + endpoint;

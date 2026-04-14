@@ -6,7 +6,7 @@
 	<div class="mx-auto grid max-w-7xl grid-cols-1 items-center gap-16 md:grid-cols-2">
 		<div class="overflow-hidden rounded-xl border border-border">
 			<img
-				src="https://peelin-good-storage.tor1.cdn.digitaloceanspaces.com/bakery/bakery.jpg"
+				src="https://peelin-good-storage.tor1.cdn.digitaloceanspaces.com/misc/bakery.jpg"
 				alt="Peelin' Good Bakery"
 				class="h-80 w-full object-cover"
 			/>

@@ -42,7 +42,7 @@
 	<div class="relative hidden overflow-hidden md:block">
 		<!-- Unsplash bakery photo -->
 		<img
-			src="https://peelin-good-storage.tor1.cdn.digitaloceanspaces.com/bakery/bakery-header.png"
+			src="https://peelin-good-storage.tor1.cdn.digitaloceanspaces.com/misc/bakery-header.png"
 			alt="Fresh baked goods at Peelin' Good"
 			class="absolute inset-0 h-full w-full object-cover brightness-95"
 		/>
