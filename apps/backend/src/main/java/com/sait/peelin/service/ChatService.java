@@ -89,7 +89,9 @@ public class ChatService {
                 .orElseGet(() -> {
                     ChatThread created = createThreadEntity(u, "general");
                     chatLookupCacheService.evictOpenThreadForCustomer(u.getUserId());
-                    return threadDto(created);
+                    ChatThreadDto dto = threadDto(created);
+                    messagingTemplate.convertAndSend("/topic/chat/threads", dto);
+                    return dto;
                 });
     }
 
@@ -108,7 +110,9 @@ public class ChatService {
         }
         ChatThread created = createThreadEntity(u, category);
         chatLookupCacheService.evictOpenThreadForCustomer(u.getUserId());
-        return threadDto(created);
+        ChatThreadDto dto = threadDto(created);
+        messagingTemplate.convertAndSend("/topic/chat/threads", dto);
+        return dto;
     }
 
     private ChatThread createThreadEntity(User customer, String category) {

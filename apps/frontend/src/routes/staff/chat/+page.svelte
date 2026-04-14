@@ -39,6 +39,7 @@
 	let unsubMessages: (() => void) | null = null;
 	let unsubTyping: (() => void) | null = null;
 	let unsubStatus: (() => void) | null = null;
+	let unsubNewThreads: (() => void) | null = null;
 
 	async function loadThreads() {
 		loadingThreads = true;
@@ -49,6 +50,17 @@
 		} finally {
 			loadingThreads = false;
 		}
+	}
+
+	function subscribeNewThreads() {
+		unsubNewThreads?.();
+		unsubNewThreads = subscribeWs('/topic/chat/threads', (data) => {
+			const incoming = data as ChatThread;
+			if (incoming.status !== 'open') return;
+			if (activeCategory && incoming.category !== activeCategory) return;
+			if (threads.some((t) => t.id === incoming.id)) return;
+			threads = [incoming, ...threads];
+		});
 	}
 
 	async function selectThread(t: ChatThread) {
@@ -155,12 +167,16 @@
 		await loadThreads();
 	}
 
-	onMount(loadThreads);
+	onMount(() => {
+		loadThreads();
+		subscribeNewThreads();
+	});
 
 	onDestroy(() => {
 		unsubMessages?.();
 		unsubTyping?.();
 		unsubStatus?.();
+		unsubNewThreads?.();
 		clearTimeout(typingTimer);
 	});
 

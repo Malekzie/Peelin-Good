@@ -62,6 +62,15 @@ public class StompChannelInterceptor implements ChannelInterceptor {
                     }
                 }
             }
+            // Staff-only thread list feed — customers must not see other customers' threads.
+            if ("/topic/chat/threads".equals(destination)) {
+                Object principal = accessor.getUser();
+                if (principal instanceof UsernamePasswordAuthenticationToken authToken
+                        && authToken.getDetails() instanceof User userDetails
+                        && userDetails.getUserRole() == UserRole.customer) {
+                    throw new MessageDeliveryException("Forbidden");
+                }
+            }
         }
 
         if (StompCommand.CONNECT.equals(accessor.getCommand())) {
