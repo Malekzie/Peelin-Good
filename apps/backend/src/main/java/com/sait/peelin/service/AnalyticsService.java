@@ -179,13 +179,20 @@ public class AnalyticsService {
             return BigDecimal.ZERO;
         }
         StringBuilder sql = new StringBuilder("""
-                SELECT COALESCE(
-                    (SUM(CASE WHEN o.order_status::text = 'completed' THEN 1 ELSE 0 END)::numeric
-                     / NULLIF(COUNT(*), 0) * 100.0), 0)
-                FROM "order" o
-                JOIN bakery b ON b.bakery_id = o.bakery_id
-                WHERE 1=1
-                """);
+        SELECT COALESCE(
+            (
+                SUM(CASE WHEN o.order_status::text = 'completed' THEN 1 ELSE 0 END)::numeric
+                / NULLIF(
+                    SUM(CASE WHEN o.order_status::text <> 'cancelled' THEN 1 ELSE 0 END),
+                    0
+                ) * 100.0
+            ),
+            0
+        )
+        FROM "order" o
+        JOIN bakery b ON b.bakery_id = o.bakery_id
+        WHERE 1=1
+        """);
         List<Object> params = new ArrayList<>();
         applyScopeAndBakeryName(sql, params, start, end, bakerySelection, scope);
         return executeSingleBigDecimal(sql.toString(), params);
@@ -200,13 +207,21 @@ public class AnalyticsService {
             return List.of();
         }
         StringBuilder sql = new StringBuilder("""
-                SELECT CAST(o.order_placed_datetime AS date) AS d,
-                       (SUM(CASE WHEN o.order_status::text = 'completed' THEN 1 ELSE 0 END)::numeric
-                        / NULLIF(COUNT(*), 0) * 100.0) AS rate
-                FROM "order" o
-                JOIN bakery b ON b.bakery_id = o.bakery_id
-                WHERE 1=1
-                """);
+        SELECT CAST(o.order_placed_datetime AS date) AS d,
+               COALESCE(
+                   (
+                       SUM(CASE WHEN o.order_status::text = 'completed' THEN 1 ELSE 0 END)::numeric
+                       / NULLIF(
+                           SUM(CASE WHEN o.order_status::text <> 'cancelled' THEN 1 ELSE 0 END),
+                           0
+                       ) * 100.0
+                   ),
+                   0
+               ) AS rate
+        FROM "order" o
+        JOIN bakery b ON b.bakery_id = o.bakery_id
+        WHERE 1=1
+        """);
         List<Object> params = new ArrayList<>();
         applyScopeAndBakeryName(sql, params, start, end, bakerySelection, scope);
         sql.append(" GROUP BY 1 ORDER BY 1 ");

@@ -42,12 +42,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             final String username = jwtService.extractUsername(jwt);
 
-            if (username != null) {
+            if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
                 if (jwtService.isTokenValid(jwt, userDetails)) {
                     UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                            userDetails, null, userDetails.getAuthorities());
+                            userDetails,
+                            null,
+                            userDetails.getAuthorities()
+                    );
                     SecurityContextHolder.getContext().setAuthentication(authToken);
                 }
             }
@@ -60,8 +63,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     /**
      * Extracts the JWT from the request.
-     * Checks the HttpOnly cookie first (web app), then falls back to
-     * the Authorization header (mobile/desktop apps).
+     * Order:
+     * 1) HttpOnly cookie "token" (web app)
+     * 2) Authorization: Bearer ... header (mobile/desktop apps)
+     * 3) token query parameter (WebSocket/mobile fallback)
      */
     private String extractToken(HttpServletRequest request) {
         if (request.getCookies() != null) {
@@ -71,10 +76,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 }
             }
         }
+
         String authHeader = request.getHeader("Authorization");
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             return authHeader.substring(7);
         }
+
+        String queryToken = request.getParameter("token");
+        if (queryToken != null && !queryToken.isBlank()) {
+            return queryToken;
+        }
+
         return null;
     }
 }

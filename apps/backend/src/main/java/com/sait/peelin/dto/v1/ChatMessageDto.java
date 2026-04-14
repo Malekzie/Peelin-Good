@@ -7,6 +7,8 @@ public record ChatMessageDto(
         Integer id,
         Integer threadId,
         UUID senderUserId,
+        String senderUsername,
+        String senderRole,
         String text,
         OffsetDateTime sentAt,
         boolean read

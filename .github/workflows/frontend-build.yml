@@ -5,10 +5,14 @@ on:
     branches: [main]
     paths:
       - "apps/frontend/**"
+      - ".do/**"
+      - ".github/workflows/**"
   pull_request:
     branches: [main]
     paths:
       - "apps/frontend/**"
+      - ".do/**"
+      - ".github/workflows/**"
 
 permissions:
   contents: read
@@ -41,7 +45,7 @@ jobs:
 
       - name: Fixing Lint
         run: npx prettier --write .
-  
+
       - name: Type check
         run: npm run check
 
@@ -133,6 +137,7 @@ jobs:
         uses: digitalocean/app_action/deploy@v2
         with:
           deploy_pr_preview: "true"
+          app_spec_location: ".do/app-preview.yaml"
           token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
 
       - name: Comment preview URL on PR

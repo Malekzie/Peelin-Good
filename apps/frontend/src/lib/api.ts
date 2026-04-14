@@ -1,9 +1,14 @@
 const API_BASE = '/api/v1';
 
 function getToken(): string | null {
-	if (typeof document === 'undefined') return null;
-	const match = document.cookie.match(/(?:^|;\s*)jwt=([^;]*)/);
-	return match ? decodeURIComponent(match[1]) : null;
+	if (typeof window === 'undefined') return null;
+
+	const localToken = window.localStorage.getItem('token');
+	if (localToken && localToken.trim().length > 0) {
+		return localToken;
+	}
+
+	return null;
 }
 
 function authHeaders(): Record<string, string> {
@@ -14,6 +19,7 @@ function authHeaders(): Record<string, string> {
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
 	const response = await fetch(`${API_BASE}${path}`, {
 		method,
+		credentials: 'include',
 		headers: {
 			'Content-Type': 'application/json',
 			...authHeaders()
@@ -22,8 +28,10 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
 	});
 
 	if (response.status === 401) {
-		document.cookie = 'jwt=; max-age=0; path=/';
-		window.location.href = '/login';
+		if (typeof window !== 'undefined') {
+			window.localStorage.removeItem('token');
+			window.location.href = '/login';
+		}
 		throw new Error('Unauthorized');
 	}
 
