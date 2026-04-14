@@ -8,6 +8,8 @@
 	import { ModeWatcher } from 'mode-watcher';
 	import { user } from '$lib/stores/authStore';
 	import { cart, cartCount } from '$lib/stores/cart';
+	import ChatWidget from '$lib/components/chat/ChatWidget.svelte';
+	import { connectWs, disconnectWs } from '$lib/services/ws';
 
 	let { children } = $props();
 	const hideFooter = $derived(
@@ -16,6 +18,14 @@
 
 	$effect(() => {
 		cart.switchUser($user?.userId ?? null);
+	});
+
+	$effect(() => {
+		if ($user) {
+			connectWs();
+		} else {
+			disconnectWs();
+		}
 	});
 </script>
 
@@ -37,3 +47,4 @@
 {#if !hideFooter}
 	<Footer />
 {/if}
+<ChatWidget />

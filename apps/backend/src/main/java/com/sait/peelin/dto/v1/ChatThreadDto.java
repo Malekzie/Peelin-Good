@@ -11,6 +11,8 @@ public record ChatThreadDto(
         String customerEmail,
         UUID employeeUserId,
         String status,
+        String category,
         OffsetDateTime createdAt,
-        OffsetDateTime updatedAt
+        OffsetDateTime updatedAt,
+        OffsetDateTime closedAt
 ) {}

@@ -58,3 +58,6 @@ vite.config.ts.timestamp-*
 
 # Agents
 .claude+
+.gitnexus
+CLAUDE.md
+AGENTS.md

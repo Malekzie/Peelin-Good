@@ -125,3 +125,48 @@ export interface AnalyticsPoint {
 	label: string;
 	value: number;
 }
+
+export interface ChatThread {
+	id: number;
+	customerUserId: string;
+	customerDisplayName: string | null;
+	customerUsername: string;
+	customerEmail: string | null;
+	employeeUserId: string | null;
+	status: string;
+	category: string;
+	createdAt: string;
+	updatedAt: string;
+	closedAt: string | null;
+}
+
+export interface ChatMessage {
+	id: number;
+	threadId: number;
+	senderUserId: string;
+	text: string;
+	sentAt: string;
+	read: boolean;
+}
+
+export interface StaffConversation {
+	id: number;
+	otherUserId: string;
+	otherUsername: string;
+	updatedAt: string;
+	unreadCount: number;
+}
+
+export interface StaffMessage {
+	id: number;
+	conversationId: number;
+	senderUserId: string;
+	text: string;
+	sentAt: string;
+	read: boolean;
+}
+
+export interface TypingPayload {
+	userId: string;
+	typing: boolean;
+}

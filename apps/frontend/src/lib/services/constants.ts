@@ -17,3 +17,5 @@ export const ADMIN_ANALYTICS_API = `${API_V1}/admin/analytics` as const;
 export const ADMIN_CUSTOMERS_API = `${API_V1}/admin/customers` as const;
 export const ADMIN_USERS_API = `${API_V1}/admin/users` as const;
 export const EMPLOYEE_STAFF_API = `${API_V1}/employee/staff` as const;
+export const CHAT_API = `${API_V1}/chat` as const;
+export const STAFF_MESSAGES_API = `${API_V1}/messages` as const;

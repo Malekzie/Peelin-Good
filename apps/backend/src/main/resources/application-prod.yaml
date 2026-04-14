@@ -14,7 +14,7 @@ spring:
     show-sql: false
   flyway:
     enabled: true
-    locations: classpath:db/migration
+    locations: classpath:db/migration/prod
     default-schema: public
     schemas: public
     # *:missing — DB history may list a version no longer in the repo (e.g. old V28); Flyway 9+ requires this pattern (not ignore-missing-migrations).
