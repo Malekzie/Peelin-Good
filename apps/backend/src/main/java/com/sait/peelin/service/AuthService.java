@@ -6,6 +6,7 @@ import com.sait.peelin.dto.v1.auth.ChangePasswordRequest;
 import com.sait.peelin.dto.v1.auth.DeactivateAccountRequest;
 import com.sait.peelin.dto.v1.auth.LoginAccountChoice;
 import com.sait.peelin.dto.v1.auth.LoginRequest;
+import com.sait.peelin.dto.v1.auth.RegisterAvailabilityResponse;
 import com.sait.peelin.dto.v1.auth.RegisterRequest;
 import com.sait.peelin.exception.AmbiguousLinkedLoginException;
 import com.sait.peelin.model.Customer;
@@ -139,13 +140,30 @@ public class AuthService {
         return jwtService.generateToken(userDetails);
     }
 
+    /**
+     * Lightweight check for multi-step UIs: username and sign-in email must not already exist (case-insensitive).
+     * Email may still match an employee work email only — that does not use a {@link User} row until registered.
+     */
+    @Transactional(readOnly = true)
+    public RegisterAvailabilityResponse getRegisterAvailability(String username, String email) {
+        String u = username != null ? username.trim() : "";
+        String e = email != null ? email.trim().toLowerCase() : "";
+        boolean usernameAvailable = u.isEmpty() || !userRepository.existsByUsernameIgnoreCase(u);
+        boolean emailAvailable = e.isEmpty() || !userRepository.existsByUserEmailIgnoreCase(e);
+        return new RegisterAvailabilityResponse(usernameAvailable, emailAvailable);
+    }
+
     @Transactional
     public AuthResponse register(RegisterRequest request) {
-        if (userRepository.existsByUsername(request.getUsername())) {
+        String usernameTrim = request.getUsername().trim();
+        if (!StringUtils.hasText(usernameTrim)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Username required");
+        }
+        if (userRepository.existsByUsernameIgnoreCase(usernameTrim)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Username already taken");
         }
         String emailNorm = request.getEmail().trim().toLowerCase();
-        if (userRepository.existsByUserEmail(emailNorm)) {
+        if (userRepository.existsByUserEmailIgnoreCase(emailNorm)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already registered");
         }
 
@@ -159,7 +177,7 @@ public class AuthService {
         }
 
         User user = new User();
-        user.setUsername(request.getUsername());
+        user.setUsername(usernameTrim);
         user.setUserEmail(emailNorm);
         user.setUserPasswordHash(passwordEncoder.encode(request.getPassword()));
         user.setUserRole(UserRole.customer);

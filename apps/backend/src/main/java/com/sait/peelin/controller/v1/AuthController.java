@@ -1,6 +1,11 @@
 package com.sait.peelin.controller.v1;
 
-import com.sait.peelin.dto.v1.auth.*;
+import com.sait.peelin.dto.v1.auth.AuthResponse;
+import com.sait.peelin.dto.v1.auth.ForgotPasswordRequest;
+import com.sait.peelin.dto.v1.auth.LoginRequest;
+import com.sait.peelin.dto.v1.auth.RegisterAvailabilityResponse;
+import com.sait.peelin.dto.v1.auth.RegisterRequest;
+import com.sait.peelin.dto.v1.auth.ResetPasswordRequest;
 import com.sait.peelin.model.User;
 import com.sait.peelin.service.AuthService;
 import com.sait.peelin.service.CurrentUserService;
@@ -86,6 +91,14 @@ public class AuthController {
         setTokenCookie(response, authResponse.getToken(), loginRequest.isRememberMe());
 
         return ResponseEntity.ok(authResponse);
+    }
+
+    @Operation(summary = "Register availability", description = "Check username and email before completing a multi-step registration (case-insensitive).")
+    @GetMapping("/register/availability")
+    public ResponseEntity<RegisterAvailabilityResponse> registerAvailability(
+            @RequestParam(required = false) String username,
+            @RequestParam(required = false) String email) {
+        return ResponseEntity.ok(authService.getRegisterAvailability(username, email));
     }
 
     @Operation(summary = "Register", description = "Create a new customer account. Returns a JWT token immediately upon success.")

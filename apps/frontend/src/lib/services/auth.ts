@@ -88,6 +88,41 @@ export async function logoutUser(): Promise<void> {
 	clearAuth();
 }
 
+export type RegisterAvailabilityResult =
+	| { ok: true; usernameAvailable: boolean; emailAvailable: boolean }
+	| { ok: false; message: string };
+
+/**
+ * Pre-check before step 2 of registration (matches Android / backend case-insensitive rules).
+ */
+export async function fetchRegisterAvailability(
+	username: string,
+	email: string
+): Promise<RegisterAvailabilityResult> {
+	try {
+		const params = new URLSearchParams();
+		params.set('username', username.trim());
+		params.set('email', email.trim().toLowerCase());
+		const res = await fetch(`${AUTH_API}/register/availability?${params.toString()}`, {
+			credentials: 'include'
+		});
+		if (!res.ok) {
+			return { ok: false, message: 'Could not verify account details. Try again.' };
+		}
+		const data = (await res.json()) as {
+			usernameAvailable?: boolean;
+			emailAvailable?: boolean;
+		};
+		return {
+			ok: true,
+			usernameAvailable: data.usernameAvailable !== false,
+			emailAvailable: data.emailAvailable !== false
+		};
+	} catch {
+		return { ok: false, message: 'Could not reach the server. Try again later.' };
+	}
+}
+
 export async function registerUser(payload: Record<string, unknown>): Promise<RegisterResult> {
 	try {
 		const res = await fetch(`${AUTH_API}/register`, {

@@ -1,5 +1,5 @@
 <script>
-	import { registerUser } from '$lib/services/auth';
+	import { fetchRegisterAvailability, registerUser } from '$lib/services/auth';
 	import { updateProfile } from '$lib/services/profile';
 	import { resolve } from '$app/paths';
 	import { goto } from '$app/navigation';
@@ -52,6 +52,8 @@
 
 	let step = 1;
 	let showPassword = false;
+	/** True while calling register/availability before advancing to step 2 */
+	let step1Checking = false;
 
 	const stepOneFields = ['firstName', 'lastName', 'email', 'username', 'password'];
 	const stepTwoFields = ['phone', 'addressLine1', 'city', 'province', 'postalCode'];
@@ -387,10 +389,11 @@
 						</a>
 						<button
 							type="button"
-							onclick={nextStep}
-							class="text-on-primary rounded-full bg-primary px-6 py-2.5 text-sm font-bold transition hover:cursor-pointer hover:opacity-90"
+							disabled={step1Checking}
+							onclick={() => void nextStep()}
+							class="text-on-primary rounded-full bg-primary px-6 py-2.5 text-sm font-bold transition hover:cursor-pointer hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
 						>
-							Continue
+							{step1Checking ? 'Checking…' : 'Continue'}
 						</button>
 					</div>
 				{:else}

@@ -34,6 +34,9 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     List<User> findAllActiveByLoginPrincipal(@Param("principal") String principal);
 
     boolean existsByUsername(String username);
+
+    boolean existsByUsernameIgnoreCase(String username);
+
     boolean existsByUserEmail(String userEmail);
 
     boolean existsByUserEmailIgnoreCase(String userEmail);
