@@ -1,3 +1,0 @@
-ALTER TABLE tag ADD COLUMN is_dietary BOOLEAN NOT NULL DEFAULT FALSE;
-
-UPDATE tag SET is_dietary = TRUE WHERE tag_id IN (5, 6, 8, 11);
