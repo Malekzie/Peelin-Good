@@ -38,6 +38,14 @@ public class ChatThread {
     @Column(name = "updated_at", nullable = false)
     private OffsetDateTime updatedAt;
 
+    @NotNull
+    @Column(name = "category", nullable = false, length = 30)
+    @ColumnDefault("'general'")
+    private String category = "general";
+
+    @Column(name = "closed_at")
+    private OffsetDateTime closedAt;
+
     public Integer getId() {
         return id;
     }
@@ -84,5 +92,21 @@ public class ChatThread {
 
     public void setUpdatedAt(OffsetDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public String getCategory() {
+        return category;
+    }
+
+    public void setCategory(String category) {
+        this.category = category;
+    }
+
+    public OffsetDateTime getClosedAt() {
+        return closedAt;
+    }
+
+    public void setClosedAt(OffsetDateTime closedAt) {
+        this.closedAt = closedAt;
     }
 }
