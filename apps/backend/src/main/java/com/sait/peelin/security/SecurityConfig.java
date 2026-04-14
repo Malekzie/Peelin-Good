@@ -23,7 +23,6 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final CorsConfigurationSource corsConfigurationSource;
-    private final OAuth2SuccessHandler oAuth2SuccessHandler;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -34,6 +33,8 @@ public class SecurityConfig {
                         session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/logout").authenticated()
+
+                        // 🔥 PUBLIC ENDPOINTS
                         .requestMatchers(
                                 "/test-error",
                                 "/unhandled",
@@ -44,11 +45,15 @@ public class SecurityConfig {
                                 "/swagger-ui.html",
                                 "/swagger-ui/**",
                                 "/v3/api-docs",
-                                "/v3/api-docs/**",
-                                "/login/oauth2/**",
-                                "/oauth2/**",
-                                "/ws/chat"
+                                "/v3/api-docs/**"
                         ).permitAll()
+
+                        // 🔥 CHAT + WEBSOCKET (THIS FIXES YOUR ISSUE)
+                        .requestMatchers("/ws/**").permitAll()
+                        .requestMatchers("/api/v1/chat/**").permitAll()
+                        .requestMatchers("/api/v1/messages/**").permitAll()
+
+                        // 🔥 EXISTING PUBLIC DATA
                         .requestMatchers(HttpMethod.POST, "/api/v1/orders").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/products/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/reviews/top").permitAll()
@@ -57,10 +62,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/tags/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/reward-tiers", "/api/v1/reward-tiers/**").permitAll()
                         .requestMatchers("/api/v1/auth/forgot-password", "/api/v1/auth/reset-password").permitAll()
+
                         .anyRequest().authenticated()
                 )
-                .oauth2Login(oauth2 -> oauth2
-                        .successHandler(oAuth2SuccessHandler))
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

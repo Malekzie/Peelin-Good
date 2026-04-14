@@ -5,12 +5,15 @@ import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CachingConfigurer;
 import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.cache.concurrent.ConcurrentMapCacheManager;
 import org.springframework.cache.interceptor.CacheErrorHandler;
 import org.springframework.cache.interceptor.SimpleCacheErrorHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -27,8 +30,12 @@ public class CacheConfig implements CachingConfigurer {
 
     private static final Logger log = LoggerFactory.getLogger(CacheConfig.class);
 
+    /**
+     * 🔥 REDIS CACHE (ONLY when profile = "redis")
+     */
     @Bean
-    public RedisCacheManager cacheManager(RedisConnectionFactory connectionFactory) {
+    @Profile("redis")
+    public RedisCacheManager redisCacheManager(RedisConnectionFactory connectionFactory) {
         ObjectMapper mapper = new ObjectMapper();
         mapper.findAndRegisterModules();
         mapper.activateDefaultTyping(
@@ -62,6 +69,29 @@ public class CacheConfig implements CachingConfigurer {
                 .cacheDefaults(defaultConfig)
                 .withInitialCacheConfigurations(cacheConfigurations)
                 .build();
+    }
+
+    /**
+     * 🔥 LOCAL CACHE (used in dev instead of Redis)
+     */
+    @Bean
+    @Profile("!redis")
+    public CacheManager cacheManager() {
+        return new ConcurrentMapCacheManager(
+                "tags",
+                "products",
+                "bakeries",
+                "product-specials-v2",
+                "orders",
+                "rewards",
+                "analytics",
+                "dashboard",
+                "customers",
+                "employees",
+                "current-users",
+                "reward-tiers",
+                "reviews"
+        );
     }
 
     @Override
