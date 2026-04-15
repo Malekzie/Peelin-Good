@@ -367,15 +367,8 @@ public class CustomerService {
     }
 
     @Transactional
-    @CacheEvict(value = "customers", allEntries = true)
     public ProfilePhotoResponse uploadMyProfilePhoto(MultipartFile photo) {
         User u = currentUserService.requireUser();
-        if (Boolean.TRUE.equals(u.getPhotoApprovalPending())) {
-            throw new ResponseStatusException(
-                    HttpStatus.CONFLICT,
-                    "A profile photo is already pending approval"
-            );
-        }
         validateProfilePhotoFile(photo);
 
         String previousPhotoPath = u.getProfilePhotoPath();

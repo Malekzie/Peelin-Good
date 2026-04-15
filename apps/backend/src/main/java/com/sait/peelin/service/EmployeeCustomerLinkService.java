@@ -79,10 +79,9 @@ public class EmployeeCustomerLinkService {
         if (match == null) {
             return false;
         }
-        if (hasBlockingActiveLink(match)) {
+        if (linkRepository.existsByEmployee_Id(match.getId())) {
             return false;
         }
-        clearReusableStaleEmployeeLink(match);
         EmployeeCustomerLink link = new EmployeeCustomerLink();
         link.setEmployee(match);
         link.setCustomer(customer);
@@ -103,9 +102,9 @@ public class EmployeeCustomerLinkService {
             return Optional.empty();
         }
         String e = emailNormalized.trim();
-        List<Employee> byEmail = employeeRepository.findByWorkOrUserEmailNormalized(e);
+        List<Employee> byEmail = employeeRepository.findByWorkEmailNormalized(e);
         List<Employee> unlinked = byEmail.stream()
-                .filter(emp -> !hasBlockingActiveLink(emp))
+                .filter(emp -> !linkRepository.existsByEmployee_Id(emp.getId()))
                 .toList();
         if (unlinked.size() == 1) {
             return Optional.of(unlinked.get(0));
@@ -152,46 +151,5 @@ public class EmployeeCustomerLinkService {
         Employee employeeFresh = employeeRepository.findById(employeeId).orElse(employee);
         Customer customerFresh = customerRepository.findById(customerId).orElse(customer);
         linkedProfileSyncService.afterLinkCreated(employeeFresh, customerFresh);
-    }
-
-    private boolean hasBlockingActiveLink(Employee employee) {
-        if (employee == null || employee.getId() == null) {
-            return false;
-        }
-        Optional<EmployeeCustomerLink> link = linkRepository.findByEmployee_Id(employee.getId());
-        if (link.isEmpty()) {
-            return false;
-        }
-        EmployeeCustomerLink l = link.get();
-        Customer linkedCustomer = l.getCustomer();
-        if (linkedCustomer == null || linkedCustomer.getUser() == null) {
-            return false;
-        }
-        User linkedCustomerUser = linkedCustomer.getUser();
-        return Boolean.TRUE.equals(linkedCustomerUser.getActive());
-    }
-
-    /**
-     * If a historical link points to an inactive/missing customer user, allow relinking by removing it.
-     */
-    private void clearReusableStaleEmployeeLink(Employee employee) {
-        if (employee == null || employee.getId() == null) {
-            return;
-        }
-        Optional<EmployeeCustomerLink> link = linkRepository.findByEmployee_Id(employee.getId());
-        if (link.isEmpty()) {
-            return;
-        }
-        EmployeeCustomerLink existing = link.get();
-        Customer linkedCustomer = existing.getCustomer();
-        boolean reusable = linkedCustomer == null
-                || linkedCustomer.getUser() == null
-                || !Boolean.TRUE.equals(linkedCustomer.getUser().getActive());
-        if (!reusable) {
-            return;
-        }
-        linkRepository.delete(existing);
-        log.info("Removed stale employee-customer link {} for employee {}",
-                existing.getId(), employee.getId());
     }
 }

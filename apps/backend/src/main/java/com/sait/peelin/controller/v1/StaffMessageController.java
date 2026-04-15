@@ -3,6 +3,7 @@ package com.sait.peelin.controller.v1;
 import com.sait.peelin.dto.v1.SendStaffMessageRequest;
 import com.sait.peelin.dto.v1.StaffConversationDto;
 import com.sait.peelin.dto.v1.StaffMessageDto;
+import com.sait.peelin.dto.v1.StaffRecipientDto;
 import com.sait.peelin.dto.v1.StartConversationRequest;
 import com.sait.peelin.service.StaffMessageService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -28,6 +29,11 @@ public class StaffMessageController {
     @GetMapping("/conversations")
     public List<StaffConversationDto> conversations() {
         return staffMessageService.conversations();
+    }
+
+    @GetMapping("/recipients")
+    public List<StaffRecipientDto> recipients() {
+        return staffMessageService.listRecipients();
     }
 
     @PostMapping("/conversations")

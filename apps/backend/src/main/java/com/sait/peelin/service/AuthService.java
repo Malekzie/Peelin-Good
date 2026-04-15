@@ -72,7 +72,7 @@ public class AuthService {
                 .orElse(null);
 
         if (explicitUsername != null) {
-            User user = userRepository.findByUsername(explicitUsername)
+            User user = userRepository.findByUsernameIgnoreCase(explicitUsername)
                     .orElseThrow(() -> new BadCredentialsException("Bad credentials"));
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(user.getUsername(), rawPassword));
@@ -151,9 +151,14 @@ public class AuthService {
         String e = email != null ? email.trim().toLowerCase() : "";
         boolean usernameAvailable = u.isEmpty() || !userRepository.existsByUsernameIgnoreCase(u);
         boolean emailAvailable = e.isEmpty() || !isCustomerOrAdminSignInEmailTaken(e);
-        boolean employeeLinkOffered = !e.isEmpty()
-                && emailAvailable
-                && employeeCustomerLinkService.findSingleUnlinkedEmployeeByWorkEmail(e).isPresent();
+        boolean employeeLinkOffered = false;
+        if (!e.isEmpty() && emailAvailable) {
+            Optional<Employee> match = employeeCustomerLinkService.findSingleUnlinkedEmployeeByWorkEmail(e);
+            if (match.isPresent()) {
+                User empUser = match.get().getUser();
+                employeeLinkOffered = empUser != null && StringUtils.hasText(empUser.getUserPasswordHash());
+            }
+        }
         return new RegisterAvailabilityResponse(usernameAvailable, emailAvailable, employeeLinkOffered);
     }
 
@@ -179,16 +184,17 @@ public class AuthService {
         java.util.Optional<Employee> linkEmployee =
                 employeeCustomerLinkService.findSingleUnlinkedEmployeeByWorkEmail(emailNorm);
         if (linkEmployee.isPresent()) {
-            String elp = request.getEmployeeLinkPassword();
-            if (!StringUtils.hasText(elp)) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                        "Employee password required to link your customer account.");
-            }
             User empUser = linkEmployee.get().getUser();
-            if (empUser == null || !StringUtils.hasText(empUser.getUserPasswordHash())
-                    || !passwordEncoder.matches(elp, empUser.getUserPasswordHash())) {
-                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                        "Employee password does not match this work email.");
+            if (empUser != null && StringUtils.hasText(empUser.getUserPasswordHash())) {
+                String elp = request.getEmployeeLinkPassword();
+                if (!StringUtils.hasText(elp)) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                            "Employee password required to link your customer account.");
+                }
+                if (!passwordEncoder.matches(elp, empUser.getUserPasswordHash())) {
+                    throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                            "Employee password does not match this work email.");
+                }
             }
         }
 
@@ -259,7 +265,7 @@ public class AuthService {
 
         if (req.getUsername() != null) {
             String nu = req.getUsername().trim();
-            if (!nu.equals(u.getUsername())) {
+            if (!nu.equalsIgnoreCase(u.getUsername())) {
                 if (nu.isEmpty()) {
                     throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Username cannot be empty");
                 }
@@ -275,8 +281,8 @@ public class AuthService {
         }
 
         if (req.getEmail() != null) {
-            String ne = req.getEmail().trim();
-            if (!ne.equals(u.getUserEmail())) {
+            String ne = req.getEmail().trim().toLowerCase();
+            if (!ne.equalsIgnoreCase(u.getUserEmail())) {
                 if (ne.isEmpty()) {
                     throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email cannot be empty");
                 }

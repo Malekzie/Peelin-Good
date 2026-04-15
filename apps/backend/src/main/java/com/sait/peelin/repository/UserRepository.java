@@ -27,8 +27,8 @@ public interface UserRepository extends JpaRepository<User, UUID> {
             SELECT u FROM User u
             WHERE u.active = true
               AND (
-                trim(u.username) = trim(:principal)
-                OR trim(u.userEmail) = trim(:principal)
+                lower(trim(u.username)) = lower(trim(:principal))
+                OR lower(trim(u.userEmail)) = lower(trim(:principal))
               )
             """)
     List<User> findAllActiveByLoginPrincipal(@Param("principal") String principal);

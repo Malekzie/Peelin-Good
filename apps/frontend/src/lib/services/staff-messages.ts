@@ -1,6 +1,18 @@
 import { STAFF_MESSAGES_API } from '$lib/services/constants';
 import type { StaffConversation, StaffMessage } from '$lib/services/types';
 
+export interface StaffRecipient {
+    userId: string;
+    username: string;
+    role: string;
+}
+
+export async function listRecipients(): Promise<StaffRecipient[]> {
+    const res = await fetch(`${STAFF_MESSAGES_API}/recipients`, { credentials: 'include' });
+    if (!res.ok) throw new Error('Failed to fetch recipients');
+    return res.json();
+}
+
 export async function getConversations(): Promise<StaffConversation[]> {
     const res = await fetch(`${STAFF_MESSAGES_API}/conversations`, { credentials: 'include' });
     if (!res.ok) throw new Error('Failed to fetch conversations');
