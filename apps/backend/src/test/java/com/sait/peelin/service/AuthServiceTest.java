@@ -81,9 +81,9 @@ class AuthServiceTest {
         request.setEmail("test@example.com");
         request.setPassword("password");
         when(userRepository.existsByUsernameIgnoreCase("testuser")).thenReturn(false);
-        when(userRepository.existsByUserEmailIgnoreCaseAndUserRole(eq("test@example.com"), eq(UserRole.customer)))
+        when(userRepository.existsByUserEmailIgnoreCaseAndUserRole(eq("test@example.com"), eq("customer")))
                 .thenReturn(false);
-        when(userRepository.existsByUserEmailIgnoreCaseAndUserRole(eq("test@example.com"), eq(UserRole.admin)))
+        when(userRepository.existsByUserEmailIgnoreCaseAndUserRole(eq("test@example.com"), eq("admin")))
                 .thenReturn(false);
         when(customerRepository.findGuestCustomersByEmailNormalized("test@example.com")).thenReturn(List.of());
         when(passwordEncoder.encode("password")).thenReturn("encoded_password");
@@ -113,9 +113,9 @@ class AuthServiceTest {
     @Test
     void getRegisterAvailability_EmailStillAvailableWhenOnlyEmployeeUsesIt() {
         when(userRepository.existsByUsernameIgnoreCase("newcust")).thenReturn(false);
-        when(userRepository.existsByUserEmailIgnoreCaseAndUserRole(eq("staff@bakery.ca"), eq(UserRole.customer)))
+        when(userRepository.existsByUserEmailIgnoreCaseAndUserRole(eq("staff@bakery.ca"), eq("customer")))
                 .thenReturn(false);
-        when(userRepository.existsByUserEmailIgnoreCaseAndUserRole(eq("staff@bakery.ca"), eq(UserRole.admin)))
+        when(userRepository.existsByUserEmailIgnoreCaseAndUserRole(eq("staff@bakery.ca"), eq("admin")))
                 .thenReturn(false);
 
         RegisterAvailabilityResponse res =
@@ -128,7 +128,7 @@ class AuthServiceTest {
     @Test
     void getRegisterAvailability_EmailTakenWhenCustomerUsesIt() {
         when(userRepository.existsByUsernameIgnoreCase("x")).thenReturn(false);
-        when(userRepository.existsByUserEmailIgnoreCaseAndUserRole(eq("taken@bakery.ca"), eq(UserRole.customer)))
+        when(userRepository.existsByUserEmailIgnoreCaseAndUserRole(eq("taken@bakery.ca"), eq("customer")))
                 .thenReturn(true);
 
         RegisterAvailabilityResponse res = authService.getRegisterAvailability("x", "taken@bakery.ca");

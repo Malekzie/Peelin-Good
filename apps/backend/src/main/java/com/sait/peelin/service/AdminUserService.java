@@ -120,8 +120,8 @@ public class AdminUserService {
         if (userRepository.existsByUsername(usernameTrimmed)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Username already taken");
         }
-        if (userRepository.existsByUserEmailIgnoreCaseAndUserRole(emailNorm, UserRole.customer)
-                || userRepository.existsByUserEmailIgnoreCaseAndUserRole(emailNorm, UserRole.admin)) {
+        if (userRepository.existsByUserEmailIgnoreCaseAndUserRole(emailNorm, UserRole.customer.name())
+                || userRepository.existsByUserEmailIgnoreCaseAndUserRole(emailNorm, UserRole.admin.name())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already registered");
         }
 

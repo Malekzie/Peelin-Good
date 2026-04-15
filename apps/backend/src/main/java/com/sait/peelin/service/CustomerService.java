@@ -92,6 +92,16 @@ public class CustomerService {
         return toDto(c);
     }
 
+    /**
+     * Evicts cached "me" projections after account-identity updates (username/email),
+     * so profile surfaces fresh data immediately.
+     */
+    @CacheEvict(value = "customers", keyGenerator = "userIdKeyGenerator")
+    public void evictCurrentCustomerCaches() {
+        User u = currentUserService.requireUser();
+        customerLookupCacheService.evictByUserId(u.getUserId());
+    }
+
     @Transactional
     public Customer createRegisteredCustomer(User user, String phone) {
         Customer existing = customerRepository.findByUser_UserId(user.getUserId()).orElse(null);
@@ -500,8 +510,8 @@ public class CustomerService {
             return;
         }
         String emailNorm = trimmed.toLowerCase();
-        if (userRepository.existsByUserEmailIgnoreCaseAndUserRole(emailNorm, UserRole.customer)
-                || userRepository.existsByUserEmailIgnoreCaseAndUserRole(emailNorm, UserRole.admin)) {
+        if (userRepository.existsByUserEmailIgnoreCaseAndUserRole(emailNorm, UserRole.customer.name())
+                || userRepository.existsByUserEmailIgnoreCaseAndUserRole(emailNorm, UserRole.admin.name())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "This email is already registered. Sign in to complete your order.");
         }
