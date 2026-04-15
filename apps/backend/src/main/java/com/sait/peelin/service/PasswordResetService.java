@@ -98,10 +98,13 @@ public class PasswordResetService {
         tokenRepository.save(resetToken);
     }
 
+    // generates a random number from random values from the OS and stores them in a 32 byte array of numbers.
     private String generateSecureToken() {
         SecureRandom random = new SecureRandom();
         byte[] bytes = new byte[32];
         random.nextBytes(bytes);
+
+        // converts the array of bytes into a readable string that is compatible with URLS
         return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
     }
 

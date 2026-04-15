@@ -55,8 +55,8 @@ public class ReviewModerationService {
                 You are a content moderator for product-only customer reviews in a bakery marketplace.
 
                 Decide whether this text should be published. Set "approved" to true only if the review is acceptable in substance and tone.
-
-                Approve when the review stays on topic for the product: taste, texture, freshness, quality, portion size, price/value, or packaging of the baked item itself. Brief background is fine.
+    
+                Approve when the review stays on topic for the product: taste, texture, freshness, quality, portion size, price/value, or packaging of the baked item itself. Brief background is fine. Metaphors, comparisons, or evocative language about taste or quality (e.g. "like I'm in Paris", "tastes like home") should be approved even if they reference a place or atmosphere.
 
                 Reject ("approved": false) when:
                 - It contains slurs, hate speech, threats, graphic content, obvious spam/gibberish, harassment, or personal attacks; or

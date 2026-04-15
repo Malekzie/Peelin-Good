@@ -256,8 +256,8 @@
 <!-- Review Form Modal -->
 <OrderReviewForm
 	modal={reviewModal}
-	rating={reviewRating}
-	comment={reviewComment}
+	bind:rating={reviewRating}
+	bind:comment={reviewComment}
 	submitting={reviewSubmitting}
 	error={reviewError}
 	success={reviewSuccess}

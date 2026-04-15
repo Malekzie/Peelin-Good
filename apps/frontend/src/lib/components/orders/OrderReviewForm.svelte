@@ -5,8 +5,8 @@
 	 */
 	let {
 		modal = null,
-		rating = 0,
-		comment = '',
+		rating = $bindable(0),
+		comment = $bindable(''),
 		submitting = false,
 		error = null,
 		success = false,
