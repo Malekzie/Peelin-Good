@@ -24,13 +24,31 @@
 	} from '@lucide/svelte';
 
 	const allNavLinks = [
-		{ label: 'Dashboard', href: '/staff/dashboard', icon: LayoutDashboard, roles: null, exact: false },
+		{
+			label: 'Dashboard',
+			href: '/staff/dashboard',
+			icon: LayoutDashboard,
+			roles: null,
+			exact: false
+		},
 		{ label: 'Orders', href: '/staff/orders', icon: ShoppingBag, roles: null, exact: false },
 		{ label: 'Customers', href: '/staff/customers', icon: Users, roles: null, exact: false },
 		{ label: 'Support Chat', href: '/staff/chat', icon: MessageCircle, roles: null, exact: true },
-		{ label: 'Chat Archive', href: '/staff/chat/archived', icon: Archive, roles: ['admin'], exact: true },
+		{
+			label: 'Chat Archive',
+			href: '/staff/chat/archived',
+			icon: Archive,
+			roles: ['admin'],
+			exact: true
+		},
 		{ label: 'Messages', href: '/staff/messages', icon: MessagesSquare, roles: null, exact: false },
-		{ label: 'Analytics', href: '/staff/analytics', icon: BarChart2, roles: ['admin'], exact: false },
+		{
+			label: 'Analytics',
+			href: '/staff/analytics',
+			icon: BarChart2,
+			roles: ['admin'],
+			exact: false
+		},
 		{ label: 'Products', href: '/staff/products', icon: Package, roles: ['admin'], exact: false },
 		{ label: 'Employees', href: '/staff/staff', icon: UserCog, roles: ['admin'], exact: false },
 		{ label: 'Users', href: '/staff/users', icon: Shield, roles: ['admin'], exact: false },
@@ -50,32 +68,52 @@
 </script>
 
 <!-- Mobile top nav -->
-<nav
-	class="flex items-center gap-1 overflow-x-auto border-b border-border bg-card px-4 py-2 md:hidden"
-	style="scrollbar-width: none;"
->
-	{#each navLinks as link (link.href)}
-		{@const active =
-			page.url.pathname === link.href || (!link.exact && page.url.pathname.startsWith(link.href + '/'))}
-		<a
-			href={resolve(link.href)}
-			class="flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors
-				{active
-				? 'bg-primary text-primary-foreground'
-				: 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
-		>
-			<link.icon class="h-4 w-4 shrink-0" />
-			{link.label}
-		</a>
-	{/each}
+<div class="relative flex items-center border-b border-border bg-card md:hidden">
 	<button
-		onclick={handleLogout}
-		class="flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-destructive"
+		type="button"
+		onclick={() =>
+			document.getElementById('mobile-nav').scrollBy({ left: -120, behavior: 'smooth' })}
+		class="shrink-0 px-2 py-3 text-muted-foreground hover:text-foreground"
 	>
-		<LogOut class="h-4 w-4 shrink-0" />
-		Log out
+		‹
 	</button>
-</nav>
+	<nav
+		id="mobile-nav"
+		class="flex flex-1 items-center gap-1 overflow-x-auto px-1 py-2"
+		style="scrollbar-width: none;"
+	>
+		{#each navLinks as link (link.href)}
+			{@const active =
+				page.url.pathname === link.href ||
+				(!link.exact && page.url.pathname.startsWith(link.href + '/'))}
+			<a
+				href={resolve(link.href)}
+				class="flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors
+					{active
+					? 'bg-primary text-primary-foreground'
+					: 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
+			>
+				<link.icon class="h-4 w-4 shrink-0" />
+				{link.label}
+			</a>
+		{/each}
+		<button
+			onclick={handleLogout}
+			class="flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-destructive"
+		>
+			<LogOut class="h-4 w-4 shrink-0" />
+			Log out
+		</button>
+	</nav>
+	<button
+		type="button"
+		onclick={() =>
+			document.getElementById('mobile-nav').scrollBy({ left: 120, behavior: 'smooth' })}
+		class="shrink-0 px-2 py-3 text-muted-foreground hover:text-foreground"
+	>
+		›
+	</button>
+</div>
 
 <aside
 	class="hidden h-full w-64 shrink-0 flex-col overflow-y-auto border-r border-border bg-card md:flex"
