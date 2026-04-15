@@ -1,10 +1,12 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { Skeleton } from '$lib/components/ui/skeleton';
 	import * as Chart from '$lib/components/ui/chart/index.js';
 	import { BarChart, LineChart } from 'layerchart';
 	import { scaleBand } from 'd3-scale';
 	import KpiCard from '$lib/components/staff/KpiCard.svelte';
 	import {
+		getBakeryNames,
 		getTotalRevenue,
 		getAverageOrderValue,
 		getCompletionRate,
@@ -16,31 +18,31 @@
 	import { formatPriceCad } from '$lib/utils/money';
 
 	type AnalyticsPoint = { label: string; value: number };
-	type AnalyticsData = {
-		bakeryNames: Promise<string[]>;
-		initialData: { startDate: string; endDate: string };
-		totalRevenue: Promise<number>;
-		aov: Promise<number>;
-		completionRate: Promise<number>;
-		revenueOverTime: Promise<AnalyticsPoint[]>;
-		revenueByBakery: Promise<AnalyticsPoint[]>;
-		topProducts: Promise<AnalyticsPoint[]>;
-		salesByEmployee: Promise<AnalyticsPoint[]>;
-	};
 
 	interface Props {
-		data: AnalyticsData;
+		data: { startDate: string; endDate: string };
 	}
 
 	let { data }: Props = $props();
-	const initialStartDate = () => data.initialData.startDate;
-	const initialEndDate = () => data.initialData.endDate;
-	const initialData = () => data;
 
-	let startDate = $state(initialStartDate());
-	let endDate = $state(initialEndDate());
+	// svelte-ignore state_referenced_locally
+	let startDate = $state(data.startDate);
+	// svelte-ignore state_referenced_locally
+	let endDate = $state(data.endDate);
 	let selectedBakery = $state('');
-	let filteredData = $state<AnalyticsData>(initialData());
+
+	// A pending promise that never resolves — used as a placeholder during SSR
+	// and before the client-side fetches are kicked off in onMount. The {#await}
+	// blocks will render their skeletons while these are pending, so the page
+	// HTML ships immediately instead of waiting on backend queries.
+	const pending = <T,>(): Promise<T> => new Promise<T>(() => {});
+
+	let bakeryNamesPromise = $state<Promise<string[]>>(pending());
+	let kpisPromise = $state<Promise<[number, number, number]>>(pending());
+	let revenueOverTimePromise = $state<Promise<AnalyticsPoint[]>>(pending());
+	let revenueByBakeryPromise = $state<Promise<AnalyticsPoint[]>>(pending());
+	let topProductsPromise = $state<Promise<AnalyticsPoint[]>>(pending());
+	let salesByEmployeePromise = $state<Promise<AnalyticsPoint[]>>(pending());
 
 	const chartConfig = {
 		value: { label: 'Value', color: '#C25F1A' }
@@ -48,18 +50,21 @@
 
 	function loadData() {
 		const bakery = selectedBakery || undefined;
-		filteredData = {
-			bakeryNames: data.bakeryNames,
-			initialData: data.initialData,
-			totalRevenue: getTotalRevenue(startDate, endDate, bakery),
-			aov: getAverageOrderValue(startDate, endDate, bakery),
-			completionRate: getCompletionRate(startDate, endDate, bakery),
-			revenueOverTime: getRevenueOverTime(startDate, endDate, bakery),
-			revenueByBakery: getRevenueByBakery(startDate, endDate),
-			topProducts: getTopProducts(startDate, endDate, bakery),
-			salesByEmployee: getSalesByEmployee(startDate, endDate, bakery)
-		};
+		kpisPromise = Promise.all([
+			getTotalRevenue(startDate, endDate, bakery),
+			getAverageOrderValue(startDate, endDate, bakery),
+			getCompletionRate(startDate, endDate, bakery)
+		]);
+		revenueOverTimePromise = getRevenueOverTime(startDate, endDate, bakery);
+		revenueByBakeryPromise = getRevenueByBakery(startDate, endDate);
+		topProductsPromise = getTopProducts(startDate, endDate, bakery);
+		salesByEmployeePromise = getSalesByEmployee(startDate, endDate, bakery);
 	}
+
+	onMount(() => {
+		bakeryNamesPromise = getBakeryNames();
+		loadData();
+	});
 
 	function formatCurrency(val: number | null) {
 		if (val == null) return '—';
@@ -115,7 +120,7 @@
 				>
 					Bakery
 				</label>
-				{#await filteredData.bakeryNames}
+				{#await bakeryNamesPromise}
 					<Skeleton class="h-10 w-32 rounded-md" />
 				{:then bakeryNames}
 					<select
@@ -141,7 +146,7 @@
 		</div>
 
 		<div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-			{#await Promise.all( [filteredData.totalRevenue, filteredData.aov, filteredData.completionRate] )}
+			{#await kpisPromise}
 				{#each [0, 1, 2] as i (i)}
 					<Skeleton class="h-28 rounded-xl" />
 				{/each}
@@ -157,7 +162,7 @@
 		<div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
 			<div class="rounded-xl border border-border bg-card p-5">
 				<p class="mb-4 text-sm font-semibold text-foreground">Revenue Over Time</p>
-				{#await filteredData.revenueOverTime}
+				{#await revenueOverTimePromise}
 					<Skeleton class="h-48 rounded-xl" />
 				{:then revenueOverTime}
 					{#if revenueOverTime.length === 0}
@@ -180,7 +185,7 @@
 
 			<div class="rounded-xl border border-border bg-card p-5">
 				<p class="mb-4 text-sm font-semibold text-foreground">Revenue by Bakery</p>
-				{#await filteredData.revenueByBakery}
+				{#await revenueByBakeryPromise}
 					<Skeleton class="h-48 rounded-xl" />
 				{:then revenueByBakery}
 					{#if revenueByBakery.length === 0}
@@ -203,7 +208,7 @@
 
 			<div class="rounded-xl border border-border bg-card p-5">
 				<p class="mb-4 text-sm font-semibold text-foreground">Top Products</p>
-				{#await filteredData.topProducts}
+				{#await topProductsPromise}
 					<Skeleton class="h-48 rounded-xl" />
 				{:then topProducts}
 					{#if topProducts.length === 0}
@@ -226,7 +231,7 @@
 
 			<div class="rounded-xl border border-border bg-card p-5">
 				<p class="mb-4 text-sm font-semibold text-foreground">Sales by Employee</p>
-				{#await filteredData.salesByEmployee}
+				{#await salesByEmployeePromise}
 					<Skeleton class="h-48 rounded-xl" />
 				{:then salesByEmployee}
 					{#if salesByEmployee.length === 0}
