@@ -1,6 +1,6 @@
 export class FormValidationUtil {
 	private static readonly emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-	private static readonly phoneRegex = /^\+?[\d\s\-().]{7,15}$/;
+	private static readonly phoneRegex = /^\(\d{3}\) \d{3}-\d{4}$/;
 	private static readonly canadianPostalRegex = /^[A-Za-z]\d[A-Za-z][ -]?\d[A-Za-z]\d$/;
 
 	static isValidEmail(value: string): boolean {
