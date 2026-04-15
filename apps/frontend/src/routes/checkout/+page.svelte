@@ -403,7 +403,11 @@
 					{touched}
 					onBlur={handleBlur}
 					onInput={handleInput}
-					onPhoneInput={() => {}}
+					onPhoneInput={(value) => {
+						guestPhone = value;
+						if (touched.guestPhone)
+							errors.guestPhone = validateField('guestPhone', currentValues());
+					}}
 				/>
 			{:else if customer}
 				<CheckoutContact {customer} />

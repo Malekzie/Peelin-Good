@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import { validateField, formatPhone, type ErrorKey } from '$lib/services/checkout';
+	import { FormValidationUtil } from '$lib/utils/formValidation';
 
 	interface Props {
 		firstName: string;
@@ -28,7 +29,8 @@
 
 	function handlePhoneInput(e: Event) {
 		const target = e.target as HTMLInputElement;
-		const formatted = formatPhone(target.value);
+		const formatted = FormValidationUtil.formatPhone(target.value);
+		target.value = formatted;
 		phone = formatted;
 		onPhoneInput(formatted);
 		if (touched.guestPhone) {
@@ -98,9 +100,7 @@
 			{/if}
 		</div>
 		<div class="flex flex-col gap-1">
-			<label for="guestPhone" class="text-sm font-medium text-foreground">
-				Phone <span class="text-xs text-muted-foreground">(or email)</span>
-			</label>
+			<label for="guestPhone" class="text-sm font-medium text-foreground"> Phone </label>
 			<input
 				id="guestPhone"
 				type="tel"
