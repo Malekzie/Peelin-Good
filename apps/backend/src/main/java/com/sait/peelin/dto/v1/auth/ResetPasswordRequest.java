@@ -8,7 +8,7 @@ public class ResetPasswordRequest {
     private String token;
 
     @NotBlank
-    @Size(min = 8, max = 72)
+    @Size(min = 7, max = 72)
     private String newPassword;
 
     public String getToken() { return token; }

@@ -346,8 +346,10 @@ public class AuthService {
         if (!passwordEncoder.matches(request.getCurrentPassword(), u.getUserPasswordHash())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Current password is incorrect");
         }
-        u.setActive(false);
-        userRepository.save(u);
+        int updated = userRepository.updateActiveFlag(u.getUserId(), false);
+        if (updated != 1) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Account deactivation failed");
+        }
     }
 
     @Transactional
@@ -365,8 +367,11 @@ public class AuthService {
         if (passwordEncoder.matches(request.getNewPassword(), u.getUserPasswordHash())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "New password must differ from your current password");
         }
-        u.setUserPasswordHash(passwordEncoder.encode(request.getNewPassword()));
-        userRepository.save(u);
+        int updated = userRepository.updatePasswordHash(
+                u.getUserId(), passwordEncoder.encode(request.getNewPassword()));
+        if (updated != 1) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Password update failed");
+        }
         userLookupCacheService.evictByIdentifier(u.getUsername());
         userLookupCacheService.evictByIdentifier(u.getUserEmail());
     }
