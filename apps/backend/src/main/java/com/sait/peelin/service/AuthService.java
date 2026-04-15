@@ -151,15 +151,20 @@ public class AuthService {
         String e = email != null ? email.trim().toLowerCase() : "";
         boolean usernameAvailable = u.isEmpty() || !userRepository.existsByUsernameIgnoreCase(u);
         boolean emailAvailable = e.isEmpty() || !isCustomerOrAdminSignInEmailTaken(e);
-        boolean employeeLinkOffered = !e.isEmpty()
-                && emailAvailable
-                && employeeCustomerLinkService.findSingleUnlinkedEmployeeByWorkEmail(e).isPresent();
+        boolean employeeLinkOffered = false;
+        if (!e.isEmpty() && emailAvailable) {
+            Optional<Employee> match = employeeCustomerLinkService.findSingleUnlinkedEmployeeByWorkEmail(e);
+            if (match.isPresent()) {
+                User empUser = match.get().getUser();
+                employeeLinkOffered = empUser != null && StringUtils.hasText(empUser.getUserPasswordHash());
+            }
+        }
         return new RegisterAvailabilityResponse(usernameAvailable, emailAvailable, employeeLinkOffered);
     }
 
     private boolean isCustomerOrAdminSignInEmailTaken(String emailNorm) {
-        return userRepository.existsByUserEmailIgnoreCaseAndUserRole(emailNorm, UserRole.customer)
-                || userRepository.existsByUserEmailIgnoreCaseAndUserRole(emailNorm, UserRole.admin);
+        return userRepository.existsByUserEmailIgnoreCaseAndUserRole(emailNorm, UserRole.customer.name())
+                || userRepository.existsByUserEmailIgnoreCaseAndUserRole(emailNorm, UserRole.admin.name());
     }
 
     @Transactional
@@ -179,16 +184,17 @@ public class AuthService {
         java.util.Optional<Employee> linkEmployee =
                 employeeCustomerLinkService.findSingleUnlinkedEmployeeByWorkEmail(emailNorm);
         if (linkEmployee.isPresent()) {
-            String elp = request.getEmployeeLinkPassword();
-            if (!StringUtils.hasText(elp)) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                        "Employee password required to link your customer account.");
-            }
             User empUser = linkEmployee.get().getUser();
-            if (empUser == null || !StringUtils.hasText(empUser.getUserPasswordHash())
-                    || !passwordEncoder.matches(elp, empUser.getUserPasswordHash())) {
-                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                        "Employee password does not match this work email.");
+            if (empUser != null && StringUtils.hasText(empUser.getUserPasswordHash())) {
+                String elp = request.getEmployeeLinkPassword();
+                if (!StringUtils.hasText(elp)) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                            "Employee password required to link your customer account.");
+                }
+                if (!passwordEncoder.matches(elp, empUser.getUserPasswordHash())) {
+                    throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                            "Employee password does not match this work email.");
+                }
             }
         }
 
@@ -253,38 +259,40 @@ public class AuthService {
         User u = currentUserService.requireUser();
         String oldUsername = u.getUsername();
         String oldEmail = u.getUserEmail();
+        String targetUsername = oldUsername;
+        String targetEmail = oldEmail;
         boolean dirty = false;
 
         if (req.getUsername() != null) {
             String nu = req.getUsername().trim();
-            if (nu.isEmpty()) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Username cannot be empty");
-            }
-            if (!USERNAME_PATTERN.matcher(nu).matches()) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid username");
-            }
             if (!nu.equalsIgnoreCase(u.getUsername())) {
+                if (nu.isEmpty()) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Username cannot be empty");
+                }
+                if (!USERNAME_PATTERN.matcher(nu).matches()) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid username");
+                }
                 if (userRepository.existsByUsernameIgnoreCaseAndUserIdNot(nu, u.getUserId())) {
                     throw new ResponseStatusException(HttpStatus.CONFLICT, "Username already taken");
                 }
-                u.setUsername(nu);
+                targetUsername = nu;
                 dirty = true;
             }
         }
 
         if (req.getEmail() != null) {
             String ne = req.getEmail().trim().toLowerCase();
-            if (ne.isEmpty()) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email cannot be empty");
-            }
-            if (ne.length() > 254 || !EMAIL_PATTERN.matcher(ne).matches()) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid email");
-            }
             if (!ne.equalsIgnoreCase(u.getUserEmail())) {
+                if (ne.isEmpty()) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email cannot be empty");
+                }
+                if (ne.length() > 254 || !EMAIL_PATTERN.matcher(ne).matches()) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid email");
+                }
                 if (userRepository.existsOtherCustomerOrAdminWithEmailIgnoreCase(ne, u.getUserId())) {
                     throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already registered");
                 }
-                u.setUserEmail(ne);
+                targetEmail = ne;
                 dirty = true;
                 Optional<Customer> cust = customerRepository.findByUser_UserId(u.getUserId());
                 if (cust.isPresent()) {
@@ -304,24 +312,31 @@ public class AuthService {
         }
 
         if (dirty) {
-            userRepository.save(u);
+            int updated = userRepository.updateAccountIdentity(u.getUserId(), targetUsername, targetEmail);
+            if (updated != 1) {
+                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Account update failed");
+            }
+            customerService.evictCurrentCustomerCaches();
             if (oldUsername != null) {
                 userLookupCacheService.evictByIdentifier(oldUsername);
             }
             if (oldEmail != null) {
                 userLookupCacheService.evictByIdentifier(oldEmail);
             }
-            userLookupCacheService.evictByIdentifier(u.getUsername());
-            userLookupCacheService.evictByIdentifier(u.getUserEmail());
+            userLookupCacheService.evictByIdentifier(targetUsername);
+            userLookupCacheService.evictByIdentifier(targetEmail);
         }
 
         UserDetails userDetails = org.springframework.security.core.userdetails.User
-                .withUsername(u.getUsername())
+                .withUsername(targetUsername)
                 .password(u.getUserPasswordHash())
                 .authorities("ROLE_" + u.getUserRole().name().toUpperCase())
                 .build();
         String token = jwtService.generateToken(userDetails);
-        return buildAuthResponse(u, token);
+        AuthResponse res = buildAuthResponse(u, token);
+        res.setUsername(targetUsername);
+        res.setEmail(targetEmail);
+        return res;
     }
 
     /**
@@ -337,8 +352,10 @@ public class AuthService {
         if (!passwordEncoder.matches(request.getCurrentPassword(), u.getUserPasswordHash())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Current password is incorrect");
         }
-        u.setActive(false);
-        userRepository.save(u);
+        int updated = userRepository.updateActiveFlag(u.getUserId(), false);
+        if (updated != 1) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Account deactivation failed");
+        }
     }
 
     @Transactional
@@ -356,8 +373,11 @@ public class AuthService {
         if (passwordEncoder.matches(request.getNewPassword(), u.getUserPasswordHash())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "New password must differ from your current password");
         }
-        u.setUserPasswordHash(passwordEncoder.encode(request.getNewPassword()));
-        userRepository.save(u);
+        int updated = userRepository.updatePasswordHash(
+                u.getUserId(), passwordEncoder.encode(request.getNewPassword()));
+        if (updated != 1) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Password update failed");
+        }
         userLookupCacheService.evictByIdentifier(u.getUsername());
         userLookupCacheService.evictByIdentifier(u.getUserEmail());
     }

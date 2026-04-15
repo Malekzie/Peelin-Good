@@ -3,7 +3,9 @@ package com.sait.peelin.controller.v1;
 import com.sait.peelin.dto.v1.ChatMessageDto;
 import com.sait.peelin.dto.v1.ChatThreadDto;
 import com.sait.peelin.dto.v1.PostChatMessageRequest;
+import com.sait.peelin.repository.EmployeeSpecialtyRepository;
 import com.sait.peelin.service.ChatService;
+import com.sait.peelin.service.CurrentUserService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -22,6 +24,8 @@ import java.util.List;
 public class ChatRestController {
 
     private final ChatService chatService;
+    private final CurrentUserService currentUserService;
+    private final EmployeeSpecialtyRepository employeeSpecialtyRepository;
 
     record CreateThreadRequest(String category) {}
 
@@ -75,5 +79,14 @@ public class ChatRestController {
     @PostMapping("/threads/{threadId}/close")
     public ChatThreadDto close(@PathVariable Integer threadId) {
         return chatService.closeThread(threadId);
+    }
+
+    @GetMapping("/staff/me/specialties")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPLOYEE')")
+    public List<String> mySpecialties() {
+        com.sait.peelin.model.User me = currentUserService.requireUser();
+        return employeeSpecialtyRepository.findByUserId(me.getUserId()).stream()
+                .map(com.sait.peelin.model.EmployeeSpecialty::getCategory)
+                .toList();
     }
 }

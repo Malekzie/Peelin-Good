@@ -6,14 +6,14 @@
         startConversation,
         getConvMessages,
         sendMessage,
-        markConvRead
+        markConvRead,
+        listRecipients,
+        type StaffRecipient
     } from '$lib/services/staff-messages';
-    import { listStaff } from '$lib/services/staff-employees';
     import { subscribeWs, publishWs } from '$lib/services/ws';
     import ChatMessageList from '$lib/components/chat/ChatMessageList.svelte';
     import ChatComposer from '$lib/components/chat/ChatComposer.svelte';
     import type { StaffConversation, StaffMessage, TypingPayload } from '$lib/services/types';
-    import type { UserRecord } from '$lib/services/types';
     import { UserPlus } from '@lucide/svelte';
 
     let conversations = $state<StaffConversation[]>([]);
@@ -27,7 +27,7 @@
 
     // New conversation picker state
     let showPicker = $state(false);
-    let staffList = $state<UserRecord[]>([]);
+    let staffList = $state<StaffRecipient[]>([]);
     let staffFilter = $state('');
     let pickerLoading = $state(false);
 
@@ -116,8 +116,7 @@
         if (staffList.length > 0) return;
         pickerLoading = true;
         try {
-            const all = await listStaff();
-            staffList = all.filter((u) => String(u.id) !== String($user?.userId));
+            staffList = await listRecipients();
         } catch {
             staffList = [];
         } finally {
@@ -125,11 +124,11 @@
         }
     }
 
-    async function handleStartConversation(staffUser: UserRecord) {
+    async function handleStartConversation(staffUser: StaffRecipient) {
         showPicker = false;
         staffFilter = '';
         try {
-            const convo = await startConversation(String(staffUser.id));
+            const convo = await startConversation(staffUser.userId);
             // Add or move to top
             conversations = [convo, ...conversations.filter((c) => c.id !== convo.id)];
             await selectConvo(convo);
@@ -210,13 +209,13 @@
                     {:else if filteredStaff.length === 0}
                         <p class="py-2 text-center text-xs text-muted-foreground">No staff found</p>
                     {:else}
-                        {#each filteredStaff as su (su.id)}
+                        {#each filteredStaff as su (su.userId)}
                             <button
                                 onclick={() => handleStartConversation(su)}
                                 class="w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-muted"
                             >
                                 {su.username}
-                                {#if su.role}<span class="ml-1 text-xs text-muted-foreground capitalize">({su.role})</span>{/if}
+                                {#if su.role}<span class="ml-1 text-xs text-muted-foreground capitalize">({su.role.toLowerCase()})</span>{/if}
                             </button>
                         {/each}
                     {/if}

@@ -33,4 +33,6 @@ public interface ChatThreadRepository extends JpaRepository<ChatThread, Integer>
             FETCH FIRST 1 ROWS ONLY
             """, nativeQuery = true)
     Integer findLatestOpenThreadIdByCustomerUserId(@Param("customerUserId") UUID customerUserId);
+
+    long countByEmployeeUser_UserIdAndStatus(UUID employeeUserId, String status);
 }

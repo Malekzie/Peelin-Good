@@ -12,6 +12,7 @@ import com.sait.peelin.model.User;
 import com.sait.peelin.model.UserRole;
 import com.sait.peelin.repository.ChatMessageRepository;
 import com.sait.peelin.repository.ChatThreadRepository;
+import com.sait.peelin.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -24,6 +25,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -35,6 +37,11 @@ public class ChatService {
     private final CustomerLookupCacheService customerLookupCacheService;
     private final CurrentUserService currentUserService;
     private final SimpMessagingTemplate messagingTemplate;
+    private final ChatRoutingService chatRoutingService;
+    private final UserRepository userRepository;
+
+    @org.springframework.beans.factory.annotation.Qualifier("systemUserId")
+    private final java.util.UUID systemUserId;
 
     @Transactional(readOnly = true)
     public List<ChatThreadDto> archivedThreads(String category) {
@@ -88,6 +95,7 @@ public class ChatService {
                 .map(this::threadDto)
                 .orElseGet(() -> {
                     ChatThread created = createThreadEntity(u, "general");
+                    created = applyAutoRouting(created);
                     chatLookupCacheService.evictOpenThreadForCustomer(u.getUserId());
                     ChatThreadDto dto = threadDto(created);
                     messagingTemplate.convertAndSend("/topic/chat/threads", dto);
@@ -109,10 +117,25 @@ public class ChatService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
         ChatThread created = createThreadEntity(u, category);
+        created = applyAutoRouting(created);
+
         chatLookupCacheService.evictOpenThreadForCustomer(u.getUserId());
         ChatThreadDto dto = threadDto(created);
         messagingTemplate.convertAndSend("/topic/chat/threads", dto);
         return dto;
+    }
+
+    private ChatThread applyAutoRouting(ChatThread thread) {
+        Optional<User> picked = chatRoutingService.pickStaff(thread.getCategory());
+        if (picked.isPresent()) {
+            thread.setEmployeeUser(picked.get());
+            thread.setUpdatedAt(OffsetDateTime.now());
+            thread = chatThreadRepository.save(thread);
+            postSystemMessage(thread, "Assigned to " + displayNameFor(picked.get()));
+        } else {
+            postSystemMessage(thread, "No staff online right now, we'll respond as soon as possible.");
+        }
+        return thread;
     }
 
     private ChatThread createThreadEntity(User customer, String category) {
@@ -295,7 +318,30 @@ public class ChatService {
                 m.getSender().getUserId(),
                 m.getMessageText(),
                 m.getSentAt(),
-                Boolean.TRUE.equals(m.getIsRead())
+                Boolean.TRUE.equals(m.getIsRead()),
+                m.getSender() != null && systemUserId.equals(m.getSender().getUserId())
         );
+    }
+
+    private void postSystemMessage(ChatThread thread, String text) {
+        User system = userRepository.findById(systemUserId).orElse(null);
+        if (system == null) {
+            return; // Migration not applied — fail quiet, thread still works.
+        }
+        ChatMessage m = new ChatMessage();
+        m.setThread(thread);
+        m.setSender(system);
+        m.setMessageText(text);
+        m.setSentAt(OffsetDateTime.now());
+        m.setIsRead(false);
+        ChatMessage saved = chatMessageRepository.save(m);
+        ChatMessageDto dto = msgDto(saved);
+        messagingTemplate.convertAndSend("/topic/chat/thread/" + thread.getId() + "/messages", dto);
+    }
+
+    private String displayNameFor(User u) {
+        if (u == null) return "a staff member";
+        String name = u.getUsername();
+        return name != null && !name.isBlank() ? name : "a staff member";
     }
 }

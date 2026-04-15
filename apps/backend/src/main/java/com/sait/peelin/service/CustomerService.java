@@ -28,6 +28,7 @@ import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -90,6 +91,16 @@ public class CustomerService {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No customer profile");
         }
         return toDto(c);
+    }
+
+    /**
+     * Evicts cached "me" projections after account-identity updates (username/email),
+     * so profile surfaces fresh data immediately.
+     */
+    @CacheEvict(value = "customers", keyGenerator = "userIdKeyGenerator")
+    public void evictCurrentCustomerCaches() {
+        User u = currentUserService.requireUser();
+        customerLookupCacheService.evictByUserId(u.getUserId());
     }
 
     @Transactional
@@ -357,6 +368,11 @@ public class CustomerService {
     }
 
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "customers", keyGenerator = "userIdKeyGenerator"),
+            @CacheEvict(value = "employees", keyGenerator = "userIdKeyGenerator"),
+            @CacheEvict(value = "customers", key = "'pending-photos'")
+    })
     public ProfilePhotoResponse uploadMyProfilePhoto(MultipartFile photo) {
         User u = currentUserService.requireUser();
         validateProfilePhotoFile(photo);
@@ -516,8 +532,8 @@ public class CustomerService {
             return;
         }
         String emailNorm = trimmed.toLowerCase();
-        if (userRepository.existsByUserEmailIgnoreCaseAndUserRole(emailNorm, UserRole.customer)
-                || userRepository.existsByUserEmailIgnoreCaseAndUserRole(emailNorm, UserRole.admin)) {
+        if (userRepository.existsByUserEmailIgnoreCaseAndUserRole(emailNorm, UserRole.customer.name())
+                || userRepository.existsByUserEmailIgnoreCaseAndUserRole(emailNorm, UserRole.admin.name())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "This email is already registered. Sign in to complete your order.");
         }

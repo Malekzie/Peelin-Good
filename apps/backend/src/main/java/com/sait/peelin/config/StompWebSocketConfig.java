@@ -34,31 +34,41 @@ public class StompWebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
+        // Raw WebSocket transport for native clients (Android mobile app).
         registry.addEndpoint("/ws")
-                .addInterceptors(new HandshakeInterceptor() {
-                    @Override
-                    public boolean beforeHandshake(ServerHttpRequest request, ServerHttpResponse response,
-                                                   WebSocketHandler wsHandler, Map<String, Object> attributes) {
-                        if (request instanceof ServletServerHttpRequest servletRequest) {
-                            HttpServletRequest httpRequest = servletRequest.getServletRequest();
-                            if (httpRequest.getCookies() != null) {
-                                for (Cookie cookie : httpRequest.getCookies()) {
-                                    if ("token".equals(cookie.getName())) {
-                                        attributes.put("token", cookie.getValue());
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                        return true;
-                    }
+                .addInterceptors(cookieTokenHandshakeInterceptor())
+                .setAllowedOriginPatterns("*");
 
-                    @Override
-                    public void afterHandshake(ServerHttpRequest request, ServerHttpResponse response,
-                                               WebSocketHandler wsHandler, Exception exception) {}
-                })
+        // SockJS fallback transport for browser clients.
+        registry.addEndpoint("/ws")
+                .addInterceptors(cookieTokenHandshakeInterceptor())
                 .setAllowedOriginPatterns("*")
                 .withSockJS();
+    }
+
+    private HandshakeInterceptor cookieTokenHandshakeInterceptor() {
+        return new HandshakeInterceptor() {
+            @Override
+            public boolean beforeHandshake(ServerHttpRequest request, ServerHttpResponse response,
+                                           WebSocketHandler wsHandler, Map<String, Object> attributes) {
+                if (request instanceof ServletServerHttpRequest servletRequest) {
+                    HttpServletRequest httpRequest = servletRequest.getServletRequest();
+                    if (httpRequest.getCookies() != null) {
+                        for (Cookie cookie : httpRequest.getCookies()) {
+                            if ("token".equals(cookie.getName())) {
+                                attributes.put("token", cookie.getValue());
+                                break;
+                            }
+                        }
+                    }
+                }
+                return true;
+            }
+
+            @Override
+            public void afterHandshake(ServerHttpRequest request, ServerHttpResponse response,
+                                       WebSocketHandler wsHandler, Exception exception) {}
+        };
     }
 
     @Override

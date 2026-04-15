@@ -3,6 +3,7 @@ package com.sait.peelin.service;
 import com.sait.peelin.dto.v1.ReadReceiptPayload;
 import com.sait.peelin.dto.v1.StaffConversationDto;
 import com.sait.peelin.dto.v1.StaffMessageDto;
+import com.sait.peelin.dto.v1.StaffRecipientDto;
 import com.sait.peelin.exception.ResourceNotFoundException;
 import com.sait.peelin.model.StaffConversation;
 import com.sait.peelin.model.StaffMessage;
@@ -76,6 +77,21 @@ public class StaffMessageService {
         return convRepo.findByUserA_UserIdOrUserB_UserIdOrderByUpdatedAtDesc(
                 me.getUserId(), me.getUserId())
                 .stream().map(c -> conversationDto(c, me.getUserId())).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<StaffRecipientDto> listRecipients() {
+        User me = currentUserService.requireUser();
+        requireStaff(me);
+        return userRepository.findAll().stream()
+                .filter(u -> u.getUserRole() == UserRole.admin || u.getUserRole() == UserRole.employee)
+                .filter(u -> Boolean.TRUE.equals(u.getActive()))
+                .filter(u -> !u.getUserId().equals(me.getUserId()))
+                .map(u -> new StaffRecipientDto(
+                        u.getUserId(),
+                        u.getUsername(),
+                        u.getUserRole().name()))
+                .toList();
     }
 
     @Transactional(readOnly = true)
