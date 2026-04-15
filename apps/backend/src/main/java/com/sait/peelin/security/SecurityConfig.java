@@ -40,6 +40,7 @@ public class SecurityConfig {
                                 "/unhandled",
                                 "/api/v1/auth/**",
                                 "/api/v1/stripe/webhook",
+                                "/api/v1/stripe/config",
                                 "/actuator/health",
                                 "/actuator/health/**",
                                 "/swagger-ui.html",
