@@ -72,7 +72,17 @@
 		loading = true;
 		error = '';
 
-		const returnUrl = `${window.location.origin}/guest/orders/${orderNumber}/confirmation`;
+		// If Stripe redirects the browser (some payment methods), the confirmation page
+		// needs the guest email as a second-factor for the order lookup. sessionStorage
+		// usually survives the round-trip, but we also pass it via the return URL as a
+		// belt-and-suspenders fallback for stricter browser storage policies.
+		const guestEmailForReturn =
+			typeof sessionStorage !== 'undefined'
+				? sessionStorage.getItem(`guestOrderEmail:${orderNumber}`)
+				: null;
+		const returnUrl = guestEmailForReturn
+			? `${window.location.origin}/guest/orders/${orderNumber}/confirmation?email=${encodeURIComponent(guestEmailForReturn)}`
+			: `${window.location.origin}/guest/orders/${orderNumber}/confirmation`;
 		const { error: stripeError } = await stripeInstance.confirmPayment({
 			elements: stripeElements,
 			redirect: 'if_required',

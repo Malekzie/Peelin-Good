@@ -88,16 +88,32 @@ public class OrderService {
 
     @Transactional(readOnly = true)
     public OrderDto getByOrderNumber(String orderNumber) {
+        return getByOrderNumber(orderNumber, null);
+    }
+
+    @Transactional(readOnly = true)
+    public OrderDto getByOrderNumber(String orderNumber, String contactEmail) {
         Order o = orderRepository.findByOrderNumber(orderNumber)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
-        // Logged-in customers may only view their own order; guests identify by knowing the order number
         User u = currentUserService.currentUserOrNull();
-        if (u != null && u.getUserRole() == UserRole.customer) {
+        if (u == null) {
+            // Unauthenticated callers must prove knowledge of the order's contact email as a
+            // second factor. On mismatch we return 404 (not 403) so we never confirm the order
+            // exists to someone who simply guessed / enumerated the order number.
+            String expected = o.getCustomer() != null ? o.getCustomer().getCustomerEmail() : null;
+            if (contactEmail == null || contactEmail.isBlank() || expected == null
+                    || !expected.trim().equalsIgnoreCase(contactEmail.trim())) {
+                throw new ResourceNotFoundException("Order not found");
+            }
+        } else if (u.getUserRole() == UserRole.customer) {
+            // Logged-in customers may only view their own order. Mismatch returns 404 (same
+            // PII-protection reasoning as the guest path) instead of 403.
             if (o.getCustomer() == null || o.getCustomer().getUser() == null
                     || !o.getCustomer().getUser().getUserId().equals(u.getUserId())) {
-                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Not your order");
+                throw new ResourceNotFoundException("Order not found");
             }
         }
+        // Admins and employees fall through with no ownership filter.
         return toDto(o);
     }
 

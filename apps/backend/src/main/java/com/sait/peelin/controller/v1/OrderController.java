@@ -3,6 +3,7 @@ package com.sait.peelin.controller.v1;
 import com.sait.peelin.dto.v1.*;
 import com.sait.peelin.service.OrderService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -47,15 +48,19 @@ public class OrderController {
         return orderService.get(id);
     }
 
-    @Operation(summary = "Get order by order number", description = "Returns an order by its human-readable order number. Guests may look up by number; logged-in customers must own the order.")
+    @Operation(summary = "Get order by order number", description = "Returns an order by its human-readable order number. "
+            + "Unauthenticated callers (guests) must supply the contact email used at checkout as an `email` query parameter; "
+            + "mismatches are returned as 404 to avoid leaking order existence. Logged-in customers must own the order.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Order found"),
-            @ApiResponse(responseCode = "403", description = "Order belongs to another customer", content = @Content),
-            @ApiResponse(responseCode = "404", description = "Order not found", content = @Content)
+            @ApiResponse(responseCode = "404", description = "Order not found or email did not match", content = @Content)
     })
     @GetMapping("/by-number/{orderNumber}")
-    public OrderDto getByOrderNumber(@PathVariable String orderNumber) {
-        return orderService.getByOrderNumber(orderNumber);
+    public OrderDto getByOrderNumber(
+            @PathVariable String orderNumber,
+            @Parameter(description = "Contact email used at checkout. Required for unauthenticated guest lookups; ignored for staff.")
+            @RequestParam(required = false) String email) {
+        return orderService.getByOrderNumber(orderNumber, email);
     }
 
     @Operation(summary = "Checkout", description = "Place a new order. Cart items, delivery method, and bakery are included in the request body.")

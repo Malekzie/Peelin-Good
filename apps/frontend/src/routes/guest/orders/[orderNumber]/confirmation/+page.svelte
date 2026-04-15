@@ -33,10 +33,23 @@
 
 	const orderNumber = page.params.orderNumber;
 
+	// Second-factor email used for guest order lookup. Populated by the checkout flow
+	// (sessionStorage, key `guestOrderEmail:<orderNumber>`) or supplied via `?email=`
+	// (e.g. after a Stripe redirect that did not re-enter our SPA state). For logged-in
+	// customers the backend authorizes from the session, so sending the param is harmless.
+	const storedGuestEmail =
+		typeof sessionStorage !== 'undefined'
+			? sessionStorage.getItem(`guestOrderEmail:${orderNumber}`)
+			: null;
+	const guestEmail = storedGuestEmail ?? page.url.searchParams.get('email') ?? '';
+
 	async function fetchOrder() {
 		try {
+			const path = guestEmail
+				? `/orders/by-number/${encodeURIComponent(orderNumber)}?email=${encodeURIComponent(guestEmail)}`
+				: `/orders/by-number/${encodeURIComponent(orderNumber)}`;
 			const [orderData, productsData] = await Promise.all([
-				api.get<Order>(`/orders/by-number/${orderNumber}`),
+				api.get<Order>(path),
 				getProducts()
 			]);
 			order = orderData;
@@ -167,7 +180,9 @@
 
 		<div class="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
 			<a
-				href={resolve(`/guest/orders/${order.orderNumber}`)}
+				href={resolve(
+					`/guest/orders/${order.orderNumber}${guestEmail ? `?email=${encodeURIComponent(guestEmail)}` : ''}`
+				)}
 				class="rounded-lg border border-border px-6 py-3 text-center text-sm font-medium text-foreground transition-colors hover:bg-muted"
 			>
 				Track Order

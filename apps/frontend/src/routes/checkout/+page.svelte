@@ -356,6 +356,13 @@
 			pendingTaxAmount = session.taxAmount ?? null;
 			pendingGrandTotal = session.grandTotal ?? null;
 
+			// Persist the guest email so the confirmation / tracking pages can pass it back
+			// to the backend as the second-factor for order lookup. For logged-in customers
+			// the backend resolves ownership from the session, so we do not need to store it.
+			if (isGuest && guestEmail && typeof sessionStorage !== 'undefined') {
+				sessionStorage.setItem(`guestOrderEmail:${session.orderNumber}`, guestEmail);
+			}
+
 			if (!stripePublishableKey) {
 				submitError = 'Payment processing is not available. Stripe is not configured.';
 				return;

@@ -5,7 +5,10 @@
 	import { ShoppingBag } from '@lucide/svelte';
 	import { formatDiscountCad, formatPriceCad } from '$lib/utils/money';
 
-	let { orderNumber }: { orderNumber: string } = $props();
+	let {
+		orderNumber,
+		guestEmail = ''
+	}: { orderNumber: string; guestEmail?: string } = $props();
 
 	const STATUS_STEPS = [
 		'placed',
@@ -47,8 +50,13 @@
 		loading = true;
 		error = '';
 		try {
+			// Guests need to pass the contact email used at checkout as a second factor.
+			// Authenticated customers are authorized via their session cookie on the backend.
+			const path = guestEmail
+				? `/orders/by-number/${encodeURIComponent(orderNumber)}?email=${encodeURIComponent(guestEmail)}`
+				: `/orders/by-number/${encodeURIComponent(orderNumber)}`;
 			const [orderData, productsData] = await Promise.all([
-				api.get<Order>(`/orders/by-number/${orderNumber}`),
+				api.get<Order>(path),
 				getProducts()
 			]);
 			order = orderData;

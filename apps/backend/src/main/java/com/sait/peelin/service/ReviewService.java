@@ -122,8 +122,14 @@ public class ReviewService {
         r.setReviewSubmittedDate(OffsetDateTime.now());
         r.setOrder(null);
         r.setBakery(bakery);
-        r.setReviewStatus(ReviewStatus.approved);
-        r.setReviewApprovalDate(OffsetDateTime.now());
+        if (isAuthenticated) {
+            r.setReviewStatus(ReviewStatus.approved);
+            r.setReviewApprovalDate(OffsetDateTime.now());
+        } else {
+            // Unauthenticated submissions require admin moderation to curb review spam.
+            r.setReviewStatus(ReviewStatus.pending);
+            r.setReviewApprovalDate(null);
+        }
 
         if (isAuthenticated && req.getOrderId() != null) {
             Order order = orderRepository.findById(req.getOrderId()).orElse(null);
@@ -448,8 +454,14 @@ public class ReviewService {
         r.setReviewRating(req.getRating());
         r.setReviewComment(req.getComment());
         r.setReviewSubmittedDate(OffsetDateTime.now());
-        r.setReviewStatus(ReviewStatus.approved);
-        r.setReviewApprovalDate(OffsetDateTime.now());
+        if (isAuthenticated) {
+            r.setReviewStatus(ReviewStatus.approved);
+            r.setReviewApprovalDate(OffsetDateTime.now());
+        } else {
+            // Unauthenticated submissions require admin moderation to curb review spam.
+            r.setReviewStatus(ReviewStatus.pending);
+            r.setReviewApprovalDate(null);
+        }
 
         Review saved = saveReviewOrConflict(r, "You already submitted a review for this bakery");
         return toDto(saved);
