@@ -109,6 +109,7 @@
 			// silently fail
 		}
 		acceptDialog = null;
+		await refreshOrdersList();
 	}
 
 	function acceptAndReviewHandler(order) {
