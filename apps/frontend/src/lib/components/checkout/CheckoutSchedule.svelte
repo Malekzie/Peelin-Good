@@ -86,7 +86,7 @@
 				>
 					This location is currently closed. It will open <span class="font-medium"
 						>{nextOpenTime}</span
-					>.
+					>. Your order will be received but won't be started until then.
 				</div>
 			{:else}
 				<p class="mt-2 text-sm text-muted-foreground">
