@@ -79,19 +79,6 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     @Modifying
     @Query(value = """
             UPDATE "user"
-            SET username = :username,
-                user_email = :email
-            WHERE user_id = :userId
-            """, nativeQuery = true)
-    int updateAccountIdentity(
-            @Param("userId") UUID userId,
-            @Param("username") String username,
-            @Param("email") String email
-    );
-
-    @Modifying
-    @Query(value = """
-            UPDATE "user"
             SET user_password_hash = :passwordHash
             WHERE user_id = :userId
             """, nativeQuery = true)
