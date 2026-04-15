@@ -543,6 +543,14 @@ public class OrderService {
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN);
             }
         }
+        if (req.getStatus() == OrderStatus.delivered && o.getOrderMethod() == OrderMethod.pickup) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Delivered applies to delivery orders only; use picked_up for pickup.");
+        }
+        if (req.getStatus() == OrderStatus.picked_up && o.getOrderMethod() == OrderMethod.delivery) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Picked up applies to pickup orders only; use delivered for delivery.");
+        }
         OrderStatus previous = o.getOrderStatus();
         o.setOrderStatus(req.getStatus());
         Order saved = orderRepository.save(o);

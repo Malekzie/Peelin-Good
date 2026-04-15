@@ -6,6 +6,7 @@ import com.sait.peelin.model.Customer;
 import com.sait.peelin.model.Order;
 import com.sait.peelin.model.OrderItem;
 import com.sait.peelin.model.OrderMethod;
+import com.sait.peelin.model.ReviewStatus;
 import com.sait.peelin.repository.OrderItemRepository;
 import com.sait.peelin.repository.ReviewRepository;
 
@@ -33,7 +34,8 @@ public final class OrderMapper {
         UUID customerId = o.getCustomer() != null ? o.getCustomer().getId() : null;
         boolean locationReviewSubmitted = false;
         if (customerId != null && reviewRepository != null) {
-            locationReviewSubmitted = reviewRepository.existsByOrder_IdAndCustomer_IdAndProductIsNull(o.getId(), customerId);
+            locationReviewSubmitted = reviewRepository.existsByOrder_IdAndCustomer_IdAndProductIsNullAndReviewStatusIn(
+                    o.getId(), customerId, List.of(ReviewStatus.approved, ReviewStatus.pending));
         }
         List<OrderItemDto> itemDtos = items.stream()
                 .map(i -> itemDto(i, customerId, reviewRepository))
@@ -101,11 +103,7 @@ public final class OrderMapper {
         if (customerId != null && productId != null && reviewRepository != null) {
             if (orderId != null) {
                 productReviewSubmitted = reviewRepository.existsByCustomer_IdAndProduct_IdAndOrder_IdAndReviewStatusIn(
-                        customerId, productId, orderId, List.of(
-                                com.sait.peelin.model.ReviewStatus.approved,
-                                com.sait.peelin.model.ReviewStatus.pending,
-                                com.sait.peelin.model.ReviewStatus.rejected
-                        ));
+                        customerId, productId, orderId, List.of(ReviewStatus.approved, ReviewStatus.pending));
             } else {
                 productReviewSubmitted = reviewRepository.existsByCustomer_IdAndProduct_IdAndOrderIsNull(customerId, productId);
             }

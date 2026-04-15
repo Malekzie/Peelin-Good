@@ -45,7 +45,14 @@ public class StripePaymentFulfillmentService {
         }
 
         Payment payment = paymentOpt.get();
+        Order order = payment.getOrder();
         if (payment.getPaymentStatus() == PaymentStatus.completed) {
+            // Self-heal edge cases where payment was marked complete but reward/status was missed.
+            if (order.getOrderStatus() != OrderStatus.paid) {
+                order.setOrderStatus(OrderStatus.paid);
+                orderRepository.save(order);
+            }
+            rewardAccrualService.grantEarnedPointsForPaidOrder(order);
             log.info("Payment already fulfilled for PaymentIntent {}", paymentIntentId);
             return;
         }
@@ -55,7 +62,6 @@ public class StripePaymentFulfillmentService {
         payment.setPaymentTransactionId(paymentIntentId);
         paymentRepository.save(payment);
 
-        Order order = payment.getOrder();
         order.setOrderStatus(OrderStatus.paid);
         orderRepository.save(order);
 

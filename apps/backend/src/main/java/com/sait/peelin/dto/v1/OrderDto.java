@@ -27,7 +27,7 @@ public record OrderDto(
         OffsetDateTime scheduledAt,
         OffsetDateTime deliveredAt,
         String comment,
-        /** True if this customer already submitted a location/service review for this order (any status). */
+        /** True if this customer has a pending or approved location/service review for this order (rejected attempts may retry). */
         boolean locationReviewSubmitted,
         BigDecimal orderSpecialDiscountAmount,
         BigDecimal orderTierDiscountAmount,

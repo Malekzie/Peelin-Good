@@ -31,6 +31,7 @@ public class RewardAccrualService {
 
     private final RewardRepository rewardRepository;
     private final CustomerRepository customerRepository;
+    private final CustomerLookupCacheService customerLookupCacheService;
 
     public int pointsEarnedForSubtotal(BigDecimal orderSubtotal) {
         if (orderSubtotal == null) {
@@ -44,6 +45,13 @@ public class RewardAccrualService {
     @Transactional
     @CacheEvict(value = {"rewards", "customers"}, allEntries = true)
     public void grantEarnedPointsForPaidOrder(Order order) {
+        if (order == null || order.getId() == null) {
+            return;
+        }
+        if (rewardRepository.existsByOrder_Id(order.getId())) {
+            // Idempotent safety for webhook + confirm races.
+            return;
+        }
         Customer customer = order.getCustomer();
         if (customer == null) {
             log.warn("Order {} has no customer; skipping reward accrual", order.getId());
@@ -61,6 +69,9 @@ public class RewardAccrualService {
         int bal = customer.getCustomerRewardBalance() == null ? 0 : customer.getCustomerRewardBalance();
         customer.setCustomerRewardBalance(bal + points);
         customerRepository.save(customer);
+        if (customer.getUser() != null && customer.getUser().getUserId() != null) {
+            customerLookupCacheService.evictByUserId(customer.getUser().getUserId());
+        }
     }
 
     /**
@@ -84,5 +95,8 @@ public class RewardAccrualService {
         int bal = customer.getCustomerRewardBalance() == null ? 0 : customer.getCustomerRewardBalance();
         customer.setCustomerRewardBalance(Math.max(0, bal - totalReversal));
         customerRepository.save(customer);
+        if (customer.getUser() != null && customer.getUser().getUserId() != null) {
+            customerLookupCacheService.evictByUserId(customer.getUser().getUserId());
+        }
     }
 }

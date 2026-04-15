@@ -224,9 +224,6 @@ public class ReviewService {
                 ? "You already submitted a location review for this order"
                 : "You already submitted a review for this product";
         Review saved = saveReviewOrConflict(rejected, conflictMessage);
-        if (orderOrNull != null) {
-            completeDeliveredOrderAfterLocationReview(saved.getOrder());
-        }
         return toDto(saved);
     }
 
@@ -239,8 +236,8 @@ public class ReviewService {
     }
 
     /**
-     * After a location/service review is submitted (approved or rejected), move delivered orders to completed
-     * so the customer cannot keep revisiting the review flow for this order.
+     * After an approved location/service review, move delivered/picked-up orders to completed
+     * so the customer does not keep revisiting the review flow. Rejected AI reviews do not complete the order.
      */
     private void completeDeliveredOrderAfterLocationReview(Order order) {
         if (order == null) {

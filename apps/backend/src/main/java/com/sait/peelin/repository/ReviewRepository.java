@@ -18,6 +18,12 @@ public interface ReviewRepository extends JpaRepository<Review, UUID> {
     List<Review> findByBakery_IdAndReviewStatus(Integer bakeryId, ReviewStatus status);
     boolean existsByOrder_IdAndCustomer_IdAndProductIsNull(UUID orderId, UUID customerId);
 
+    /** Location/service review for this order: only these statuses mean the customer is done or awaiting moderation. */
+    boolean existsByOrder_IdAndCustomer_IdAndProductIsNullAndReviewStatusIn(
+            UUID orderId,
+            UUID customerId,
+            Collection<ReviewStatus> statuses);
+
     List<Review> findByBakery_IdAndOrderIsNotNullAndReviewStatus(Integer bakeryId, ReviewStatus reviewStatus);
     List<Review> findByReviewStatusOrderByReviewSubmittedDateDesc(com.sait.peelin.model.ReviewStatus status);
     List<Review> findByReviewStatusAndBakery_IdOrderByReviewSubmittedDateDesc(
