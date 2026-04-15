@@ -179,17 +179,17 @@ public class ReviewService {
             var mod = reviewModerationService.moderateReview(comment, ReviewModerationService.ModerationKind.BAKERY_SERVICE);
             if (!mod.approved()) {
                 return persistModerationRejectedReview(
-                        customer, product, order.getBakery(), order, req, moderationReasonOrDefault(mod.reason()));
+                        customer, null, order.getBakery(), order, req, moderationReasonOrDefault(mod.reason()));
             }
         }
 
         Review r = new Review();
         r.setCustomer(customer);
-        r.setProduct(product);
+        r.setProduct(null);
         r.setReviewRating(req.getRating());
         r.setReviewComment(req.getComment());
         r.setReviewSubmittedDate(OffsetDateTime.now());
-        r.setOrder(null);  // Always null for product reviews
+        r.setOrder(order);  // Always null for product reviews
         r.setBakery(order.getBakery());
         r.setReviewStatus(ReviewStatus.approved);
         r.setReviewApprovalDate(OffsetDateTime.now());

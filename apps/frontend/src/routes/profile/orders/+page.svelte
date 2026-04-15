@@ -57,7 +57,20 @@
 	async function refreshOrdersList() {
 		try {
 			const fresh = await getMyOrders();
-			if (fresh) orders = fresh;
+			if (fresh) {
+				orders = fresh;
+				// update reviewPicker's order if it's open
+				if (reviewPicker) {
+					const updatedOrder = fresh.find((o) => o.id === reviewPicker.order.id);
+					if (updatedOrder) {
+						reviewPicker = {
+							...reviewPicker,
+							order: updatedOrder,
+							items: buildReviewableItems(updatedOrder)
+						};
+					}
+				}
+			}
 		} catch {
 			/* keep existing list */
 		}

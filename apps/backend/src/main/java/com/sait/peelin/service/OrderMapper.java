@@ -33,7 +33,7 @@ public final class OrderMapper {
         UUID customerId = o.getCustomer() != null ? o.getCustomer().getId() : null;
         boolean locationReviewSubmitted = false;
         if (customerId != null && reviewRepository != null) {
-            locationReviewSubmitted = reviewRepository.existsByOrder_IdAndCustomer_Id(o.getId(), customerId);
+            locationReviewSubmitted = reviewRepository.existsByOrder_IdAndCustomer_IdAndProductIsNull(o.getId(), customerId);
         }
         List<OrderItemDto> itemDtos = items.stream()
                 .map(i -> itemDto(i, customerId, reviewRepository))
