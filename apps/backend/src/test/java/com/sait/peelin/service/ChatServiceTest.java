@@ -7,10 +7,10 @@ import com.sait.peelin.model.User;
 import com.sait.peelin.model.UserRole;
 import com.sait.peelin.repository.ChatMessageRepository;
 import com.sait.peelin.repository.ChatThreadRepository;
+import com.sait.peelin.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -35,8 +35,10 @@ class ChatServiceTest {
     @Mock CustomerLookupCacheService customerLookupCacheService;
     @Mock CurrentUserService currentUserService;
     @Mock SimpMessagingTemplate messagingTemplate;
+    @Mock ChatRoutingService chatRoutingService;
+    @Mock UserRepository userRepository;
 
-    @InjectMocks ChatService chatService;
+    ChatService chatService;
 
     private User staffUser;
     private User customerUser;
@@ -44,6 +46,13 @@ class ChatServiceTest {
 
     @BeforeEach
     void setUp() {
+        UUID systemUserId = UUID.fromString("00000000-0000-0000-0000-000000000001");
+        chatService = new ChatService(
+                chatThreadRepository, chatMessageRepository,
+                chatLookupCacheService, customerLookupCacheService,
+                currentUserService, messagingTemplate,
+                chatRoutingService, userRepository, systemUserId);
+
         staffUser = new User();
         staffUser.setUserId(UUID.randomUUID());
         staffUser.setUsername("staff1");
@@ -72,6 +81,10 @@ class ChatServiceTest {
             return t;
         });
         when(currentUserService.currentUserOrNull()).thenReturn(customerUser);
+        // No staff available — exercises the "no staff" branch without extra setup.
+        when(chatRoutingService.pickStaff(any())).thenReturn(Optional.empty());
+        // System user not found — postSystemMessage returns early (fail-quiet path).
+        when(userRepository.findById(any())).thenReturn(Optional.empty());
 
         ChatThreadDto result = chatService.createThread("order_issue");
 
