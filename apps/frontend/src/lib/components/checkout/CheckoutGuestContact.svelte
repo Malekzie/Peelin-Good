@@ -47,7 +47,9 @@
 	</p>
 	<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
 		<div class="flex flex-col gap-1">
-			<label for="guestFirst" class="text-sm font-medium text-foreground">First Name</label>
+			<label for="guestFirst" class="text-sm font-medium text-foreground"
+				>First Name <span class="text-red-500">*</span></label
+			>
 			<input
 				id="guestFirst"
 				type="text"
@@ -64,7 +66,9 @@
 			{/if}
 		</div>
 		<div class="flex flex-col gap-1">
-			<label for="guestLast" class="text-sm font-medium text-foreground">Last Name</label>
+			<label for="guestLast" class="text-sm font-medium text-foreground"
+				>Last Name <span class="text-red-500">*</span></label
+			>
 			<input
 				id="guestLast"
 				type="text"

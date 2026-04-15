@@ -99,7 +99,8 @@ export function validateField(
 	switch (name) {
 		case 'guestFirstName':
 		case 'guestLastName':
-			if (val.trim() && val.trim().length < 2) return 'Must be at least 2 characters.';
+			if (!val.trim()) return 'This field is required.';
+			if (val.trim().length < 2) return 'Must be at least 2 characters.';
 			return '';
 		case 'guestEmail':
 			if (!val.trim()) return 'Email is required.';
