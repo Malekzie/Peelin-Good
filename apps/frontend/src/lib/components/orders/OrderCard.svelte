@@ -41,4 +41,10 @@
 			</div>
 		</div>
 	</button>
+	{#if order.status === 'placed' || order.status === 'pending_payment'}
+		<div class="border-t border-amber-200 bg-amber-50 px-5 py-3 text-sm text-amber-800">
+			Payment incomplete.
+			<a href="/checkout" class="font-semibold underline hover:text-amber-900">Retry checkout</a>
+		</div>
+	{/if}
 {/if}
