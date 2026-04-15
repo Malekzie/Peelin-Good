@@ -160,6 +160,13 @@
 		}
 	});
 
+	$effect(() => {
+		if (loading) return;
+		const initialState = resolveInitialMenuState($page.url, tags);
+		activeTagId = initialState.activeTagId;
+		searchQuery = initialState.searchQuery;
+	});
+
 	const filtered = $derived(filterMenuProducts(products, activeTagId, searchQuery));
 
 	const activeTagName = $derived(tags.find((tag) => tag.id === activeTagId)?.name ?? null);

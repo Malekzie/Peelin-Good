@@ -13,6 +13,8 @@
 	import OrderReviewPicker from '$lib/components/orders/OrderReviewPicker.svelte';
 	import OrderReviewForm from '$lib/components/orders/OrderReviewForm.svelte';
 	import Toast from '$lib/components/orders/Toast.svelte';
+	import { resumeStripePayment, getStripePublishableKey } from '$lib/services/orders';
+	import CheckoutPayment from '$lib/components/checkout/CheckoutPayment.svelte';
 
 	const API = '/api/v1';
 
@@ -38,6 +40,10 @@
 	/** @type {'success' | 'pending'} */
 	let reviewOutcome = $state('success');
 
+	// Retry payment state
+	let retryPayment = $state(null);
+	let retryPaymentLoading = $state(false);
+
 	// Toast state
 	let toastMessage = $state(null);
 	let toastClear = 0;
@@ -52,6 +58,32 @@
 		toastClear = setTimeout(() => {
 			toastMessage = null;
 		}, 6500);
+	}
+
+	async function handleRetryPayment(order) {
+		retryPaymentLoading = true;
+		try {
+			const [session, publishableKey] = await Promise.all([
+				resumeStripePayment(order.id),
+				getStripePublishableKey()
+			]);
+			if (session.orderPaid) {
+				await refreshOrdersList();
+				showToast('Your order is already paid!');
+				return;
+			}
+			retryPayment = {
+				clientSecret: session.clientSecret,
+				paymentIntentId: session.paymentIntentId,
+				orderId: session.orderId,
+				orderNumber: session.orderNumber,
+				publishableKey
+			};
+		} catch (e) {
+			showToast('Could not resume payment. Please try again.');
+		} finally {
+			retryPaymentLoading = false;
+		}
 	}
 
 	async function refreshOrdersList() {
@@ -250,6 +282,7 @@
 	onToggleOrder={toggleAccordion}
 	onAcceptDelivery={(order) => (acceptDialog = { order })}
 	onLeaveReview={openReviewPickerHandler}
+	onRetryPayment={handleRetryPayment}
 />
 
 <!-- Accept Delivery Dialog -->
@@ -282,6 +315,32 @@
 
 <!-- Toast Notification -->
 <Toast message={toastMessage} />
+
+{#if retryPayment}
+	<div class="fixed inset-x-0 top-16 bottom-0 z-40 overflow-y-auto bg-background px-6 py-16">
+		<div class="mx-auto max-w-2xl">
+			<CheckoutPayment
+				orderNumber={retryPayment.orderNumber}
+				orderId={retryPayment.orderId}
+				publishableKey={retryPayment.publishableKey}
+				clientSecret={retryPayment.clientSecret}
+				paymentIntentId={retryPayment.paymentIntentId}
+				subtotal={0}
+				discount={null}
+				deliveryFee={null}
+				taxAmount={null}
+				grandTotal={null}
+				orderMethod="pickup"
+				onSuccess={async (orderNumber) => {
+					retryPayment = null;
+					await refreshOrdersList();
+					showToast('Payment successful!');
+				}}
+				onBack={() => (retryPayment = null)}
+			/>
+		</div>
+	</div>
+{/if}
 
 <!-- Submission Overlay (moderation animation) -->
 <ReviewSubmissionOverlay visible={reviewSubmitting} />

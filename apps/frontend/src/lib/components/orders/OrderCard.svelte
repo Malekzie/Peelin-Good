@@ -7,7 +7,7 @@
 	import { ChevronDown } from '@lucide/svelte';
 	import { formatDate, formatPrice, statusColor } from '$lib/utils/OrdersHelper';
 
-	let { order = null, isOpen = false, onToggle = () => {} } = $props();
+	let { order = null, isOpen = false, onToggle = () => {}, onRetryPayment = () => {} } = $props();
 </script>
 
 {#if order}
@@ -41,4 +41,18 @@
 			</div>
 		</div>
 	</button>
+	{#if order.status === 'placed' || order.status === 'pending_payment'}
+		<div
+			class="flex items-center justify-between border-t border-amber-200 bg-amber-50 px-5 py-3 text-sm text-amber-800"
+		>
+			<span>Payment incomplete.</span>
+			<button
+				type="button"
+				onclick={() => onRetryPayment(order)}
+				class="rounded-full bg-amber-500 px-4 py-1.5 text-xs font-semibold text-white hover:bg-amber-600"
+			>
+				Complete Payment
+			</button>
+		</div>
+	{/if}
 {/if}

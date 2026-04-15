@@ -5,12 +5,14 @@
 		getBakeries,
 		getBakeryReviews,
 		getBakeryAverage,
+		getBakeryHours,
 		createBakeryReview
 	} from '$lib/services/bakeries';
 	import { MapPin, Phone, Mail } from '@lucide/svelte';
 	import ReviewSubmissionOverlay from '$lib/components/review/ReviewSubmissionOverlay.svelte';
 	import { truncateModerationMessage } from '$lib/utils/reviewMessage';
 	import { user } from '$lib/stores/authStore';
+	import { isOpenNow } from '$lib/services/checkout';
 
 	let bakeries = $state([]);
 	let loading = $state(true);
@@ -29,11 +31,12 @@
 			const raw = await getBakeries();
 			bakeries = await Promise.all(
 				raw.map(async (b) => {
-					const [reviews, average] = await Promise.all([
+					const [reviews, average, hours] = await Promise.all([
 						getBakeryReviews(b.id).catch(() => []),
-						getBakeryAverage(b.id).catch(() => null)
+						getBakeryAverage(b.id).catch(() => null),
+						getBakeryHours(b.id).catch(() => [])
 					]);
-					return { ...b, reviews, average };
+					return { ...b, reviews, average, hours };
 				})
 			);
 		} catch (e) {
@@ -156,7 +159,18 @@
 						{/if}
 						<div class="flex flex-1 flex-col gap-5 p-8">
 							<div>
-								<h2 class="text-2xl font-bold text-foreground">{bakery.name}</h2>
+								<div class="flex items-center gap-2">
+									<h2 class="text-2xl font-bold text-foreground">{bakery.name}</h2>
+									<span
+										class="rounded-full px-2 py-0.5 text-xs font-semibold {isOpenNow(
+											bakery.hours ?? []
+										)
+											? 'bg-emerald-100 text-emerald-800'
+											: 'bg-red-100 text-red-800'}"
+									>
+										{isOpenNow(bakery.hours ?? []) ? 'Open' : 'Closed'}
+									</span>
+								</div>
 								{#if bakery.average !== null}
 									<p class="mt-1 text-base text-yellow-500">
 										{stars(Math.round(bakery.average))}

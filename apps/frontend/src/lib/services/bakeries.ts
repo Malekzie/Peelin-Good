@@ -42,3 +42,9 @@ export async function createBakeryReview(
 	}
 	return res.json();
 }
+
+export async function getBakeryHours(bakeryId: ApiId): Promise<unknown[]> {
+	const res = await fetch(`${BAKERIES_API}/${bakeryId}/hours`);
+	if (!res.ok) return [];
+	return res.json();
+}

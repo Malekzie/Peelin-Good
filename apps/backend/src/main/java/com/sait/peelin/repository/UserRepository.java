@@ -79,19 +79,6 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     @Modifying
     @Query(value = """
             UPDATE "user"
-            SET username = :username,
-                user_email = :email
-            WHERE user_id = :userId
-            """, nativeQuery = true)
-    int updateAccountIdentity(
-            @Param("userId") UUID userId,
-            @Param("username") String username,
-            @Param("email") String email
-    );
-
-    @Modifying
-    @Query(value = """
-            UPDATE "user"
             SET user_password_hash = :passwordHash
             WHERE user_id = :userId
             """, nativeQuery = true)
@@ -113,14 +100,27 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     @Modifying
     @Query(value = """
-            UPDATE "user"
-            SET profile_photo_path = :photoPath,
-                photo_approval_pending = :pending
-            WHERE user_id = :userId
-            """, nativeQuery = true)
+        UPDATE "user"
+        SET profile_photo_path = :photoPath,
+            photo_approval_pending = :pending
+        WHERE user_id = :userId
+        """, nativeQuery = true)
     int updateProfilePhotoState(
             @Param("userId") UUID userId,
             @Param("photoPath") String photoPath,
             @Param("pending") boolean pending
+    );
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query(value = """
+        UPDATE "user"
+        SET username = :username,
+            user_email = :email
+        WHERE user_id = :userId
+        """, nativeQuery = true)
+    int updateAccountIdentity(
+            @Param("userId") UUID userId,
+            @Param("username") String username,
+            @Param("email") String email
     );
 }

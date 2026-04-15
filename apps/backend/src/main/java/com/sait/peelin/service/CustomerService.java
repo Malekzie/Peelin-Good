@@ -417,7 +417,23 @@ public class CustomerService {
         if (req.getBusinessPhone() != null) {
             c.setCustomerBusinessPhone(PhoneNumberFormatter.formatStoredPhoneOrNull(req.getBusinessPhone()));
         }
-        if (req.getEmail() != null) c.setCustomerEmail(req.getEmail());
+        if (req.getEmail() != null) {
+            System.out.println("Email patch: old=" + c.getCustomerEmail() + " new=" + req.getEmail() + " userId=" + (c.getUser() != null ? c.getUser().getUserId() : "null"));
+            c.setCustomerEmail(req.getEmail());
+            if (c.getUser() != null) {
+                String oldEmail = c.getUser().getUserEmail();
+                int updated = userRepository.updateAccountIdentity(
+                        c.getUser().getUserId(),
+                        c.getUser().getUsername(),
+                        req.getEmail().trim()
+                );
+                if (updated == 1) {
+                    c.getUser().setUserEmail(req.getEmail().trim());
+                    if (oldEmail != null) userLookupCacheService.evictByIdentifier(oldEmail);
+                    userLookupCacheService.evictByIdentifier(req.getEmail().trim());
+                }
+            }
+        }
         if (req.getAddressId() != null) {
             c.setAddress(addressRepository.findById(req.getAddressId())
                     .orElseThrow(() -> new ResourceNotFoundException("Address not found")));
