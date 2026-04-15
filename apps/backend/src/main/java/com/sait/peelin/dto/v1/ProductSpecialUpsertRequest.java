@@ -24,6 +24,6 @@ public class ProductSpecialUpsertRequest {
     private LocalDate featuredOn;
 
     @DecimalMin("0.00")
-    @DecimalMax("100.00")
+    @DecimalMax("50.00")
     private BigDecimal discountPercent = BigDecimal.ZERO;
 }

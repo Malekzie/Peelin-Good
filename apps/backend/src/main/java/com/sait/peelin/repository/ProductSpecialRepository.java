@@ -14,4 +14,17 @@ public interface ProductSpecialRepository extends JpaRepository<ProductSpecial, 
      */
     Optional<ProductSpecial> findFirstByFeaturedOnOrderByProductSpecialIdAsc(LocalDate featuredOn);
     List<ProductSpecial> findByFeaturedOnOrderByProductSpecialIdAsc(LocalDate featuredOn);
+
+    /**
+     * Returns {@code true} when any row already has {@code featuredOn} set to the given date.
+     * Used by the create path to enforce the one-special-per-day constraint.
+     */
+    boolean existsByFeaturedOn(LocalDate featuredOn);
+
+    /**
+     * Returns {@code true} when a <em>different</em> row already has {@code featuredOn} set to the
+     * given date.  The {@code productSpecialId} exclusion prevents a self-conflict when updating an
+     * existing special to keep the same date.
+     */
+    boolean existsByFeaturedOnAndProductSpecialIdNot(LocalDate featuredOn, Integer productSpecialId);
 }

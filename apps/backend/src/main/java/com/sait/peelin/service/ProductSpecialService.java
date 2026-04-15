@@ -47,11 +47,18 @@ public class ProductSpecialService {
     /**
      * Creates a new product special entry and evicts the date-keyed cache so
      * the next call to {@link #findFirstForDate} reflects the new row.
+     *
+     * <p>Enforces two business rules before persisting:
+     * <ul>
+     *   <li>Only one special may be featured per calendar day.</li>
+     *   <li>The discount may not exceed 50 %.</li>
+     * </ul>
      */
     @Transactional
     @CacheEvict(value = "product-specials", allEntries = true)
     public ProductSpecialDto create(ProductSpecialUpsertRequest req) {
         requireProduct(req.getProductId());
+        requireUniqueFeaturedOnForCreate(req.getFeaturedOn());
 
         ProductSpecial ps = new ProductSpecial();
         ps.setProductId(req.getProductId());
@@ -64,6 +71,10 @@ public class ProductSpecialService {
 
     /**
      * Replaces all mutable fields on an existing product special and evicts the cache.
+     *
+     * <p>Enforces the same business rules as {@link #create}: one special per day (excluding the
+     * row being updated so a date-only update does not conflict with itself) and a 50 % discount
+     * ceiling.
      */
     @Transactional
     @CacheEvict(value = "product-specials", allEntries = true)
@@ -73,6 +84,7 @@ public class ProductSpecialService {
                         "Product special not found: " + id));
 
         requireProduct(req.getProductId());
+        requireUniqueFeaturedOnForUpdate(req.getFeaturedOn(), id);
 
         ps.setProductId(req.getProductId());
         ps.setFeaturedOn(req.getFeaturedOn());
@@ -96,6 +108,31 @@ public class ProductSpecialService {
     }
 
     // ── Helpers ──────────────────────────────────────────────────
+
+    /**
+     * Throws {@code 409 Conflict} when another special is already scheduled for {@code date}.
+     * Used by the create path where no existing row should be excluded from the check.
+     */
+    private void requireUniqueFeaturedOnForCreate(LocalDate date) {
+        if (productSpecialRepository.existsByFeaturedOn(date)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "A product special is already scheduled for " + date
+                            + ". Only one special is allowed per day.");
+        }
+    }
+
+    /**
+     * Throws {@code 409 Conflict} when a <em>different</em> special is already scheduled for
+     * {@code date}.  The {@code currentId} of the row being updated is excluded so that saving
+     * the same featured-on date does not trigger a self-conflict.
+     */
+    private void requireUniqueFeaturedOnForUpdate(LocalDate date, Integer currentId) {
+        if (productSpecialRepository.existsByFeaturedOnAndProductSpecialIdNot(date, currentId)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "A product special is already scheduled for " + date
+                            + ". Only one special is allowed per day.");
+        }
+    }
 
     private Product requireProduct(Integer productId) {
         return productRepository.findById(productId)
