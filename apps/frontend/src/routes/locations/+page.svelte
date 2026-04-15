@@ -10,6 +10,7 @@
 	import { MapPin, Phone, Mail } from '@lucide/svelte';
 	import ReviewSubmissionOverlay from '$lib/components/review/ReviewSubmissionOverlay.svelte';
 	import { truncateModerationMessage } from '$lib/utils/reviewMessage';
+	import { user } from '$lib/stores/authStore';
 
 	let bakeries = $state([]);
 	let loading = $state(true);
@@ -21,6 +22,7 @@
 	let reviewSuccess = $state(false);
 	let expandedBakeries = $state(new Set());
 	let reviewFilters = $state({});
+	let reviewGuestName = $state('');
 
 	onMount(async () => {
 		try {
@@ -60,6 +62,7 @@
 		reviewModal = { bakeryId: bakery.id, bakeryName: bakery.name };
 		reviewRating = 0;
 		reviewComment = '';
+		reviewGuestName = '';
 		reviewError = null;
 		reviewSuccess = false;
 	}
@@ -80,7 +83,8 @@
 			const submitted = await createBakeryReview(
 				reviewModal.bakeryId,
 				reviewRating,
-				reviewComment
+				reviewComment,
+				reviewGuestName || null
 			);
 			const status = (submitted?.status ?? '').toLowerCase();
 			if (status === 'rejected') {
@@ -293,6 +297,16 @@
 					>
 				{/each}
 			</div>
+
+			{#if !$user}
+				<input
+					type="text"
+					bind:value={reviewGuestName}
+					placeholder="Your name (optional)"
+					disabled={reviewSubmitting}
+					class="mt-4 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
+				/>
+			{/if}
 
 			<textarea
 				bind:value={reviewComment}
