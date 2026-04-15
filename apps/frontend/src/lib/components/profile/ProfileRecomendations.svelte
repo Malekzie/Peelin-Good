@@ -59,13 +59,13 @@
 				</div>
 			{:else if error}
 				<p
-					class="rounded-xl border border-emerald-400/50 bg-white/70 px-3 py-4 text-sm text-emerald-950/85 dark:border-emerald-700/50 dark:bg-emerald-900/35 dark:text-emerald-100/85"
+					class="rounded-xl border border-emerald-400/50 bg-card/70 px-3 py-4 text-sm text-emerald-950/85 dark:border-emerald-700/50 dark:bg-emerald-900/35 dark:text-emerald-100/85"
 				>
 					Could not load recommendations.
 				</p>
 			{:else if needsPreferences}
 				<p
-					class="rounded-xl border border-emerald-400/50 bg-white/70 px-3 py-4 text-sm text-emerald-950/90 dark:border-emerald-700/50 dark:bg-emerald-900/35 dark:text-emerald-100/90"
+					class="rounded-xl border border-emerald-400/50 bg-card/70 px-3 py-4 text-sm text-emerald-950/90 dark:border-emerald-700/50 dark:bg-emerald-900/35 dark:text-emerald-100/90"
 				>
 					Set your taste preferences first, then we can suggest products tailored to you.
 				</p>
@@ -78,7 +78,7 @@
 				</Button>
 			{:else if recommendations.length === 0}
 				<p
-					class="rounded-xl border border-emerald-400/50 bg-white/70 px-3 py-4 text-sm text-emerald-950/90 dark:border-emerald-700/50 dark:bg-emerald-900/35 dark:text-emerald-100/90"
+					class="rounded-xl border border-emerald-400/50 bg-card/70 px-3 py-4 text-sm text-emerald-950/90 dark:border-emerald-700/50 dark:bg-emerald-900/35 dark:text-emerald-100/90"
 				>
 					No recommendations yet. Order something to get started!
 				</p>

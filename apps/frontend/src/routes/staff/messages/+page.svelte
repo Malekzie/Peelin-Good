@@ -201,7 +201,7 @@
                     type="text"
                     bind:value={staffFilter}
                     placeholder="Search staff..."
-                    class="w-full rounded-lg border border-border bg-white px-3 py-1.5 text-sm outline-none focus:border-[#C4714A]"
+                    class="w-full rounded-lg border border-border bg-background px-3 py-1.5 text-sm text-foreground outline-none focus:border-[#C4714A]"
                 />
                 <div class="mt-2 max-h-40 overflow-y-auto">
                     {#if pickerLoading}

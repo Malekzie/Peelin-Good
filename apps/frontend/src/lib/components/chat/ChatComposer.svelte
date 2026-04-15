@@ -38,7 +38,7 @@
 		{placeholder}
 		{disabled}
 		rows="1"
-		class="flex-1 resize-none rounded-xl border border-[#2C1A0E]/15 bg-white px-3 py-2 text-sm text-[#2C1A0E] placeholder-[#2C1A0E]/30 outline-none focus:border-[#C4714A] disabled:opacity-50 dark:border-[#FAF7F2]/15 dark:bg-[#FAF7F2]/10 dark:text-[#FAF7F2] dark:placeholder-[#FAF7F2]/30"
+		class="flex-1 resize-none rounded-xl border border-[#2C1A0E]/15 bg-card px-3 py-2 text-sm text-[#2C1A0E] placeholder-[#2C1A0E]/30 outline-none focus:border-[#C4714A] disabled:opacity-50 dark:border-[#FAF7F2]/15 dark:bg-[#FAF7F2]/10 dark:text-[#FAF7F2] dark:placeholder-[#FAF7F2]/30"
 	></textarea>
 	<button
 		onclick={submit}

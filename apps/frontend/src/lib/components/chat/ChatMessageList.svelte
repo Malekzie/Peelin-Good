@@ -47,7 +47,7 @@
 						'rounded-2xl px-3 py-2 text-sm',
 						mine && 'rounded-tr-sm bg-[#C4714A] text-white',
 						!mine &&
-							'rounded-tl-sm bg-white text-[#2C1A0E] shadow-sm dark:bg-[#FAF7F2]/10 dark:text-[#FAF7F2]'
+							'rounded-tl-sm bg-card text-[#2C1A0E] shadow-sm dark:bg-[#FAF7F2]/10 dark:text-[#FAF7F2]'
 					]}
 				>
 					{msg.text}
@@ -67,7 +67,7 @@
 	{#if typingLabel}
 		<div class="flex justify-start">
 			<div
-				class="rounded-2xl rounded-tl-sm bg-white px-3 py-2 text-xs text-[#2C1A0E]/50 shadow-sm dark:bg-[#FAF7F2]/10 dark:text-[#FAF7F2]/50"
+				class="rounded-2xl rounded-tl-sm bg-card px-3 py-2 text-xs text-[#2C1A0E]/50 shadow-sm dark:bg-[#FAF7F2]/10 dark:text-[#FAF7F2]/50"
 			>
 				{typingLabel} is typing...
 			</div>

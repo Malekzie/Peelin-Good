@@ -41,7 +41,7 @@
         {#each categories as cat (cat.value)}
             <button
                 onclick={() => onpick(cat.value)}
-                class="rounded-xl border border-[#2C1A0E]/10 bg-white px-4 py-3 text-left text-sm font-medium text-[#2C1A0E] transition-colors hover:border-[#C4714A] hover:bg-[#C4714A]/5 dark:border-[#FAF7F2]/10 dark:bg-[#FAF7F2]/5 dark:text-[#FAF7F2] dark:hover:bg-[#C4714A]/10"
+                class="rounded-xl border border-[#2C1A0E]/10 bg-card px-4 py-3 text-left text-sm font-medium text-[#2C1A0E] transition-colors hover:border-[#C4714A] hover:bg-[#C4714A]/5 dark:border-[#FAF7F2]/10 dark:bg-[#FAF7F2]/5 dark:text-[#FAF7F2] dark:hover:bg-[#C4714A]/10"
             >
                 {cat.label}
             </button>
