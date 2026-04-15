@@ -9,5 +9,6 @@ public record ChatMessageDto(
         UUID senderUserId,
         String text,
         OffsetDateTime sentAt,
-        boolean read
+        boolean read,
+        boolean isSystem
 ) {}
