@@ -87,7 +87,8 @@
 			case 'username':
 				if (!value.trim()) return 'Username is required.';
 				if (value.trim().length < 3) return 'Must be at least 3 characters.';
-				if (!/^[a-zA-Z0-9_]+$/.test(value)) return 'Only letters, numbers, and underscores.';
+				if (!/^[a-zA-Z0-9_.\-]+$/.test(value))
+					return 'Only letters, numbers, underscores, periods, and hyphens.';
 				return '';
 			case 'password':
 				if (!value) return 'Password is required.';
