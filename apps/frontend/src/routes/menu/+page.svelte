@@ -221,6 +221,14 @@
 	bind:sheetQty
 	{sheetAdded}
 	bind:showAllReviews
+	isSpecial={todaySpecial != null &&
+		selectedProduct != null &&
+		todaySpecial.productId === selectedProduct.id}
+	specialDiscount={todaySpecial != null &&
+	selectedProduct != null &&
+	todaySpecial.productId === selectedProduct.id
+		? todaySpecial.discountPercent
+		: null}
 	onOpenReviewModal={openReviewModal}
 	onAddToCart={addSelectedToCart}
 />

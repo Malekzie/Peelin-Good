@@ -17,6 +17,8 @@
 		sheetQty = $bindable(1),
 		sheetAdded = false,
 		showAllReviews = $bindable(false),
+		isSpecial = false,
+		specialDiscount = null,
 		onOpenReviewModal = () => {},
 		onAddToCart = () => {}
 	} = $props();
@@ -32,7 +34,11 @@
 	const sheetPrice = $derived(
 		product
 			? formatPriceCad(
-					typeof product.basePrice === 'number' ? product.basePrice : parseFloat(product.basePrice)
+					isSpecial && specialDiscount
+						? parseFloat(product.basePrice) * (1 - specialDiscount / 100)
+						: typeof product.basePrice === 'number'
+							? product.basePrice
+							: parseFloat(product.basePrice)
 				)
 			: ''
 	);
@@ -54,7 +60,16 @@
 			<div class="flex flex-1 flex-col gap-5 p-6">
 				<SheetHeader class="gap-1 text-left">
 					<SheetTitle class="text-2xl font-bold text-foreground">{product.name}</SheetTitle>
-					<p class="text-xl font-bold text-primary">{sheetPrice}</p>
+					{#if isSpecial && specialDiscount}
+						<div class="flex items-center gap-2">
+							<p class="text-xl font-bold text-primary">{sheetPrice}</p>
+							<p class="text-sm text-muted-foreground line-through">
+								{formatPriceCad(product.basePrice)}
+							</p>
+						</div>
+					{:else}
+						<p class="text-xl font-bold text-primary">{sheetPrice}</p>
+					{/if}
 				</SheetHeader>
 
 				{#if product.description}
