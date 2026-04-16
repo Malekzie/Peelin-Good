@@ -176,7 +176,43 @@
 	);
 
 	const hasScheduledAt = $derived(scheduleEnabled && !!scheduleDate && !!scheduleTime);
-	const scheduledAtIso = $derived(hasScheduledAt ? `${scheduleDate}T${scheduleTime}:00Z` : null);
+	const scheduledAtIso = $derived(
+		hasScheduledAt ? edmontonLocalToIso(scheduleDate, scheduleTime) : null
+	);
+
+	// Bakery hours are stored in America/Edmonton; the picker shows Edmonton wall-clock time.
+	// Naively appending "Z" sent user-entered times as UTC, so server TZ conversion misaligned
+	// and rejected in-hours picks as out-of-hours (e.g. 11:00 local → 05:00 MDT).
+	function edmontonLocalToIso(dateStr: string, timeStr: string): string {
+		const [y, mo, d] = dateStr.split('-').map(Number);
+		const [h, mi] = timeStr.split(':').map(Number);
+		const asUtcMs = Date.UTC(y, mo - 1, d, h, mi, 0);
+		const offsetMs = timeZoneOffsetMs('America/Edmonton', new Date(asUtcMs));
+		return new Date(asUtcMs - offsetMs).toISOString();
+	}
+
+	function timeZoneOffsetMs(timeZone: string, instant: Date): number {
+		const parts = new Intl.DateTimeFormat('en-US', {
+			timeZone,
+			hour12: false,
+			year: 'numeric',
+			month: '2-digit',
+			day: '2-digit',
+			hour: '2-digit',
+			minute: '2-digit',
+			second: '2-digit'
+		}).formatToParts(instant);
+		const pick = (type: string) => Number(parts.find((p) => p.type === type)!.value);
+		const asIfUtc = Date.UTC(
+			pick('year'),
+			pick('month') - 1,
+			pick('day'),
+			pick('hour') % 24,
+			pick('minute'),
+			pick('second')
+		);
+		return asIfUtc - instant.getTime();
+	}
 
 	// ── Lifecycle ────────────────────────────────────────────────────────────────
 

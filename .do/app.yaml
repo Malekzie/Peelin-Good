@@ -14,19 +14,47 @@ features:
 ingress:
   rules:
     - component:
-        name: workshop7-apps-frontend
+        name: workshop7-apps-backend
       match:
         authority:
           exact: ""
         path:
-          prefix: /
+          prefix: /api
     - component:
         name: workshop7-apps-backend
       match:
         authority:
           exact: ""
         path:
-          prefix: /workshop7-apps-backend
+          prefix: /ws
+    - component:
+        name: workshop7-apps-backend
+      match:
+        authority:
+          exact: ""
+        path:
+          prefix: /oauth2
+    - component:
+        name: workshop7-apps-backend
+      match:
+        authority:
+          exact: ""
+        path:
+          prefix: /login/oauth2
+    - component:
+        name: workshop7-apps-backend
+      match:
+        authority:
+          exact: ""
+        path:
+          prefix: /actuator
+    - component:
+        name: workshop7-apps-frontend
+      match:
+        authority:
+          exact: ""
+        path:
+          prefix: /
 name: peelin-good
 region: tor
 services:
@@ -80,6 +108,26 @@ services:
         scope: RUN_AND_BUILD_TIME
         type: SECRET
         value: EV[1:RjkTXpeJjYsM+G54BNPgBh6OdeqxnmRy:8DQTmCTjBNtEPi/sQcFnkh6lGgk8ztzMQlxMrYkLSWhh1lfVwg4w1Q==]
+      # TODO: After commit, set these in DO console → Settings → App-Level Env Vars (mark as Encrypted).
+      # The backend has no stripe: section in application-prod.yaml, so without these three vars
+      # StripeService.isConfigured() returns false and checkout emits "dev_pi_*" placeholder secrets.
+      - key: STRIPE_SECRET_KEY
+        scope: RUN_AND_BUILD_TIME
+        value: ""
+      - key: STRIPE_WEBHOOK_SECRET
+        scope: RUN_AND_BUILD_TIME
+        value: ""
+      - key: STRIPE_PUBLISHABLE_KEY
+        scope: RUN_AND_BUILD_TIME
+        value: ""
+      # CORS: comma-separated prod frontend origins. Must include protocol + host (no trailing slash).
+      - key: APP_CORS_ORIGINS
+        scope: RUN_AND_BUILD_TIME
+        value: ""
+      # Frontend URL used in emails, OAuth redirects. Set to the public site URL.
+      - key: FRONTEND_URL
+        scope: RUN_AND_BUILD_TIME
+        value: ""
     github:
       branch: main
       deploy_on_push: false
