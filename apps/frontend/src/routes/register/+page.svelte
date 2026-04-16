@@ -279,6 +279,11 @@
 				touched.email = true;
 				step = 1;
 			} else if (status === 409) {
+				submitError = 'Username or email is already taken.';
+				errors.username = 'May already be taken.';
+				errors.email = 'May already be taken.';
+				touched.username = true;
+				touched.email = true;
 				step = 1;
 			} else {
 				errors.email = msg;

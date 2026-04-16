@@ -88,6 +88,10 @@ app:
   email:
     logo-path: ${EMAIL_LOGO_PATH:../frontend/static/images/Peelin' Good.png}
 
+server:
+  error:
+    include-message: always
+
 management:
   endpoints:
     web:
