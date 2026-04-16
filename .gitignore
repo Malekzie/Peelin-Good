@@ -61,3 +61,8 @@ vite.config.ts.timestamp-*
 .gitnexus
 CLAUDE.md
 AGENTS.md
+
+# Vendor binaries — download from upstream, never commit
+scripts/*.exe
+scripts/stripe
+scripts/stripe.exe
