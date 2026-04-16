@@ -5,6 +5,7 @@
 	import { Eye, EyeOff } from '@lucide/svelte';
 	import { loginUser } from '$lib/services/auth';
 	import { user } from '$lib/stores/authStore';
+	import { safeRedirectPath } from '$lib/utils/safeRedirect';
 
 	let identifier = $state('');
 	let password = $state('');
@@ -79,8 +80,11 @@
 			return;
 		}
 
-		const redirectTo = page.url.searchParams.get('redirectTo');
-		goto(resolve(redirectTo ?? getDefaultPostAuthRoute($user?.role)));
+		const redirectTo = safeRedirectPath(
+			page.url.searchParams.get('redirectTo'),
+			getDefaultPostAuthRoute($user?.role)
+		);
+		goto(resolve(redirectTo));
 	}
 
 	async function completeLoginAsChosen(username) {
@@ -97,8 +101,11 @@
 			return;
 		}
 		roleChoiceDialog = null;
-		const redirectTo = page.url.searchParams.get('redirectTo');
-		goto(resolve(redirectTo ?? getDefaultPostAuthRoute($user?.role)));
+		const redirectTo = safeRedirectPath(
+			page.url.searchParams.get('redirectTo'),
+			getDefaultPostAuthRoute($user?.role)
+		);
+		goto(resolve(redirectTo));
 	}
 </script>
 

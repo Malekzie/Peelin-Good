@@ -3,6 +3,7 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { setAuth } from '$lib/stores/authStore.js';
+	import { safeRedirectPath } from '$lib/utils/safeRedirect';
 
 	function getDefaultPostAuthRoute(role) {
 		const normalizedRole = (role ?? '').toLowerCase();
@@ -22,8 +23,7 @@
 
 		if (username && role && userId) {
 			setAuth({ username, role, userId });
-			const redirectTo = params.get('redirectTo');
-			goto(resolve(redirectTo ?? getDefaultPostAuthRoute(role)));
+			goto(resolve(safeRedirectPath(params.get('redirectTo'), getDefaultPostAuthRoute(role))));
 		} else {
 			goto(resolve('/login?error=oauth_failed'));
 		}
