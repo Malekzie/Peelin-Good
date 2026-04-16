@@ -90,28 +90,21 @@
 		</div>
 	</div>
 
-	<!-- Photo backdrop + Today's Special overlay -->
-	<div class="relative hidden overflow-hidden md:block">
-		<img
-			src="https://peelin-good-storage.tor1.cdn.digitaloceanspaces.com/misc/bakery-header.png"
-			alt="Fresh baked goods at Peelin' Good"
-			class="absolute inset-0 h-full w-full object-cover brightness-95"
-		/>
-		<div class="absolute inset-0 bg-black/55"></div>
-
-		<div class="relative flex h-full flex-col justify-center gap-6 p-10">
+	<!-- Today's Special panel -->
+	<div class="relative hidden bg-muted/40 md:block">
+		<div class="relative flex h-full flex-col justify-center gap-6 px-10 py-16 lg:px-14">
 			<div>
 				<p class="text-[11px] font-semibold tracking-[0.25em] text-primary uppercase">
 					Out of the oven
 				</p>
-				<h2 class="mt-1 text-3xl font-black tracking-tight text-white lg:text-4xl">
+				<h2 class="mt-1 text-3xl font-black tracking-tight text-foreground lg:text-4xl">
 					Today's special
 				</h2>
-				<p class="mt-1 text-sm text-white/80">Our featured product for today.</p>
+				<p class="mt-1 text-sm text-muted-foreground">Our featured product for today.</p>
 			</div>
 
 			{#if loading}
-				<Skeleton class="mx-auto h-64 w-full max-w-sm rounded-2xl bg-white/20" />
+				<Skeleton class="mx-auto h-64 w-full max-w-sm rounded-2xl" />
 			{:else if special}
 				<div class="mx-auto w-full max-w-sm">
 					<SpecialCard
@@ -124,14 +117,15 @@
 					/>
 				</div>
 			{:else}
-				<p class="text-sm text-white/80">
+				<p class="text-sm text-muted-foreground">
 					No special is available today. Check back another day!
 				</p>
-				<div class="flex items-end justify-end">
-					<a href={resolve('/menu')} class="rounded-full bg-primary px-4 py-2">
-						<p class="text-xs font-bold tracking-widest text-primary-foreground uppercase">
-							Order today
-						</p>
+				<div>
+					<a
+						href={resolve('/menu')}
+						class="inline-block rounded-full bg-primary px-4 py-2 text-xs font-bold tracking-widest text-primary-foreground uppercase"
+					>
+						Browse menu
 					</a>
 				</div>
 			{/if}
