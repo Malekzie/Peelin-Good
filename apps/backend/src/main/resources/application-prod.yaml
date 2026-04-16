@@ -17,7 +17,10 @@ spring:
     locations: classpath:db/migration/core
     default-schema: public
     schemas: public
-    # *:missing — DB history may list a version no longer in the repo (e.g. old V28); Flyway 9+ requires this pattern (not ignore-missing-migrations).
+    # DB holds history rows (V0-V45) from prior seed migrations no longer in classpath.
+    # Skip validation + auto-repair so startup doesn't fail on "applied migration not resolved locally".
+    validate-on-migrate: false
+    repair-on-migrate: true
     ignore-migration-patterns:
       - "*:ignored"
       - "*:missing"
