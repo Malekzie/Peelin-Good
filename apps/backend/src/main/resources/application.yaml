@@ -22,7 +22,7 @@ spring:
   data:
     redis:
       host: ${VALKEY_HOST:localhost}
-      port: ${VALKEY_PORT:6379}
+      port: ${VALKEY_PORT:}
       username: ${VALKEY_USERNAME:default}
       password: ${VALKEY_PASSWORD:}
       ssl:
