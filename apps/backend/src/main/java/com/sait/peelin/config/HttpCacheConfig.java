@@ -8,7 +8,6 @@ import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -23,12 +22,12 @@ public class HttpCacheConfig implements WebMvcConfigurer {
     private static final Map<String, CacheControl> CACHE_POLICIES = new LinkedHashMap<>();
 
     static {
-        CACHE_POLICIES.put("/api/v1/bakeries",         CacheControl.maxAge(Duration.ofHours(1)).cachePublic());
-        CACHE_POLICIES.put("/api/v1/products",         CacheControl.maxAge(Duration.ofMinutes(10)).cachePublic());
-        CACHE_POLICIES.put("/api/v1/product-specials", CacheControl.maxAge(Duration.ofMinutes(30)).cachePublic());
-        CACHE_POLICIES.put("/api/v1/tags",             CacheControl.maxAge(Duration.ofHours(1)).cachePublic());
-        CACHE_POLICIES.put("/api/v1/reward-tiers",     CacheControl.maxAge(Duration.ofHours(1)).cachePublic());
-        CACHE_POLICIES.put("/api/v1/reviews/top",      CacheControl.maxAge(Duration.ofMinutes(5)).cachePublic());
+        CACHE_POLICIES.put("/api/v1/bakeries",         CacheControl.noCache().cachePublic());
+        CACHE_POLICIES.put("/api/v1/products",         CacheControl.noCache().cachePublic());
+        CACHE_POLICIES.put("/api/v1/product-specials", CacheControl.noCache().cachePublic());
+        CACHE_POLICIES.put("/api/v1/tags",             CacheControl.noCache().cachePublic());
+        CACHE_POLICIES.put("/api/v1/reward-tiers",     CacheControl.noCache().cachePublic());
+        CACHE_POLICIES.put("/api/v1/reviews/top",      CacheControl.noCache().cachePublic());
     }
 
     @Override
