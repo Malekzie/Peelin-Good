@@ -128,6 +128,23 @@ services:
       - key: FRONTEND_URL
         scope: RUN_AND_BUILD_TIME
         value: ""
+      # DO Managed Valkey (same cluster as the DB). SSL required — VALKEY_SSL is the only switch
+      # application.yaml reads for TLS. Fill host/port/username/password from DO console → Connection Details.
+      - key: VALKEY_HOST
+        scope: RUN_AND_BUILD_TIME
+        value: ""
+      - key: VALKEY_PORT
+        scope: RUN_AND_BUILD_TIME
+        value: ""
+      - key: VALKEY_USERNAME
+        scope: RUN_AND_BUILD_TIME
+        value: "default"
+      - key: VALKEY_PASSWORD
+        scope: RUN_AND_BUILD_TIME
+        value: ""
+      - key: VALKEY_SSL
+        scope: RUN_AND_BUILD_TIME
+        value: "true"
     github:
       branch: main
       deploy_on_push: false
