@@ -11,3 +11,11 @@ spring:
     enabled: false
   cache:
     type: none
+
+# Test-only JWT secret satisfies the fail-fast validator without requiring a real env var.
+# Safe to commit: this profile is never active in prod.
+app:
+  jwt:
+    secret: test-only-jwt-secret-32-bytes-long-for-tests!
+  cookie:
+    secure: false

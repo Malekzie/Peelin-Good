@@ -77,7 +77,9 @@ spring:
 
 app:
   jwt:
-    secret: ${JWT_SECRET:dev-secret-key-for-local-development-only-32b}
+    # No default: EnvValidator fails fast at startup if JWT_SECRET is unset.
+    # Reusing a shared literal across envs made token forgery trivial (CWE-798).
+    secret: ${JWT_SECRET}
     expiration: ${JWT_EXPIRATION:864000000}
     issuer: ${JWT_ISSUER:peelin-good}
   cors:
@@ -99,18 +101,13 @@ management:
         include: health
 
 sentry:
-  dsn: https://a91f0a7472bb4d649eb2e4f2e71b97fa@o4508069461164032.ingest.us.sentry.io/4511153240145920
-  # Add data like request headers and IP for users,
-  # see https://docs.sentry.io/platforms/java/guides/spring-boot/data-management/data-collected/ for more info
-  send-default-pii: true
-  # Enable sending logs to Sentry
+  # DSN must come from environment; empty string disables the SDK cleanly.
+  dsn: ${SENTRY_DSN:}
+  # Do not attach request headers, cookies, or client IP — opt in explicitly per-event if needed.
+  send-default-pii: false
   logs:
     enabled: true
-  # Set traces-sample-rate to 1.0 to capture 100% of transactions for tracing.
-  # We recommend adjusting this value in production.
-  traces-sample-rate: 1.0
-  # Set profile-session-sample-rate to 1.0 to profile 100% of profile sessions.
-  profile-session-sample-rate: 1.0
-  # Set profile-lifecycle to trace to automatically start and stop
-  # profiling when a transaction starts and finishes.
+  # Dev default: sample heavily so traces are visible locally. Prod overrides below.
+  traces-sample-rate: ${SENTRY_TRACES_SAMPLE_RATE:0.2}
+  profile-session-sample-rate: ${SENTRY_PROFILE_SAMPLE_RATE:0.2}
   profile-lifecycle: TRACE
