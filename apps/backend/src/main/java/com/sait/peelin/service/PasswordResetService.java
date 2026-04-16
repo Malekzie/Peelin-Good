@@ -6,6 +6,8 @@ import com.sait.peelin.repository.PasswordResetTokenRepository;
 import com.sait.peelin.repository.UserRepository;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -28,6 +30,8 @@ import org.springframework.core.io.FileSystemResource;
 @Service
 @RequiredArgsConstructor
 public class PasswordResetService {
+
+    private static final Logger log = LoggerFactory.getLogger(PasswordResetService.class);
 
     private final UserRepository userRepository;
     private final PasswordResetTokenRepository tokenRepository;
@@ -110,7 +114,7 @@ public class PasswordResetService {
 
     private void sendResetEmail(User user, String token) {
         if (fromEmail == null || fromEmail.isBlank()) {
-            System.err.println("Mail not configured, skipping password reset email");
+            log.warn("Mail not configured (spring.mail.username unset); skipping password reset email for userId={}", user.getUserId());
             return;
         }
 
@@ -169,9 +173,9 @@ public class PasswordResetService {
                 }
 
                 mailSender.send(message);
-                System.out.println("Password reset email sent to: " + user.getUserEmail());
+                log.info("Password reset email sent to userId={}", user.getUserId());
             } catch (Exception e) {
-                System.err.println("Failed to send password reset email: " + e.getMessage());
+                log.error("Failed to send password reset email for userId={}: {}", user.getUserId(), e.getMessage());
             }
         });
     }

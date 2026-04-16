@@ -243,7 +243,9 @@ public class ChatService {
     @Transactional
     @CacheEvict(value = "chat-messages", key = "'thread:' + #threadId")
     public void markRead(Integer threadId) {
-        chatThreadRepository.findById(threadId).orElseThrow(() -> new ResourceNotFoundException("Thread not found"));
+        ChatThread t = chatThreadRepository.findById(threadId)
+                .orElseThrow(() -> new ResourceNotFoundException("Thread not found"));
+        assertCanAccessThread(t);
         User viewer = currentUserService.requireUser();
         chatMessageRepository.markAllReadForThread(threadId, viewer.getUserId());
         messagingTemplate.convertAndSend(
@@ -251,6 +253,14 @@ public class ChatService {
                 new ReadReceiptPayload(viewer.getUserId(), OffsetDateTime.now()));
     }
 
+    /**
+     * Access policy:
+     *   - admin           → any thread
+     *   - customer        → only their own thread
+     *   - employee        → the thread they are assigned to; unclaimed threads are readable for triage.
+     * Triage access is a deliberate product decision; to restrict to assigned-only, change the
+     * `employeeUser == null` branch below to throw FORBIDDEN.
+     */
     private void assertCanAccessThread(ChatThread t) {
         User u = currentUserService.requireUser();
         if (u.getUserRole() == UserRole.admin) return;

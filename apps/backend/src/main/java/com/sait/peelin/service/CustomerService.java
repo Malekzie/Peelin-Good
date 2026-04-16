@@ -418,7 +418,7 @@ public class CustomerService {
             c.setCustomerBusinessPhone(PhoneNumberFormatter.formatStoredPhoneOrNull(req.getBusinessPhone()));
         }
         if (req.getEmail() != null) {
-            System.out.println("Email patch: old=" + c.getCustomerEmail() + " new=" + req.getEmail() + " userId=" + (c.getUser() != null ? c.getUser().getUserId() : "null"));
+            log.debug("Email patch requested for userId={}", c.getUser() != null ? c.getUser().getUserId() : "null");
             c.setCustomerEmail(req.getEmail());
             if (c.getUser() != null) {
                 String oldEmail = c.getUser().getUserEmail();

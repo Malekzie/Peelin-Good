@@ -3,6 +3,8 @@ package com.sait.peelin.service;
 import com.sait.peelin.model.User;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -12,6 +14,8 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class WelcomeEmailService {
+
+    private static final Logger log = LoggerFactory.getLogger(WelcomeEmailService.class);
 
     private final JavaMailSender mailSender;
 
@@ -26,7 +30,7 @@ public class WelcomeEmailService {
 
     public void sendWelcomeEmail(User user) {
         if (fromEmail == null || fromEmail.isBlank()) {
-            System.out.println("Mail not configured, skipping welcome email for: " + user.getUserEmail());
+            log.warn("Mail not configured (spring.mail.username unset); skipping welcome email for userId={}", user.getUserId());
             return;
         }
 
@@ -82,9 +86,9 @@ public class WelcomeEmailService {
                 }
 
                 mailSender.send(message);
-                System.out.println("Welcome email sent to: " + user.getUserEmail());
+                log.info("Welcome email sent to userId={}", user.getUserId());
             } catch (Exception e) {
-                System.err.println("Failed to send welcome email: " + e.getMessage());
+                log.error("Failed to send welcome email for userId={}: {}", user.getUserId(), e.getMessage());
             }
         });
     }
