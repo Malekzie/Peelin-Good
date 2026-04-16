@@ -1,13 +1,11 @@
 -- =============================================================================
--- R__reference_seed_v0.sql — Flyway REPEATABLE migration (PostgreSQL)
--- Lives in THREADED-PROJECT repository root (not under flyway-migrations/).
--- Re-runs whenever this file’s checksum changes; not version-locked like V__.
+-- V47__reference_seed_v0.sql — Flyway VERSIONED seed migration (PostgreSQL)
+-- Converted from legacy repeatable seed to a one-time ordered migration.
 --
 -- Pipeline (optional): classpath V0–V41+ → V43__drop_and_recreate_empty_schema.sql → this file
 -- (point Flyway locations at this repo root, or copy these files into your Flyway locations).
 --
--- DESTRUCTIVE: truncates all application domain tables listed below (not
--- flyway_schema_history, not tax_rate reference rows from V19/V24).
+-- NOTE: table row wipe now occurs in V46__wipe_reference_data_rows.sql.
 --
 -- Intended for local / CI / disposable databases. Do not run against
 -- production unless you explicitly adopt wipe-and-reseed.
@@ -33,38 +31,6 @@
 -- =============================================================================
 
 BEGIN;
-
--- Child-first TRUNCATE list (FK-safe); tax_rate left intact.
-TRUNCATE TABLE
-    staff_message,
-    staff_conversation,
-    chat_message,
-    chat_thread,
-    message,
-    review,
-    reward,
-    payment,
-    order_item,
-    "order",
-    employee_customer_link,
-    batch_inventory,
-    batch,
-    customer_preference,
-    customer,
-    employee,
-    inventory,
-    product_tag,
-    product_special,
-    supplier,
-    bakery_hours,
-    bakery,
-    product,
-    tag,
-    reward_tier,
-    password_reset_token,
-    address,
-    "user"
-RESTART IDENTITY CASCADE;
 
 -- ---------------------------------------------------------------------------
 -- address (same geometry as V3)
