@@ -31,7 +31,7 @@
 	let loading = $state(true);
 	let error = $state('');
 
-	const orderNumber = page.params.orderNumber;
+	const orderNumber = page.params.orderNumber ?? '';
 
 	// Second-factor email used for guest order lookup. Populated by the checkout flow
 	// (sessionStorage, key `guestOrderEmail:<orderNumber>`) or supplied via `?email=`
@@ -48,10 +48,7 @@
 			const path = guestEmail
 				? `/orders/by-number/${encodeURIComponent(orderNumber)}?email=${encodeURIComponent(guestEmail)}`
 				: `/orders/by-number/${encodeURIComponent(orderNumber)}`;
-			const [orderData, productsData] = await Promise.all([
-				api.get<Order>(path),
-				getProducts()
-			]);
+			const [orderData, productsData] = await Promise.all([api.get<Order>(path), getProducts()]);
 			order = orderData;
 			const map: Record<string | number, string | null> = {};
 			for (const p of productsData ?? []) {
