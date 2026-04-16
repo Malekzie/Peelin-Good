@@ -56,7 +56,9 @@ public class AuthController {
     @Value("${app.jwt.expiration:864000000}")
     private long jwtExpiration;
 
-    @Value("${app.cookie.secure:false}")
+    // Secure-by-default. Dev profile overrides to false via application-dev.yaml so that
+    // localhost (http://) logins still set the cookie. Never set this to false in prod.
+    @Value("${app.cookie.secure:true}")
     private boolean cookieSecure;
 
     private void setTokenCookie(HttpServletResponse response, String token, boolean rememberMe) {

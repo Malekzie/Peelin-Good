@@ -92,3 +92,8 @@ stripe:
   secret-key: ${STRIPE_SECRET_KEY:}
   webhook-secret: ${STRIPE_WEBHOOK_SECRET:}
   publishable-key: ${STRIPE_PUBLISHABLE_KEY:}
+
+# Secure-cookie flag must be false over http://localhost; prod default is true (see AuthController).
+app:
+  cookie:
+    secure: false

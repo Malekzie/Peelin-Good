@@ -35,6 +35,12 @@ spring:
   # Redis/Valkey connection is inherited from application.yaml (VALKEY_* env vars).
   # The nested ${REDIS_*:${VALKEY_*:}} fallback here was breaking port binding when DO
   # surfaced the outer var as an empty string, so let the base config win.
+
+app:
+  cookie:
+    # Belt-and-suspenders; AuthController already defaults this to true, but pin it explicitly in prod.
+    secure: true
+
 management:
   endpoints:
     web:

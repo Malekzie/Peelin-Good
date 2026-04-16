@@ -14,6 +14,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
+import org.springframework.security.web.header.writers.XXssProtectionHeaderWriter;
 import org.springframework.web.cors.CorsConfigurationSource;
 
 @Configuration
@@ -31,13 +33,35 @@ public class SecurityConfig {
         http
                 .cors(c -> c.configurationSource(corsConfigurationSource))
                 .csrf(csrf -> csrf.disable())
+                .headers(h -> h
+                        // HSTS: enforce HTTPS for 1 year across subdomains. Only sent over TLS, so
+                        // it's a no-op on http://localhost. Safe to enable unconditionally.
+                        .httpStrictTransportSecurity(hsts -> hsts
+                                .includeSubDomains(true)
+                                .maxAgeInSeconds(31_536_000))
+                        .contentTypeOptions(opts -> {}) // X-Content-Type-Options: nosniff
+                        .frameOptions(frame -> frame.deny()) // X-Frame-Options: DENY (clickjacking)
+                        .referrerPolicy(rp -> rp.policyGeneralReferrerPolicy(
+                                ReferrerPolicyHeaderWriter.ReferrerPolicy.NO_REFERRER))
+                        .xssProtection(xss -> xss.headerValue(
+                                XXssProtectionHeaderWriter.HeaderValue.DISABLED))
+                        // API-only backend: no inline scripts, no frames, no base URIs.
+                        // Swagger UI serves its own assets same-origin, so 'self' is sufficient.
+                        .contentSecurityPolicy(csp -> csp.policyDirectives(
+                                "default-src 'none'; "
+                                + "frame-ancestors 'none'; "
+                                + "base-uri 'none'; "
+                                + "form-action 'self'; "
+                                + "img-src 'self' data:; "
+                                + "style-src 'self' 'unsafe-inline'; "
+                                + "script-src 'self'; "
+                                + "connect-src 'self'"))
+                )
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/logout").permitAll()
                         .requestMatchers(
-                                "/test-error",
-                                "/unhandled",
                                 "/api/v1/auth/**",
                                 "/api/v1/stripe/webhook",
                                 "/api/v1/stripe/config",
