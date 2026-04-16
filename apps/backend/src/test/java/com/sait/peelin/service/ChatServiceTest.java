@@ -9,6 +9,7 @@ import com.sait.peelin.repository.ChatMessageRepository;
 import com.sait.peelin.repository.ChatThreadRepository;
 import com.sait.peelin.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -112,6 +113,7 @@ class ChatServiceTest {
     }
 
     @Test
+    @Disabled("Obsolete after close-thread role restriction was lifted; customers may now close their own threads.")
     void closeThread_ByCustomer_ThrowsForbidden() {
         when(currentUserService.requireUser()).thenReturn(customerUser);
 
