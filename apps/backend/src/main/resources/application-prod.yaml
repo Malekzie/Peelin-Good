@@ -30,10 +30,10 @@ spring:
     prefix: ${DO_SPACES_PREFIX:customers}
   data:
     redis:
-      host: ${REDIS_HOST:}
-      username: ${REDIS_USERNAME:}
-      password: ${REDIS_PASSWORD:}
-      port: ${REDIS_PORT:}
+      host: ${REDIS_HOST:${VALKEY_HOST:localhost}}
+      username: ${REDIS_USERNAME:${VALKEY_USERNAME:}}
+      password: ${REDIS_PASSWORD:${VALKEY_PASSWORD:}}
+      port: ${REDIS_PORT:${VALKEY_PORT:6379}}
 management:
   endpoints:
     web:
