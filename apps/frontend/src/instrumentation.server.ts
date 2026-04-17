@@ -2,6 +2,10 @@ import * as Sentry from '@sentry/sveltekit';
 
 const dsn = process.env.SENTRY_DSN ?? '';
 const tracesSampleRate = Number(process.env.SENTRY_TRACES_SAMPLE_RATE ?? 0.1);
+// CI sets SENTRY_RELEASE (git SHA) and SENTRY_ENVIRONMENT (prod / preview / dev) so source-map
+// resolution + per-env event grouping line up with the bundle uploaded by sentryVitePlugin.
+const release = process.env.SENTRY_RELEASE || undefined;
+const environment = process.env.SENTRY_ENVIRONMENT || undefined;
 
 const SENSITIVE_KEY =
 	/^(authorization|cookie|set-cookie|x-api-key|x-auth-token|token|access_token|refresh_token|password|secret|stripe-signature)$/i;
@@ -17,6 +21,8 @@ function scrubHeaders(h: Record<string, unknown> | undefined) {
 Sentry.init({
 	dsn,
 	enabled: Boolean(dsn),
+	release,
+	environment,
 	tracesSampleRate,
 	enableLogs: true,
 	sendDefaultPii: false,

@@ -103,6 +103,11 @@ management:
 sentry:
   # DSN must come from environment; empty string disables the SDK cleanly.
   dsn: ${SENTRY_DSN:}
+  # SENTRY_RELEASE (git SHA in CI) ties events to the source bundle uploaded by the Maven plugin
+  # so stack traces resolve to source. SENTRY_ENVIRONMENT separates prod/preview/dev in the UI.
+  # Both are optional: empty means the SDK omits the field rather than fabricating one.
+  release: ${SENTRY_RELEASE:}
+  environment: ${SENTRY_ENVIRONMENT:}
   # Do not attach request headers, cookies, or client IP — opt in explicitly per-event if needed.
   send-default-pii: false
   logs:

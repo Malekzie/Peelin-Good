@@ -67,6 +67,15 @@ jobs:
         run: npm ci
 
       - name: Build
+        # SENTRY_AUTH_TOKEN lets sentryVitePlugin upload sourcemaps; SENTRY_RELEASE keys the
+        # upload to the commit SHA so frames resolve at runtime. PUBLIC_SENTRY_RELEASE /
+        # PUBLIC_SENTRY_ENVIRONMENT are baked into the client bundle by Vite so the browser
+        # SDK reports the same release the upload was tagged under.
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_RELEASE: ${{ github.sha }}
+          PUBLIC_SENTRY_RELEASE: ${{ github.sha }}
+          PUBLIC_SENTRY_ENVIRONMENT: ${{ github.event_name == 'pull_request' && 'preview' || 'production' }}
         run: npm run build
 
   docker:

@@ -8,7 +8,13 @@ export default defineConfig({
 	plugins: [
 		sentrySvelteKit({
 			org: 'robbie-zg',
-			project: 'peelin-web'
+			project: 'peelin-web',
+			// Tag uploaded source-maps with the same release the runtime reports so Sentry
+			// can match minified frames back to source. SENTRY_RELEASE is set in CI to the
+			// commit SHA; sentryVitePlugin reads SENTRY_AUTH_TOKEN from the env.
+			sourceMapsUploadOptions: {
+				release: { name: process.env.SENTRY_RELEASE }
+			}
 		}),
 		tailwindcss(),
 		sveltekit(),

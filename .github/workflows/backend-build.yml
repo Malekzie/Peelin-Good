@@ -38,6 +38,12 @@ jobs:
 
       - name: Build and run tests
         # TODO: re-enable once service tests are updated for the cache-layer + exception refactors.
+        # SENTRY_AUTH_TOKEN activates the sentry-upload Maven profile so the source bundle is
+        # uploaded keyed under SENTRY_RELEASE; absent token = profile inactive = no upload (the
+        # build still succeeds locally for forks without the secret).
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_RELEASE: ${{ github.sha }}
         run: ./mvnw verify -DskipTests --no-transfer-progress
 
   docker:

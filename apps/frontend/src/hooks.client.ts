@@ -7,6 +7,10 @@ import * as Sentry from '@sentry/sveltekit';
 const tracesSampleRate = Number(env.PUBLIC_SENTRY_TRACES_SAMPLE_RATE ?? 0.1);
 const replaysSessionSampleRate = Number(env.PUBLIC_SENTRY_REPLAY_SESSION_SAMPLE_RATE ?? 0);
 const replaysOnErrorSampleRate = Number(env.PUBLIC_SENTRY_REPLAY_ON_ERROR_SAMPLE_RATE ?? 1.0);
+// PUBLIC_SENTRY_RELEASE / PUBLIC_SENTRY_ENVIRONMENT are baked at build time by Vite so the
+// browser SDK reports the same release tag the source-map upload was keyed under.
+const release = env.PUBLIC_SENTRY_RELEASE || undefined;
+const environment = env.PUBLIC_SENTRY_ENVIRONMENT || undefined;
 
 // Header / query keys that must never leave the browser.
 const SENSITIVE_KEYS =
@@ -43,6 +47,8 @@ function scrubUrl(url: string | undefined): string | undefined {
 Sentry.init({
 	dsn: env.PUBLIC_SENTRY_DSN,
 	enabled: Boolean(env.PUBLIC_SENTRY_DSN),
+	release,
+	environment,
 
 	tracesSampleRate,
 	replaysSessionSampleRate,
