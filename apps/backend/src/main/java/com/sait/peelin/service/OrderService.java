@@ -125,139 +125,32 @@ public class OrderService {
     @CacheEvict(value = {"orders", "analytics", "dashboard"}, allEntries = true)
     public CheckoutSessionResponse checkout(CheckoutRequest req) {
         User user = currentUserService.currentUserOrNull();
-        Customer customer;
-        boolean guestCheckout = false;
-        if (user == null) {
-            if (req.getGuest() == null) {
-                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication or guest details are required");
-            }
-            if (req.getCustomerId() != null) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Guest checkout cannot target an existing customer id");
-            }
-            customer = customerService.resolveOrCreateGuestCustomer(req.getGuest());
-            guestCheckout = true;
-        } else if (user.getUserRole() == UserRole.customer) {
-            customer = customerLookupCacheService.findByUserId(user.getUserId());
-            if (customer == null) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Customer profile not found");
-            }
-        } else if (user.getUserRole() == UserRole.admin || user.getUserRole() == UserRole.employee) {
-            if (req.getCustomerId() == null) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "customerId is required for staff checkout");
-            }
-            customer = customerRepository.findById(req.getCustomerId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Customer not found"));
-            if (user.getUserRole() == UserRole.employee) {
-                Employee staff = employeeRepository.findByUser_UserId(user.getUserId())
-                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN));
-                if (!staff.getBakery().getId().equals(req.getBakeryId())) {
-                    throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Bakery does not match your assignment");
-                }
-            }
-        } else {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Cannot place order with this role");
-        }
+        CheckoutCaller caller = resolveCheckoutCaller(req, user);
+        Customer customer = caller.customer();
+        boolean guestCheckout = caller.guestCheckout();
+        boolean staffCaller = caller.staffCaller();
 
         Bakery bakery = bakeryRepository.findById(req.getBakeryId())
                 .orElseThrow(() -> new ResourceNotFoundException("Bakery not found"));
 
         requireScheduledTimeWithinHours(req.getScheduledAt(), bakery.getId());
 
-        if (req.getOrderMethod() == OrderMethod.delivery
-                && req.getAddressId() == null
-                && req.getDeliveryAddress() == null
-                && customer.getAddress() == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Delivery requires address information");
-        }
-        Address address = null;
-        if (req.getAddressId() != null) {
-            address = addressRepository.findById(req.getAddressId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Address not found"));
-        } else if (req.getDeliveryAddress() != null) {
-            Address a = new Address();
-            a.setAddressLine1(req.getDeliveryAddress().getLine1());
-            a.setAddressLine2(req.getDeliveryAddress().getLine2());
-            a.setAddressCity(req.getDeliveryAddress().getCity());
-            a.setAddressProvince(req.getDeliveryAddress().getProvince());
-            a.setAddressPostalCode(req.getDeliveryAddress().getPostalCode());
-            address = addressRepository.save(a);
-        } else if (req.getOrderMethod() == OrderMethod.delivery) {
-            address = customer.getAddress();
-        }
+        Address address = resolveCheckoutAddress(req, customer);
 
         // pricingLocalDate is only honored for admin/employee callers — otherwise a customer could
         // pick a past date when their cart's products had a larger product-special discount.
-        boolean staffCaller = user != null
-                && (user.getUserRole() == UserRole.admin || user.getUserRole() == UserRole.employee);
         LocalDate pricingDate = (staffCaller && req.getPricingLocalDate() != null)
                 ? req.getPricingLocalDate()
                 : LocalDate.now(DEFAULT_PRICING_ZONE);
 
-        BigDecimal listSubtotal = BigDecimal.ZERO;
-        for (CheckoutRequest.CheckoutLineRequest line : req.getItems()) {
-            Product p = productRepository.findById(line.getProductId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Product not found: " + line.getProductId()));
-            BigDecimal unit = p.getProductBasePrice();
-            listSubtotal = listSubtotal.add(unit.multiply(BigDecimal.valueOf(line.getQuantity())));
-        }
+        BigDecimal listSubtotal = computeListSubtotal(req);
 
-        BigDecimal specialDiscount = BigDecimal.ZERO;
-        BigDecimal tierDiscount = BigDecimal.ZERO;
-        BigDecimal employeeDiscount = BigDecimal.ZERO;
-        BigDecimal total;
-
-        // manualDiscount is a staff-only override; silently ignore it for customer/guest callers
-        // so a malicious client cannot zero out their grandTotal by posting a huge discount.
-        BigDecimal effectiveManualDiscount = staffCaller ? req.getManualDiscount() : null;
-        if (effectiveManualDiscount != null) {
-            BigDecimal manual = effectiveManualDiscount.max(BigDecimal.ZERO).min(listSubtotal);
-            total = listSubtotal.subtract(manual).max(BigDecimal.ZERO);
-            tierDiscount = manual;
-        } else {
-            var todaySpecial = productSpecialService.findFirstForDate(pricingDate);
-            Integer specialPid = todaySpecial != null ? todaySpecial.productId() : null;
-            BigDecimal specialPct = todaySpecial != null && todaySpecial.discountPercent() != null
-                    ? todaySpecial.discountPercent()
-                    : null;
-
-            BigDecimal afterSpecial = BigDecimal.ZERO;
-            for (CheckoutRequest.CheckoutLineRequest line : req.getItems()) {
-                Product p = productRepository.findById(line.getProductId()).orElseThrow();
-                BigDecimal unitList = p.getProductBasePrice();
-                BigDecimal lineList = unitList.multiply(BigDecimal.valueOf(line.getQuantity()));
-                BigDecimal lineAfter = lineList;
-                if (specialPid != null && specialPid.equals(p.getId())
-                        && specialPct != null && specialPct.compareTo(BigDecimal.ZERO) > 0) {
-                    BigDecimal factor = BigDecimal.ONE.subtract(
-                            specialPct.divide(BigDecimal.valueOf(100), 10, RoundingMode.HALF_UP));
-                    lineAfter = lineList.multiply(factor).setScale(2, RoundingMode.HALF_UP);
-                    specialDiscount = specialDiscount.add(lineList.subtract(lineAfter));
-                }
-                afterSpecial = afterSpecial.add(lineAfter);
-            }
-
-            if (!guestCheckout) {
-                int pts = customer.getCustomerRewardBalance() != null ? customer.getCustomerRewardBalance() : 0;
-                RewardTier tierForDiscount = rewardTierService.tierForBalance(pts).orElse(customer.getRewardTier());
-                if (tierForDiscount != null && tierForDiscount.getRewardTierDiscountRate() != null) {
-                    tierDiscount = afterSpecial.multiply(tierForDiscount.getRewardTierDiscountRate())
-                            .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
-                }
-            }
-            if (tierDiscount.compareTo(afterSpecial) > 0) {
-                tierDiscount = afterSpecial;
-            }
-            BigDecimal afterTier = afterSpecial.subtract(tierDiscount).max(BigDecimal.ZERO);
-
-            if (!guestCheckout && employeeCustomerLinkService.isEligibleForEmployeeDiscount(customer.getId())) {
-                employeeDiscount = afterTier.multiply(EmployeeCustomerLinkService.EMPLOYEE_DISCOUNT_PERCENT)
-                        .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
-            }
-            if (employeeDiscount.compareTo(afterTier) > 0) {
-                employeeDiscount = afterTier;
-            }
-            total = afterTier.subtract(employeeDiscount).max(BigDecimal.ZERO);
-        }
+        DiscountBreakdown breakdown = computeDiscounts(
+                req, listSubtotal, customer, guestCheckout, staffCaller, pricingDate);
+        BigDecimal specialDiscount = breakdown.specialDiscount();
+        BigDecimal tierDiscount = breakdown.tierDiscount();
+        BigDecimal employeeDiscount = breakdown.employeeDiscount();
+        BigDecimal total = breakdown.total();
 
         BigDecimal discount = tierDiscount.add(employeeDiscount);
         BigDecimal taxRatePercent = TAX_RATE_PERCENT;
@@ -535,6 +428,170 @@ public class OrderService {
                                 + dayHour.getOpenTime() + " – " + dayHour.getCloseTime() + ")");
             }
         }
+    }
+
+    private record CheckoutCaller(Customer customer, boolean guestCheckout, boolean staffCaller) {}
+
+    private record DiscountBreakdown(
+            BigDecimal specialDiscount,
+            BigDecimal tierDiscount,
+            BigDecimal employeeDiscount,
+            BigDecimal total) {}
+
+    private CheckoutCaller resolveCheckoutCaller(CheckoutRequest req, User user) {
+        if (user == null) {
+            return resolveGuestCaller(req);
+        }
+        return switch (user.getUserRole()) {
+            case customer -> resolveCustomerCaller(user);
+            case admin, employee -> resolveStaffCaller(req, user);
+        };
+    }
+
+    private CheckoutCaller resolveGuestCaller(CheckoutRequest req) {
+        if (req.getGuest() == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication or guest details are required");
+        }
+        if (req.getCustomerId() != null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Guest checkout cannot target an existing customer id");
+        }
+        Customer customer = customerService.resolveOrCreateGuestCustomer(req.getGuest());
+        return new CheckoutCaller(customer, true, false);
+    }
+
+    private CheckoutCaller resolveCustomerCaller(User user) {
+        Customer customer = customerLookupCacheService.findByUserId(user.getUserId());
+        if (customer == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Customer profile not found");
+        }
+        return new CheckoutCaller(customer, false, false);
+    }
+
+    private CheckoutCaller resolveStaffCaller(CheckoutRequest req, User user) {
+        if (req.getCustomerId() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "customerId is required for staff checkout");
+        }
+        Customer customer = customerRepository.findById(req.getCustomerId())
+                .orElseThrow(() -> new ResourceNotFoundException("Customer not found"));
+        if (user.getUserRole() == UserRole.employee) {
+            Employee staff = employeeRepository.findByUser_UserId(user.getUserId())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN));
+            if (!staff.getBakery().getId().equals(req.getBakeryId())) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Bakery does not match your assignment");
+            }
+        }
+        return new CheckoutCaller(customer, false, true);
+    }
+
+    private Address resolveCheckoutAddress(CheckoutRequest req, Customer customer) {
+        boolean isDelivery = req.getOrderMethod() == OrderMethod.delivery;
+        if (isDelivery
+                && req.getAddressId() == null
+                && req.getDeliveryAddress() == null
+                && customer.getAddress() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Delivery requires address information");
+        }
+        if (req.getAddressId() != null) {
+            return addressRepository.findById(req.getAddressId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Address not found"));
+        }
+        if (req.getDeliveryAddress() != null) {
+            Address a = new Address();
+            a.setAddressLine1(req.getDeliveryAddress().getLine1());
+            a.setAddressLine2(req.getDeliveryAddress().getLine2());
+            a.setAddressCity(req.getDeliveryAddress().getCity());
+            a.setAddressProvince(req.getDeliveryAddress().getProvince());
+            a.setAddressPostalCode(req.getDeliveryAddress().getPostalCode());
+            return addressRepository.save(a);
+        }
+        if (isDelivery) {
+            return customer.getAddress();
+        }
+        return null;
+    }
+
+    private BigDecimal computeListSubtotal(CheckoutRequest req) {
+        BigDecimal listSubtotal = BigDecimal.ZERO;
+        for (CheckoutRequest.CheckoutLineRequest line : req.getItems()) {
+            Product p = productRepository.findById(line.getProductId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Product not found: " + line.getProductId()));
+            BigDecimal unit = p.getProductBasePrice();
+            listSubtotal = listSubtotal.add(unit.multiply(BigDecimal.valueOf(line.getQuantity())));
+        }
+        return listSubtotal;
+    }
+
+    private DiscountBreakdown computeDiscounts(
+            CheckoutRequest req,
+            BigDecimal listSubtotal,
+            Customer customer,
+            boolean guestCheckout,
+            boolean staffCaller,
+            LocalDate pricingDate) {
+        // manualDiscount is a staff-only override; silently ignore it for customer/guest callers
+        // so a malicious client cannot zero out their grandTotal by posting a huge discount.
+        BigDecimal effectiveManualDiscount = staffCaller ? req.getManualDiscount() : null;
+        if (effectiveManualDiscount != null) {
+            BigDecimal manual = effectiveManualDiscount.max(BigDecimal.ZERO).min(listSubtotal);
+            BigDecimal total = listSubtotal.subtract(manual).max(BigDecimal.ZERO);
+            return new DiscountBreakdown(BigDecimal.ZERO, manual, BigDecimal.ZERO, total);
+        }
+        return computeAutomaticDiscounts(req, customer, guestCheckout, pricingDate);
+    }
+
+    private DiscountBreakdown computeAutomaticDiscounts(
+            CheckoutRequest req, Customer customer, boolean guestCheckout, LocalDate pricingDate) {
+        var todaySpecial = productSpecialService.findFirstForDate(pricingDate);
+        Integer specialPid = todaySpecial != null ? todaySpecial.productId() : null;
+        BigDecimal specialPct = (todaySpecial != null && todaySpecial.discountPercent() != null)
+                ? todaySpecial.discountPercent()
+                : null;
+
+        BigDecimal afterSpecial = BigDecimal.ZERO;
+        BigDecimal specialDiscount = BigDecimal.ZERO;
+        for (CheckoutRequest.CheckoutLineRequest line : req.getItems()) {
+            Product p = productRepository.findById(line.getProductId()).orElseThrow();
+            BigDecimal lineList = p.getProductBasePrice().multiply(BigDecimal.valueOf(line.getQuantity()));
+            BigDecimal lineAfter = applyLineSpecial(lineList, p, specialPid, specialPct);
+            specialDiscount = specialDiscount.add(lineList.subtract(lineAfter));
+            afterSpecial = afterSpecial.add(lineAfter);
+        }
+
+        BigDecimal tierDiscount = computeTierDiscount(customer, guestCheckout, afterSpecial);
+        BigDecimal afterTier = afterSpecial.subtract(tierDiscount).max(BigDecimal.ZERO);
+        BigDecimal employeeDiscount = computeEmployeeDiscount(customer, guestCheckout, afterTier);
+        BigDecimal total = afterTier.subtract(employeeDiscount).max(BigDecimal.ZERO);
+        return new DiscountBreakdown(specialDiscount, tierDiscount, employeeDiscount, total);
+    }
+
+    private static BigDecimal applyLineSpecial(BigDecimal lineList, Product p, Integer specialPid, BigDecimal specialPct) {
+        boolean applies = specialPid != null
+                && specialPid.equals(p.getId())
+                && specialPct != null
+                && specialPct.compareTo(BigDecimal.ZERO) > 0;
+        if (!applies) return lineList;
+        BigDecimal factor = BigDecimal.ONE.subtract(
+                specialPct.divide(BigDecimal.valueOf(100), 10, RoundingMode.HALF_UP));
+        return lineList.multiply(factor).setScale(2, RoundingMode.HALF_UP);
+    }
+
+    private BigDecimal computeTierDiscount(Customer customer, boolean guestCheckout, BigDecimal afterSpecial) {
+        if (guestCheckout) return BigDecimal.ZERO;
+        int pts = customer.getCustomerRewardBalance() != null ? customer.getCustomerRewardBalance() : 0;
+        RewardTier tier = rewardTierService.tierForBalance(pts).orElse(customer.getRewardTier());
+        if (tier == null || tier.getRewardTierDiscountRate() == null) return BigDecimal.ZERO;
+        BigDecimal discount = afterSpecial.multiply(tier.getRewardTierDiscountRate())
+                .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+        return discount.min(afterSpecial);
+    }
+
+    private BigDecimal computeEmployeeDiscount(Customer customer, boolean guestCheckout, BigDecimal afterTier) {
+        if (guestCheckout || !employeeCustomerLinkService.isEligibleForEmployeeDiscount(customer.getId())) {
+            return BigDecimal.ZERO;
+        }
+        BigDecimal discount = afterTier.multiply(EmployeeCustomerLinkService.EMPLOYEE_DISCOUNT_PERCENT)
+                .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+        return discount.min(afterTier);
     }
 
     /**
