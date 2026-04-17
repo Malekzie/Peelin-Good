@@ -75,6 +75,14 @@ spring:
             user-info-uri: https://graph.microsoft.com/oidc/userinfo
             user-name-attribute: sub
 
+springdoc:
+  swagger-ui:
+    operations-sorter: alpha
+    tags-sorter: alpha
+    doc-expansion: list
+    filter: true
+    show-extensions: true
+
 app:
   jwt:
     # No default: EnvValidator fails fast at startup if JWT_SECRET is unset.
