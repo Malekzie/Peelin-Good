@@ -41,12 +41,14 @@ public class SecurityConfig {
                                 .maxAgeInSeconds(31_536_000))
                         .contentTypeOptions(opts -> {}) // X-Content-Type-Options: nosniff
                         .frameOptions(frame -> frame.deny()) // X-Frame-Options: DENY (clickjacking)
-                        .referrerPolicy(rp -> rp.policyGeneralReferrerPolicy(
+                        .referrerPolicy(rp -> rp.policy(
                                 ReferrerPolicyHeaderWriter.ReferrerPolicy.NO_REFERRER))
                         .xssProtection(xss -> xss.headerValue(
                                 XXssProtectionHeaderWriter.HeaderValue.DISABLED))
-                        // API-only backend: no inline scripts, no frames, no base URIs.
-                        // Swagger UI serves its own assets same-origin, so 'self' is sufficient.
+                        // API responses are JSON and never executed as HTML, so CSP here is only
+                        // meaningful for the Swagger UI pages served same-origin. Springdoc's bundled
+                        // HTML uses inline bootstrap scripts, so 'unsafe-inline' is required for
+                        // /swagger-ui/** to render; same rationale for style-src.
                         .contentSecurityPolicy(csp -> csp.policyDirectives(
                                 "default-src 'none'; "
                                 + "frame-ancestors 'none'; "
@@ -54,7 +56,7 @@ public class SecurityConfig {
                                 + "form-action 'self'; "
                                 + "img-src 'self' data:; "
                                 + "style-src 'self' 'unsafe-inline'; "
-                                + "script-src 'self'; "
+                                + "script-src 'self' 'unsafe-inline'; "
                                 + "connect-src 'self'"))
                 )
                 .sessionManagement(session ->

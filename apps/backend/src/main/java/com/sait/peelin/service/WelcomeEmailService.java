@@ -88,7 +88,7 @@ public class WelcomeEmailService {
                 mailSender.send(message);
                 log.info("Welcome email sent to userId={}", user.getUserId());
             } catch (Exception e) {
-                log.error("Failed to send welcome email for userId={}: {}", user.getUserId(), e.getMessage());
+                log.error("Failed to send welcome email for userId={}", user.getUserId(), e);
             }
         });
     }

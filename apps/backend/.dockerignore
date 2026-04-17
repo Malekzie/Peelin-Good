@@ -15,4 +15,3 @@ HELP.md
 .mvn/wrapper/maven-wrapper.jar
 scripts/
 .dockerignore
-Dockerfile

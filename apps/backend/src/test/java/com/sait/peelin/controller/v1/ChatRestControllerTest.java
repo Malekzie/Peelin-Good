@@ -2,7 +2,9 @@ package com.sait.peelin.controller.v1;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sait.peelin.dto.v1.ChatThreadDto;
+import com.sait.peelin.repository.EmployeeSpecialtyRepository;
 import com.sait.peelin.service.ChatService;
+import com.sait.peelin.service.CurrentUserService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.security.oauth2.client.OAuth2ClientAutoConfiguration;
@@ -42,6 +44,8 @@ class ChatRestControllerTest {
     @Autowired MockMvc mockMvc;
     @Autowired ObjectMapper objectMapper;
     @MockitoBean ChatService chatService;
+    @MockitoBean CurrentUserService currentUserService;
+    @MockitoBean EmployeeSpecialtyRepository employeeSpecialtyRepository;
 
     ChatThreadDto thread(String status, String category) {
         return new ChatThreadDto(1, UUID.randomUUID(), "Alice", "alice",

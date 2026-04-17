@@ -9,7 +9,8 @@ const replaysSessionSampleRate = Number(env.PUBLIC_SENTRY_REPLAY_SESSION_SAMPLE_
 const replaysOnErrorSampleRate = Number(env.PUBLIC_SENTRY_REPLAY_ON_ERROR_SAMPLE_RATE ?? 1.0);
 
 // Header / query keys that must never leave the browser.
-const SENSITIVE_KEYS = /^(authorization|cookie|set-cookie|x-api-key|x-auth-token|token|access_token|refresh_token|password|secret)$/i;
+const SENSITIVE_KEYS =
+	/^(authorization|cookie|set-cookie|x-api-key|x-auth-token|token|access_token|refresh_token|password|secret)$/i;
 const SENSITIVE_QUERY = /^(token|access_token|refresh_token|code|state|id_token|password)$/i;
 
 function scrub<T>(value: T): T {
@@ -65,8 +66,9 @@ Sentry.init({
 			event.request.headers = scrub(event.request.headers);
 			event.request.url = scrubUrl(event.request.url);
 			if (event.request.query_string && typeof event.request.query_string === 'string') {
-				event.request.query_string = scrubUrl('?' + event.request.query_string)?.replace(/^\?/, '')
-					?? event.request.query_string;
+				event.request.query_string =
+					scrubUrl('?' + event.request.query_string)?.replace(/^\?/, '') ??
+					event.request.query_string;
 			}
 		}
 		if (event.user) {

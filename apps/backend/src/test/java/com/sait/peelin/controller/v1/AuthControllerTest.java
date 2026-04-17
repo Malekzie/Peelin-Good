@@ -5,6 +5,7 @@ import com.sait.peelin.dto.v1.auth.AuthResponse;
 import com.sait.peelin.dto.v1.auth.LoginRequest;
 import com.sait.peelin.dto.v1.auth.RegisterRequest;
 import com.sait.peelin.service.AuthService;
+import com.sait.peelin.service.CurrentUserService;
 import com.sait.peelin.service.JwtService;
 import com.sait.peelin.service.PasswordResetService;
 import com.sait.peelin.service.WelcomeEmailService;
@@ -65,6 +66,9 @@ class AuthControllerTest {
 
     @MockitoBean
     private WelcomeEmailService welcomeEmailService;
+
+    @MockitoBean
+    private CurrentUserService currentUserService;
 
     @MockitoBean
     private UserDetailsService userDetailsService;

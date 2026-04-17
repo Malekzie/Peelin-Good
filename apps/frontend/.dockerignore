@@ -14,4 +14,3 @@ coverage/
 .vscode/
 .DS_Store
 .dockerignore
-Dockerfile

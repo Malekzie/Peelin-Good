@@ -175,7 +175,7 @@ public class PasswordResetService {
                 mailSender.send(message);
                 log.info("Password reset email sent to userId={}", user.getUserId());
             } catch (Exception e) {
-                log.error("Failed to send password reset email for userId={}: {}", user.getUserId(), e.getMessage());
+                log.error("Failed to send password reset email for userId={}", user.getUserId(), e);
             }
         });
     }
