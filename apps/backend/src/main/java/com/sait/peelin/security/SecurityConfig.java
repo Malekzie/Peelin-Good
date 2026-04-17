@@ -18,6 +18,8 @@ import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWrite
 import org.springframework.security.web.header.writers.XXssProtectionHeaderWriter;
 import org.springframework.web.cors.CorsConfigurationSource;
 
+import java.util.Optional;
+
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
@@ -27,6 +29,8 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final CorsConfigurationSource corsConfigurationSource;
     private final OAuth2SuccessHandler oAuth2SuccessHandler;
+    // Optional: only present when Redis is wired (non-test profile). Tests skip rate limiting.
+    private final Optional<RateLimitFilter> rateLimitFilter;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -101,6 +105,8 @@ public class SecurityConfig {
                         })
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+        // Rate limiter runs before the JWT filter so it can throttle unauthenticated paths.
+        rateLimitFilter.ifPresent(f -> http.addFilterBefore(f, JwtAuthenticationFilter.class));
         return http.build();
     }
 
