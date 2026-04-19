@@ -99,7 +99,7 @@ public class ReviewService {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Customer profile required");
             }
         } else {
-            customer = resolveOrCreateAnonymousReviewer();
+            customer = resolveOrCreateAnonymousReviewer(req.getGuestName());
         }
         Product product = productRepository.findById(productId).orElseThrow(() -> new ResourceNotFoundException("Product not found"));
 
@@ -122,14 +122,8 @@ public class ReviewService {
         r.setReviewSubmittedDate(OffsetDateTime.now());
         r.setOrder(null);
         r.setBakery(bakery);
-        if (isAuthenticated) {
-            r.setReviewStatus(ReviewStatus.approved);
-            r.setReviewApprovalDate(OffsetDateTime.now());
-        } else {
-            // Unauthenticated submissions require admin moderation to curb review spam.
-            r.setReviewStatus(ReviewStatus.pending);
-            r.setReviewApprovalDate(null);
-        }
+        r.setReviewStatus(ReviewStatus.approved);
+        r.setReviewApprovalDate(OffsetDateTime.now());
 
         if (isAuthenticated && req.getOrderId() != null) {
             Order order = orderRepository.findById(req.getOrderId()).orElse(null);
@@ -343,7 +337,8 @@ public class ReviewService {
             return "Customer";
         }
         if (c.getUser() == null) {
-            return "Anonymous";
+            String first = trimName(c.getCustomerFirstName());
+            return first.isEmpty() ? "Anonymous" : first;
         }
         String first = trimName(c.getCustomerFirstName());
         String last = trimName(c.getCustomerLastName());
@@ -397,7 +392,7 @@ public class ReviewService {
         return t.substring(0, MODERATION_MESSAGE_CLIENT_MAX_LEN - 1).trim() + "…";
     }
 
-    private Customer resolveOrCreateAnonymousReviewer() {
+    private Customer resolveOrCreateAnonymousReviewer(String guestName) {
         RewardTier lowestTier = rewardTierRepository.findFirstByOrderByRewardTierMinPointsAsc()
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No reward tiers configured"));
 
@@ -405,7 +400,7 @@ public class ReviewService {
         guest.setRewardTier(lowestTier);
         guest.setCustomerRewardBalance(0);
         guest.setGuestExpiryDate(java.time.LocalDate.now().plusYears(1));
-        guest.setCustomerFirstName("Anonymous");
+        guest.setCustomerFirstName(StringUtils.hasText(guestName) ? guestName.trim() : "Anonymous");
 
         guest.setCustomerEmail(com.sait.peelin.support.GuestContactFiller.syntheticEmailForPhoneDigits(
                 com.sait.peelin.support.GuestContactFiller.allocateSyntheticPhoneDigits()));
@@ -431,7 +426,7 @@ public class ReviewService {
             customer = customerRepository.findByUser_UserId(u.getUserId())
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Customer profile required"));
         } else {
-            customer = resolveOrCreateAnonymousReviewer();
+            customer = resolveOrCreateAnonymousReviewer(req.getGuestName());
         }
 
         String comment = req.getComment();
@@ -460,14 +455,8 @@ public class ReviewService {
         r.setReviewRating(req.getRating());
         r.setReviewComment(req.getComment());
         r.setReviewSubmittedDate(OffsetDateTime.now());
-        if (isAuthenticated) {
-            r.setReviewStatus(ReviewStatus.approved);
-            r.setReviewApprovalDate(OffsetDateTime.now());
-        } else {
-            // Unauthenticated submissions require admin moderation to curb review spam.
-            r.setReviewStatus(ReviewStatus.pending);
-            r.setReviewApprovalDate(null);
-        }
+        r.setReviewStatus(ReviewStatus.approved);
+        r.setReviewApprovalDate(OffsetDateTime.now());
 
         Review saved = saveReviewOrConflict(r, "You already submitted a review for this bakery");
         return toDto(saved);
