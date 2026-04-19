@@ -309,6 +309,9 @@ public class ReviewService {
                 && r.getProduct() != null
                 && orderItemRepository.existsPurchasedByCustomer(r.getCustomer().getId(), r.getProduct().getId());
 
+        boolean reviewerPhotoApprovalPending = (r.getCustomer() != null && r.getCustomer().getUser() != null)
+                && Boolean.TRUE.equals(r.getCustomer().getUser().getPhotoApprovalPending());
+
         return new ReviewDto(
                 r.getId(),
                 r.getCustomer().getId(),
@@ -326,7 +329,8 @@ public class ReviewService {
                 moderationMessage,
                 verifiedPurchase,
                 verifiedAccount,
-                reviewerPhotoUrl
+                reviewerPhotoUrl,
+                reviewerPhotoApprovalPending
         );
     }
 

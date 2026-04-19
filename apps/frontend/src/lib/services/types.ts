@@ -34,6 +34,7 @@ export interface ReviewRecord extends ApiRecord {
 	moderationMessage?: string | null;
 	submittedAt?: string | null;
 	reviewerPhotoUrl?: string | null;
+	reviewerPhotoApproved?: boolean;
 }
 
 export interface OrderItemRecord extends ApiRecord {

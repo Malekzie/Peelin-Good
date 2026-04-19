@@ -28,5 +28,6 @@ public record ReviewDto(
         String moderationMessage,
         boolean verifiedPurchase,
         boolean verifiedAccount,
-        String reviewerPhotoUrl
+        String reviewerPhotoUrl,
+        boolean reviewerPhotoApprovalPending
 ) {}

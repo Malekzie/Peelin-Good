@@ -289,7 +289,7 @@
 									<div class="rounded-xl border border-border bg-background p-4">
 										<div class="flex items-start gap-3">
 											<!-- Avatar -->
-											{#if review.reviewerPhotoUrl}
+											{#if review.reviewerPhotoUrl && !review.reviewerPhotoApprovalPending}
 												<img
 													src={review.reviewerPhotoUrl}
 													alt={review.reviewerDisplayName}
