@@ -119,31 +119,106 @@
 						</div>
 						{#each showAllReviews ? filteredReviews : filteredReviews.slice(0, 3) as review (review.id)}
 							<div class="rounded-lg bg-muted/50 px-3 py-2">
-								<div class="flex items-center justify-between">
-									<div class="flex items-center gap-2">
-										<p class="text-xs font-semibold text-foreground">
-											{review.reviewerDisplayName}
+								<div class="flex items-start gap-2">
+									<!-- Avatar -->
+									{#if review.reviewerPhotoUrl && !review.reviewerPhotoApprovalPending}
+										<img
+											src={review.reviewerPhotoUrl}
+											alt={review.reviewerDisplayName}
+											class="h-8 w-8 shrink-0 rounded-full object-cover"
+										/>
+									{:else if review.verifiedAccount && review.reviewerDisplayName}
+										{@const hash = [...review.reviewerDisplayName].reduce(
+											(h, c) => c.charCodeAt(0) + ((h << 5) - h),
+											0
+										)}
+										{@const colours = [
+											{ bg: '#EEEDFE', text: '#3C3489' },
+											{ bg: '#E1F5EE', text: '#0F6E56' },
+											{ bg: '#E6F1FB', text: '#185FA5' },
+											{ bg: '#FAEEDA', text: '#854F0B' },
+											{ bg: '#FBEAF0', text: '#993556' },
+											{ bg: '#FAECE7', text: '#993C1D' }
+										]}
+										{@const color = colours[Math.abs(hash) % colours.length]}
+										{@const parts = review.reviewerDisplayName.trim().split(/\s+/)}
+										{@const initials =
+											parts.length >= 2
+												? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+												: review.reviewerDisplayName.slice(0, 2).toUpperCase()}
+										<div
+											class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-medium"
+											style="background-color: {color.bg}; color: {color.text};"
+										>
+											{initials}
+										</div>
+									{:else}
+										<div
+											class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted"
+										>
+											<svg
+												width="14"
+												height="14"
+												viewBox="0 0 24 24"
+												fill="none"
+												stroke="currentColor"
+												stroke-width="2"
+												stroke-linecap="round"
+												stroke-linejoin="round"
+												class="text-muted-foreground"
+											>
+												<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+												<circle cx="12" cy="7" r="4" />
+											</svg>
+										</div>
+									{/if}
+
+									<!-- Content -->
+									<div class="min-w-0 flex-1">
+										<div class="flex flex-wrap items-center gap-1.5">
+											<p class="text-xs font-semibold text-foreground">
+												{review.reviewerDisplayName}
+											</p>
+											{#if review.verifiedAccount}
+												<span
+													class="rounded-full bg-emerald-100 px-1.5 py-0.5 text-[9px] font-semibold text-emerald-800"
+													>Verified</span
+												>
+											{/if}
+											{#if review.verifiedPurchase}
+												<span
+													class="rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] font-semibold text-amber-700"
+													>Purchased</span
+												>
+											{/if}
+											{#if review.submittedAt}
+												{@const date = new Date(review.submittedAt)}
+												{@const diffDays = Math.floor((Date.now() - date.getTime()) / 86400000)}
+												<span class="ml-auto text-[10px] text-muted-foreground">
+													{diffDays === 0
+														? 'Today'
+														: diffDays === 1
+															? 'Yesterday'
+															: diffDays < 7
+																? `${diffDays}d ago`
+																: diffDays < 30
+																	? `${Math.floor(diffDays / 7)}w ago`
+																	: date.toLocaleDateString('en-CA', {
+																			month: 'short',
+																			day: 'numeric',
+																			year: 'numeric'
+																		})}
+												</span>
+											{/if}
+										</div>
+										<p class="text-xs text-yellow-500">
+											{'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}
 										</p>
-										{#if review.verifiedAccount}
-											<span
-												class="rounded-full bg-emerald-100 px-1.5 py-0.5 text-[9px] font-semibold text-emerald-800"
-												>Verified</span
-											>
-										{/if}
-										{#if review.verifiedPurchase}
-											<span
-												class="rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] font-semibold text-amber-700"
-												>Purchased</span
-											>
+										{#if review.comment}
+											<p class="mt-1 text-xs text-muted-foreground">{review.comment}</p>
 										{/if}
 									</div>
-									<p class="text-xs text-yellow-500">
-										{'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}
-									</p>
 								</div>
-								{#if review.comment}
-									<p class="mt-1 text-xs text-muted-foreground">{review.comment}</p>
-								{/if}
 							</div>
 						{/each}
 						{#if filteredReviews.length > 3}
