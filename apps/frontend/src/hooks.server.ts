@@ -35,7 +35,8 @@ export const handle: Handle = sequence(
 
 		if (jwt) {
 			try {
-				const payload = JSON.parse(atob(jwt.split('.')[1]));
+				const b64 = jwt.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+				const payload = JSON.parse(Buffer.from(b64, 'base64').toString('utf8'));
 				const now = Math.floor(Date.now() / 1000);
 				if (payload.exp && payload.exp < now) {
 					event.locals.user = null;

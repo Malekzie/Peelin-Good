@@ -11,6 +11,8 @@ public record ChatThreadDto(
         String customerEmail,
         String customerProfilePhotoPath,
         UUID employeeUserId,
+        String employeeDisplayName,
+        String employeeUsername,
         String status,
         String category,
         OffsetDateTime createdAt,

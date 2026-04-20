@@ -7,6 +7,7 @@ import com.sait.peelin.model.User;
 import com.sait.peelin.model.UserRole;
 import com.sait.peelin.repository.ChatMessageRepository;
 import com.sait.peelin.repository.ChatThreadRepository;
+import com.sait.peelin.repository.EmployeeRepository;
 import com.sait.peelin.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
@@ -38,6 +39,7 @@ class ChatServiceTest {
     @Mock SimpMessagingTemplate messagingTemplate;
     @Mock ChatRoutingService chatRoutingService;
     @Mock UserRepository userRepository;
+    @Mock EmployeeRepository employeeRepository;
 
     ChatService chatService;
 
@@ -52,7 +54,7 @@ class ChatServiceTest {
                 chatThreadRepository, chatMessageRepository,
                 chatLookupCacheService, customerLookupCacheService,
                 currentUserService, messagingTemplate,
-                chatRoutingService, userRepository, systemUserId);
+                chatRoutingService, userRepository, employeeRepository, systemUserId);
 
         staffUser = new User();
         staffUser.setUserId(UUID.randomUUID());

@@ -81,8 +81,9 @@
 
 		unsubStatus = subscribeWs(ChatTopics.status(t.id), (data) => {
 			const updated = data as ChatThread;
-			if (updated.status === 'closed' && thread?.id === updated.id) {
-				thread = updated;
+			if (thread?.id !== updated.id) return;
+			thread = updated;
+			if (updated.status === 'closed') {
 				unsubMessages?.();
 				unsubTyping?.();
 			}
@@ -194,13 +195,19 @@
 								<span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#8A9E7F] opacity-75"></span>
 								<span class="relative inline-flex h-2 w-2 rounded-full bg-[#8A9E7F]"></span>
 							</span>
-							<p class="text-sm font-semibold text-[#FAF7F2]">Peelin' Good Support</p>
+							<p class="text-sm font-semibold text-[#FAF7F2]">
+								{#if thread?.status !== 'closed' && thread?.employeeUserId}
+									{thread.employeeDisplayName ?? thread.employeeUsername ?? 'Support agent'}
+								{:else}
+									Peelin' Good Support
+								{/if}
+							</p>
 						</div>
 						<p class="mt-0.5 text-[11px] text-[#FAF7F2]/60">
 							{#if thread?.status === 'closed'}
 								Conversation ended
 							{:else if thread?.employeeUserId}
-								Agent connected · replies in minutes
+								Connected · replies in minutes
 							{:else if thread}
 								Waiting for an agent · typically under 5 min
 							{:else}
