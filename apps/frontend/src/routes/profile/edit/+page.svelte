@@ -173,7 +173,13 @@
 				e.confirmPassword = 'Passwords do not match.';
 		}
 		if (!fields.firstName.trim()) e.firstName = 'First name is required.';
+		else if (fields.firstName.trim().length < 2) e.firstName = 'Must be at least 2 characters.';
+		else if (!/^[a-zA-ZÀ-ÖØ-öø-ÿ'\- ]+$/.test(fields.firstName.trim()))
+			e.firstName = 'Only letters, hyphens, and apostrophes allowed.';
 		if (!fields.lastName.trim()) e.lastName = 'Last name is required.';
+		else if (fields.lastName.trim().length < 2) e.lastName = 'Must be at least 2 characters.';
+		else if (!/^[a-zA-ZÀ-ÖØ-öø-ÿ'\- ]+$/.test(fields.lastName.trim()))
+			e.lastName = 'Only letters, hyphens, and apostrophes allowed.';
 		if (!fields.phone.trim()) e.phone = 'Phone is required.';
 		else if (fields.phone.trim().toUpperCase().startsWith('OAUTH-'))
 			e.phone = 'Please enter a valid phone number.';
@@ -181,14 +187,16 @@
 			e.phone = 'Enter a valid phone number.';
 		if (!fields.addressLine1.trim()) e.addressLine1 = 'Address is required.';
 		if (!fields.city.trim()) e.city = 'City is required.';
+		else if (!/^[a-zA-ZÀ-ÖØ-öø-ÿ'\-. ]+$/.test(fields.city.trim()))
+			e.city = 'Enter a valid city name.';
 		if (!fields.province) e.province = 'Province is required.';
 		if (!fields.postalCode.trim()) e.postalCode = 'Postal code is required.';
 		else if (!FormValidationUtil.isValidCanadianPostalCode(fields.postalCode))
 			e.postalCode = 'Enter a valid Canadian postal code.';
 		if (!fields.username.trim()) e.username = 'Username is required.';
 		else if (fields.username.trim().length < 3) e.username = 'Must be at least 3 characters.';
-		else if (!/^[a-zA-Z0-9_]+$/.test(fields.username.trim()))
-			e.username = 'Only letters, numbers, and underscores.';
+		else if (!/^[a-zA-Z0-9_.\-]+$/.test(fields.username.trim()))
+			e.username = 'Only letters, numbers, underscores, periods, and hyphens.';
 		if (!fields.email.trim()) e.email = 'Email is required.';
 		else if (!FormValidationUtil.isValidEmail(fields.email))
 			e.email = 'Enter a valid email address.';

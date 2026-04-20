@@ -577,6 +577,7 @@
 									/>
 									<button
 										type="button"
+										tabindex="-1"
 										onclick={() => (showEmployeeLinkPassword = !showEmployeeLinkPassword)}
 										class="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground transition hover:text-foreground"
 										aria-label={showEmployeeLinkPassword ? 'Hide password' : 'Show password'}
@@ -615,6 +616,7 @@
 									/>
 									<button
 										type="button"
+										tabindex="-1"
 										onclick={() =>
 											(showEmployeeLinkPasswordConfirm = !showEmployeeLinkPasswordConfirm)}
 										class="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground transition hover:text-foreground"
