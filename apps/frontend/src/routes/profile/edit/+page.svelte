@@ -111,9 +111,9 @@
 	});
 
 	const missingFields = $derived(
-		reason === 'checkout' && profile
+		(reason === 'checkout' || reason === 'oauth') && profile
 			? {
-					phone: !profile.phone,
+					phone: !profile.phone || profile.phone.toUpperCase().startsWith('OAUTH-'),
 					addressLine1: !profile.address?.line1,
 					city: !profile.address?.city,
 					province: !profile.address?.province,

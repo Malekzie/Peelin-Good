@@ -93,7 +93,9 @@
 					</p>
 					<div class="mt-6 flex justify-end gap-3">
 						<Button variant="outline" onclick={() => (showOAuthModal = false)}>Skip for now</Button>
-						<Button onclick={() => goto(resolve('/profile/edit'))}>Complete profile</Button>
+						<Button onclick={() => goto(resolve('/profile/edit?reason=oauth'))}
+							>Complete profile</Button
+						>
 					</div>
 				</div>
 			</div>
