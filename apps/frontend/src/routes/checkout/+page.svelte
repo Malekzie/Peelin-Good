@@ -237,7 +237,11 @@
 	$effect(() => {
 		if (userLat !== null && userLng !== null && bakeries.length > 0) {
 			const sorted = sortedBakeries(bakeries, userLat, userLng);
-			bakeries = sorted;
+			const ids = sorted.map((b) => b.id).join(',');
+			const currentIds = bakeries.map((b) => b.id).join(',');
+			if (ids !== currentIds) {
+				bakeries = sorted;
+			}
 			if (!selectedBakeryId) selectedBakeryId = sorted[0]?.id ?? null;
 		}
 	});
