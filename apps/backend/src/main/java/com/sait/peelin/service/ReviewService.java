@@ -28,6 +28,8 @@ public class ReviewService {
 
     /** Short text for mobile/web toasts; full reason stays in {@code moderation_rejection_reason}. */
     private static final int MODERATION_MESSAGE_CLIENT_MAX_LEN = 100;
+    private static final String GUEST_FIRST_NAME = "Guest";
+    private static final String GUEST_LAST_NAME = "Customer";
     private static final List<ReviewStatus> BLOCKING_REVIEW_STATUSES =
             List.of(ReviewStatus.approved, ReviewStatus.pending, ReviewStatus.rejected);
     boolean isAuthenticated = true;
@@ -328,20 +330,16 @@ public class ReviewService {
         );
     }
 
-    /**
-     * Signed-in customers: first name plus last-name initial (e.g. {@code James R.}).
-     * Guest reviewers (no linked user) always show as {@code Anonymous}.
-     */
     static String reviewerDisplayName(Customer c) {
         if (c == null) {
             return "Customer";
         }
-        if (c.getUser() == null) {
-            String first = trimName(c.getCustomerFirstName());
-            return first.isEmpty() ? "Anonymous" : first;
-        }
         String first = trimName(c.getCustomerFirstName());
         String last = trimName(c.getCustomerLastName());
+        if (c.getUser() == null) {
+            if (first.isEmpty()) first = GUEST_FIRST_NAME;
+            if (last.isEmpty()) last = GUEST_LAST_NAME;
+        }
         if (first.isEmpty()) {
             first = "Customer";
         }
@@ -400,7 +398,8 @@ public class ReviewService {
         guest.setRewardTier(lowestTier);
         guest.setCustomerRewardBalance(0);
         guest.setGuestExpiryDate(java.time.LocalDate.now().plusYears(1));
-        guest.setCustomerFirstName(StringUtils.hasText(guestName) ? guestName.trim() : "Anonymous");
+        guest.setCustomerFirstName(GUEST_FIRST_NAME);
+        guest.setCustomerLastName(GUEST_LAST_NAME);
 
         guest.setCustomerEmail(com.sait.peelin.support.GuestContactFiller.syntheticEmailForPhoneDigits(
                 com.sait.peelin.support.GuestContactFiller.allocateSyntheticPhoneDigits()));

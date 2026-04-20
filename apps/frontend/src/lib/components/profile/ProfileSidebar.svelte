@@ -8,7 +8,7 @@
 	import { user } from '$lib/stores/authStore';
 	import { Button } from '$lib/components/ui/button';
 	import { Separator } from '$lib/components/ui/separator';
-	import { Avatar, AvatarFallback } from '$lib/components/ui/avatar';
+	import { Avatar, AvatarFallback, AvatarImage } from '$lib/components/ui/avatar';
 	import {
 		User,
 		ShoppingBag,
@@ -35,15 +35,26 @@
 
 	let profileFirstName = $state('');
 	let profileLastName = $state('');
+	let profilePhotoUrl = $state(null);
+let profilePhotoPending = $state(false);
 
 	onMount(async () => {
 		try {
 			const profile = await getProfile();
 			profileFirstName = (profile?.firstName ?? '').trim();
 			profileLastName = (profile?.lastName ?? '').trim();
+			profilePhotoUrl = (
+				profile?.profilePhotoUrl ??
+				profile?.photoUrl ??
+				profile?.profilePhotoPath ??
+				null
+			)?.trim() || null;
+			profilePhotoPending = profile?.photoApprovalPending === true;
 		} catch {
 			profileFirstName = '';
 			profileLastName = '';
+			profilePhotoUrl = null;
+			profilePhotoPending = false;
 		}
 	});
 
@@ -116,6 +127,11 @@
 		<div class="shrink-0 space-y-6 p-6 pt-8">
 			<div class="flex items-center gap-3">
 				<Avatar class="h-10 w-10">
+					<AvatarImage
+						src={profilePhotoUrl ?? undefined}
+						alt={$user?.username ?? 'Account'}
+						class={profilePhotoPending ? 'opacity-60 grayscale' : ''}
+					/>
 					<AvatarFallback class="bg-primary text-sm font-semibold text-primary-foreground">
 						{initials}
 					</AvatarFallback>

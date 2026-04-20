@@ -28,6 +28,11 @@
 		return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 	}
 
+function approvedCustomerPhotoPath(thread: ChatThread): string | undefined {
+	if (thread.customerPhotoApprovalPending) return undefined;
+	return thread.customerProfilePhotoPath ?? undefined;
+}
+
 	const CATEGORIES = [
 		{ value: '', label: 'All' },
 		{ value: 'general', label: 'General' },
@@ -323,10 +328,10 @@
 						>
 							<Avatar class="h-9 w-9 shrink-0">
 								<AvatarImage
-									src={t.customerProfilePhotoPath ?? undefined}
+									src={approvedCustomerPhotoPath(t)}
 									alt={t.customerDisplayName ?? t.customerUsername}
 								/>
-								<AvatarFallback class="bg-[#8A9E7F] text-xs font-semibold text-white">
+								<AvatarFallback class="bg-primary text-xs font-semibold text-primary-foreground">
 									{initialsOf(t.customerDisplayName ?? t.customerUsername)}
 								</AvatarFallback>
 							</Avatar>
@@ -371,10 +376,10 @@
 				<div class="flex items-center gap-3">
 					<Avatar class="h-11 w-11">
 						<AvatarImage
-							src={selectedThread.customerProfilePhotoPath ?? undefined}
+							src={approvedCustomerPhotoPath(selectedThread)}
 							alt={selectedThread.customerDisplayName ?? selectedThread.customerUsername}
 						/>
-						<AvatarFallback class="bg-[#8A9E7F] text-sm font-semibold text-white">
+						<AvatarFallback class="bg-primary text-sm font-semibold text-primary-foreground">
 							{initialsOf(
 								selectedThread.customerDisplayName ?? selectedThread.customerUsername
 							)}

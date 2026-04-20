@@ -34,6 +34,7 @@ export interface ReviewRecord extends ApiRecord {
 	moderationMessage?: string | null;
 	submittedAt?: string | null;
 	reviewerPhotoUrl?: string | null;
+	reviewerPhotoApprovalPending?: boolean;
 	reviewerPhotoApproved?: boolean;
 }
 
@@ -138,9 +139,11 @@ export interface ChatThread {
 	customerUsername: string;
 	customerEmail: string | null;
 	customerProfilePhotoPath: string | null;
+	customerPhotoApprovalPending: boolean;
 	employeeUserId: string | null;
 	employeeDisplayName: string | null;
 	employeeUsername: string | null;
+	employeeProfilePhotoPath: string | null;
 	status: string;
 	category: string;
 	createdAt: string;

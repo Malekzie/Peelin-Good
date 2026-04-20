@@ -11,6 +11,17 @@
 		return Array(n).fill('★').join('');
 	}
 
+	function initialsOf(name: string | null | undefined): string {
+		const source = (name ?? '').trim();
+		if (!source) return '?';
+		if (/^guest(\s+customer|\s+c\.?)?$/i.test(source)) return 'GC';
+		const parts = source.split(/\s+/).filter(Boolean);
+		if (parts.length >= 2) {
+			return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+		}
+		return source.slice(0, 2).toUpperCase();
+	}
+
 	onMount(async () => {
 		try {
 			const topReviews = await getTopReviews(3);
@@ -39,10 +50,33 @@
 						"{r.comment}"
 					</blockquote>
 					<figcaption class="border-t border-border pt-4">
-						<p class="text-sm font-semibold text-foreground">{r.reviewerDisplayName}</p>
-						{#if r.bakeryName}
-							<p class="text-xs text-muted-foreground">{r.bakeryName}</p>
-						{/if}
+						<div class="flex items-center gap-2.5">
+							{#if r.reviewerPhotoUrl && !r.reviewerPhotoApprovalPending}
+								<img
+									src={r.reviewerPhotoUrl}
+									alt={r.reviewerDisplayName ?? 'Reviewer'}
+									class="h-8 w-8 rounded-full object-cover"
+								/>
+							{:else if r.reviewerDisplayName}
+								<div
+									class="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-[11px] font-semibold text-primary-foreground"
+								>
+									{initialsOf(r.reviewerDisplayName)}
+								</div>
+							{:else}
+								<div
+									class="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-[11px] font-semibold text-primary-foreground"
+								>
+									GC
+								</div>
+							{/if}
+							<div>
+								<p class="text-sm font-semibold text-foreground">{r.reviewerDisplayName}</p>
+								{#if r.bakeryName}
+									<p class="text-xs text-muted-foreground">{r.bakeryName}</p>
+								{/if}
+							</div>
+						</div>
 					</figcaption>
 				</figure>
 			{/each}

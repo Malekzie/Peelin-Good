@@ -43,6 +43,8 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class CustomerService {
+    private static final String GUEST_FIRST_NAME = "Guest";
+    private static final String GUEST_LAST_NAME = "Customer";
 
     private final CustomerRepository customerRepository;
     private final RewardTierRepository rewardTierRepository;
@@ -376,20 +378,21 @@ public class CustomerService {
     public ProfilePhotoResponse uploadMyProfilePhoto(MultipartFile photo) {
         User u = currentUserService.requireUser();
         validateProfilePhotoFile(photo);
+        boolean requiresApproval = u.getUserRole() == UserRole.customer;
 
         String previousPhotoPath = u.getProfilePhotoPath();
         String uploadedUrl = profilePhotoStorageService.uploadCustomerProfilePhoto(u.getUserId(), photo);
-        int updated = userRepository.updateProfilePhotoState(u.getUserId(), uploadedUrl, true);
+        int updated = userRepository.updateProfilePhotoState(u.getUserId(), uploadedUrl, requiresApproval);
         if (updated != 1) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to persist profile photo");
         }
         customerLookupCacheService.evictByUserId(u.getUserId());
         u.setProfilePhotoPath(uploadedUrl);
-        u.setPhotoApprovalPending(true);
+        u.setPhotoApprovalPending(requiresApproval);
         if (previousPhotoPath != null && !previousPhotoPath.isBlank() && !previousPhotoPath.equals(uploadedUrl)) {
             profilePhotoStorageService.deleteCustomerProfilePhoto(previousPhotoPath);
         }
-        return new ProfilePhotoResponse(uploadedUrl, true);
+        return new ProfilePhotoResponse(uploadedUrl, requiresApproval);
     }
 
     private static void validateProfilePhotoFile(MultipartFile photo) {
@@ -595,9 +598,9 @@ public class CustomerService {
     }
 
     private void applyGuestOptionalNames(Customer customer, GuestCustomerRequest req) {
-        customer.setCustomerFirstName(normalizeEmptyToNull(req.getFirstName()));
+        customer.setCustomerFirstName(GUEST_FIRST_NAME);
         customer.setCustomerMiddleInitial(normalizeOptional(req.getMiddleInitial()));
-        customer.setCustomerLastName(normalizeEmptyToNull(req.getLastName()));
+        customer.setCustomerLastName(GUEST_LAST_NAME);
     }
 
     private String normalizeEmptyToNull(String value) {
@@ -611,11 +614,11 @@ public class CustomerService {
         if (StringUtils.hasText(req.getEmail()) && GuestContactFiller.isSyntheticGuestEmail(existing.getCustomerEmail())) {
             existing.setCustomerEmail(req.getEmail().trim().toLowerCase());
         }
-        if (existing.getCustomerFirstName() == null && StringUtils.hasText(req.getFirstName())) {
-            existing.setCustomerFirstName(req.getFirstName().trim());
+        if (existing.getCustomerFirstName() == null || existing.getCustomerFirstName().trim().isEmpty()) {
+            existing.setCustomerFirstName(GUEST_FIRST_NAME);
         }
-        if (existing.getCustomerLastName() == null && StringUtils.hasText(req.getLastName())) {
-            existing.setCustomerLastName(req.getLastName().trim());
+        if (existing.getCustomerLastName() == null || existing.getCustomerLastName().trim().isEmpty()) {
+            existing.setCustomerLastName(GUEST_LAST_NAME);
         }
         if (existing.getCustomerMiddleInitial() == null && StringUtils.hasText(req.getMiddleInitial())) {
             existing.setCustomerMiddleInitial(normalizeOptional(req.getMiddleInitial()));

@@ -42,6 +42,17 @@
 				)
 			: ''
 	);
+
+	function reviewInitials(name) {
+		const label = (name ?? '').trim();
+		if (!label) return '?';
+		if (/^guest(\s+customer|\s+c\.?)?$/i.test(label)) return 'GC';
+		const parts = label.split(/\s+/).filter(Boolean);
+		if (parts.length >= 2) {
+			return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+		}
+		return label.slice(0, 2).toUpperCase();
+	}
 </script>
 
 <Sheet bind:open>
@@ -127,49 +138,23 @@
 											alt={review.reviewerDisplayName}
 											class="h-8 w-8 shrink-0 rounded-full object-cover"
 										/>
-									{:else if review.verifiedAccount && review.reviewerDisplayName}
-										{@const hash = [...review.reviewerDisplayName].reduce(
-											(h, c) => c.charCodeAt(0) + ((h << 5) - h),
-											0
-										)}
-										{@const colours = [
-											{ bg: '#EEEDFE', text: '#3C3489' },
-											{ bg: '#E1F5EE', text: '#0F6E56' },
-											{ bg: '#E6F1FB', text: '#185FA5' },
-											{ bg: '#FAEEDA', text: '#854F0B' },
-											{ bg: '#FBEAF0', text: '#993556' },
-											{ bg: '#FAECE7', text: '#993C1D' }
-										]}
-										{@const color = colours[Math.abs(hash) % colours.length]}
-										{@const parts = review.reviewerDisplayName.trim().split(/\s+/)}
-										{@const initials =
-											parts.length >= 2
-												? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
-												: review.reviewerDisplayName.slice(0, 2).toUpperCase()}
+									{:else if review.reviewerPhotoApprovalPending && review.reviewerDisplayName}
 										<div
-											class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-medium"
-											style="background-color: {color.bg}; color: {color.text};"
+											class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-[11px] font-semibold text-primary-foreground"
 										>
-											{initials}
+											{reviewInitials(review.reviewerDisplayName)}
+										</div>
+									{:else if review.reviewerDisplayName}
+										<div
+											class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-[11px] font-semibold text-primary-foreground"
+										>
+											{reviewInitials(review.reviewerDisplayName)}
 										</div>
 									{:else}
 										<div
-											class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted"
+											class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-[11px] font-semibold text-primary-foreground"
 										>
-											<svg
-												width="14"
-												height="14"
-												viewBox="0 0 24 24"
-												fill="none"
-												stroke="currentColor"
-												stroke-width="2"
-												stroke-linecap="round"
-												stroke-linejoin="round"
-												class="text-muted-foreground"
-											>
-												<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-												<circle cx="12" cy="7" r="4" />
-											</svg>
+											GC
 										</div>
 									{/if}
 

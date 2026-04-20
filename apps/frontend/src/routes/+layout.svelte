@@ -11,10 +11,11 @@
 	import ChatWidget from '$lib/components/chat/ChatWidget.svelte';
 	import { connectWs, disconnectWs } from '$lib/services/ws';
 
-	let { children } = $props();
+	let { children, data } = $props();
 	const hideFooter = $derived(
 		page.url.pathname.startsWith('/staff') || page.url.pathname.startsWith('/profile')
 	);
+	const canUseChat = $derived(data?.user?.role === 'customer');
 
 	$effect(() => {
 		cart.switchUser($user?.userId ?? null);
@@ -47,4 +48,6 @@
 {#if !hideFooter}
 	<Footer />
 {/if}
-<ChatWidget />
+{#if canUseChat}
+	<ChatWidget />
+{/if}

@@ -24,7 +24,6 @@
 	let reviewSuccess = $state(false);
 	let expandedBakeries = $state(new Set());
 	let reviewFilters = $state({});
-	let reviewGuestName = $state('');
 
 	onMount(async () => {
 		try {
@@ -65,7 +64,6 @@
 		reviewModal = { bakeryId: bakery.id, bakeryName: bakery.name };
 		reviewRating = 0;
 		reviewComment = '';
-		reviewGuestName = '';
 		reviewError = null;
 		reviewSuccess = false;
 	}
@@ -83,12 +81,7 @@
 		reviewError = null;
 		reviewSuccess = false;
 		try {
-			const submitted = await createBakeryReview(
-				reviewModal.bakeryId,
-				reviewRating,
-				reviewComment,
-				reviewGuestName || null
-			);
+			const submitted = await createBakeryReview(reviewModal.bakeryId, reviewRating, reviewComment);
 			const status = (submitted?.status ?? '').toLowerCase();
 			if (status === 'rejected') {
 				const short = truncateModerationMessage(submitted?.moderationMessage);
@@ -122,23 +115,10 @@
 		return '★'.repeat(rating) + '☆'.repeat(5 - rating);
 	}
 
-	const avatarColours = [
-		{ bg: '#EEEDFE', text: '#3C3489' },
-		{ bg: '#E1F5EE', text: '#0F6E56' },
-		{ bg: '#E6F1FB', text: '#185FA5' },
-		{ bg: '#FAEEDA', text: '#854F0B' },
-		{ bg: '#FBEAF0', text: '#993556' },
-		{ bg: '#FAECE7', text: '#993C1D' }
-	];
-
-	function getAvatarColours(name) {
-		let hash = 0;
-		for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-		return avatarColours[Math.abs(hash) % avatarColours.length];
-	}
-
 	function getInitials(name) {
 		if (!name) return '';
+		const label = name.trim();
+		if (/^guest(\s+customer|\s+c\.?)?$/i.test(label)) return 'GC';
 		const parts = name.trim().split(/\s+/);
 		return parts.length >= 2
 			? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
@@ -295,32 +275,23 @@
 													alt={review.reviewerDisplayName}
 													class="h-9 w-9 shrink-0 rounded-full object-cover"
 												/>
-											{:else if review.verifiedAccount && review.reviewerDisplayName}
-												{@const color = getAvatarColours(review.reviewerDisplayName)}
+											{:else if review.reviewerPhotoApprovalPending && review.reviewerDisplayName}
 												<div
-													class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[13px] font-medium"
-													style="background-color: {color.bg}; color: {color.text};"
+													class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-[13px] font-semibold text-primary-foreground"
+												>
+													{getInitials(review.reviewerDisplayName)}
+												</div>
+											{:else if review.reviewerDisplayName}
+												<div
+													class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-[13px] font-semibold text-primary-foreground"
 												>
 													{getInitials(review.reviewerDisplayName)}
 												</div>
 											{:else}
 												<div
-													class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted"
+													class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-[13px] font-semibold text-primary-foreground"
 												>
-													<svg
-														width="16"
-														height="16"
-														viewBox="0 0 24 24"
-														fill="none"
-														stroke="currentColor"
-														stroke-width="2"
-														stroke-linecap="round"
-														stroke-linejoin="round"
-														class="text-muted-foreground"
-													>
-														<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-														<circle cx="12" cy="7" r="4" />
-													</svg>
+													GC
 												</div>
 											{/if}
 
@@ -395,16 +366,6 @@
 					>
 				{/each}
 			</div>
-
-			{#if !$user}
-				<input
-					type="text"
-					bind:value={reviewGuestName}
-					placeholder="Your name (optional)"
-					disabled={reviewSubmitting}
-					class="mt-4 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
-				/>
-			{/if}
 
 			<textarea
 				bind:value={reviewComment}

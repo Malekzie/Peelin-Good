@@ -2,6 +2,7 @@
 	import { onDestroy } from 'svelte';
 	import { MessageCircle, X } from '@lucide/svelte';
 	import { user } from '$lib/stores/authStore';
+	import { Avatar, AvatarImage, AvatarFallback } from '$lib/components/ui/avatar';
 	import {
 		getThreads,
 		createThread,
@@ -34,6 +35,14 @@
 	let unsubMessages: (() => void) | null = null;
 	let unsubTyping: (() => void) | null = null;
 	let unsubStatus: (() => void) | null = null;
+
+	function initialsOf(name: string | null | undefined, fallback = 'S'): string {
+		const source = (name ?? '').trim();
+		if (!source) return fallback;
+		const parts = source.split(/\s+/).filter(Boolean);
+		if (parts.length === 1) return parts[0][0]?.toUpperCase() ?? fallback;
+		return ((parts[0][0] ?? '') + (parts[parts.length - 1][0] ?? '')).toUpperCase() || fallback;
+	}
 
 	// Reset all chat state when the logged-in user changes (prevents session bleed between users)
 	let _prevUserId: string | undefined;
@@ -189,7 +198,21 @@
 			>
 				<!-- Header -->
 				<div class="flex shrink-0 items-start justify-between gap-3 bg-[#2C1A0E] px-4 py-3">
-					<div class="min-w-0 flex-1">
+					<div class="flex min-w-0 flex-1 items-start gap-2.5">
+						<Avatar class="mt-0.5 h-8 w-8 shrink-0">
+							<AvatarImage
+								src={thread?.employeeProfilePhotoPath ?? undefined}
+								alt={thread?.employeeDisplayName ?? thread?.employeeUsername ?? "Support"}
+							/>
+							<AvatarFallback class="bg-[#8A9E7F] text-[11px] font-semibold text-white">
+								{#if thread?.employeeUserId}
+									{initialsOf(thread.employeeDisplayName ?? thread.employeeUsername, 'S')}
+								{:else}
+									S
+								{/if}
+							</AvatarFallback>
+						</Avatar>
+						<div class="min-w-0 flex-1">
 						<div class="flex items-center gap-2">
 							<span class="relative flex h-2 w-2">
 								<span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#8A9E7F] opacity-75"></span>
@@ -214,6 +237,7 @@
 								We typically reply in a few minutes
 							{/if}
 						</p>
+						</div>
 					</div>
 					<button
 						onclick={() => {
