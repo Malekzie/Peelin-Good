@@ -26,7 +26,15 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
 	}
 
 	if (!response.ok) {
-		throw new Error(`HTTP ${response.status}`);
+		const text = await response.text();
+		let message = `HTTP ${response.status}`;
+		try {
+			const json = JSON.parse(text);
+			if (typeof json.message === 'string' && json.message.trim()) message = json.message;
+		} catch {
+			// non-JSON error body — keep the default message
+		}
+		throw new Error(message);
 	}
 
 	const text = await response.text();
