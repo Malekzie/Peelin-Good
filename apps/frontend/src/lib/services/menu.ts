@@ -72,11 +72,13 @@ export async function submitMenuProductReview(options: {
 	productId: number | string;
 	rating: number;
 	comment: string;
+	guestName?: string;
 }) {
 	const submitted = await createProductReview(
 		options.productId,
 		options.rating,
-		options.comment
+		options.comment,
+		options.guestName
 	);
 
 	const status = (submitted?.status ?? '').toLowerCase();

@@ -3,6 +3,7 @@
 		open = $bindable(false),
 		productName = '',
 		isLoggedIn = false,
+		guestName = $bindable(''),
 		rating = $bindable(0),
 		comment = $bindable(''),
 		submitting = $bindable(false),
@@ -30,6 +31,15 @@
 					</button>
 				{/each}
 			</div>
+
+			{#if !isLoggedIn}
+				<input
+					bind:value={guestName}
+					placeholder="Your name (optional)"
+					disabled={submitting}
+					class="mt-4 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+				/>
+			{/if}
 
 			<textarea
 				bind:value={comment}

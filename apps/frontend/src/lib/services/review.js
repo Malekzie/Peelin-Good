@@ -12,6 +12,7 @@ export async function createProductReview(
 	productId,
 	rating,
 	comment,
+	guestName = null,
 	orderId = null
 ) {
 	const res = await apiFetch(`${API}/products/${productId}/reviews`, {
@@ -20,6 +21,7 @@ export async function createProductReview(
 		body: JSON.stringify({
 			rating,
 			comment,
+			...(guestName ? { guestName } : {}),
 			...(orderId ? { orderId } : {})
 		})
 	});

@@ -337,6 +337,7 @@ public class ReviewService {
         String first = trimName(c.getCustomerFirstName());
         String last = trimName(c.getCustomerLastName());
         if (c.getUser() == null) {
+            if (first.isEmpty() && last.isEmpty()) return "Anonymous";
             if (first.isEmpty()) first = GUEST_FIRST_NAME;
             if (last.isEmpty()) last = GUEST_LAST_NAME;
         }
@@ -398,8 +399,14 @@ public class ReviewService {
         guest.setRewardTier(lowestTier);
         guest.setCustomerRewardBalance(0);
         guest.setGuestExpiryDate(java.time.LocalDate.now().plusYears(1));
-        guest.setCustomerFirstName(GUEST_FIRST_NAME);
-        guest.setCustomerLastName(GUEST_LAST_NAME);
+        if (guestName != null && !guestName.isBlank()) {
+            String[] parts = guestName.trim().split("\\s+", 2);
+            guest.setCustomerFirstName(parts[0]);
+            guest.setCustomerLastName(parts.length > 1 ? parts[1] : GUEST_LAST_NAME);
+        } else {
+            guest.setCustomerFirstName(null);
+            guest.setCustomerLastName(null);
+        }
 
         guest.setCustomerEmail(com.sait.peelin.support.GuestContactFiller.syntheticEmailForPhoneDigits(
                 com.sait.peelin.support.GuestContactFiller.allocateSyntheticPhoneDigits()));

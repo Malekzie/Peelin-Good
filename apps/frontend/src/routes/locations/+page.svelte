@@ -22,6 +22,7 @@
 	let reviewSubmitting = $state(false);
 	let reviewError = $state(null);
 	let reviewSuccess = $state(false);
+	let reviewGuestName = $state('');
 	let expandedBakeries = $state(new Set());
 	let reviewFilters = $state({});
 
@@ -66,6 +67,7 @@
 		reviewComment = '';
 		reviewError = null;
 		reviewSuccess = false;
+		reviewGuestName = '';
 	}
 
 	function closeReviewModal() {
@@ -81,7 +83,12 @@
 		reviewError = null;
 		reviewSuccess = false;
 		try {
-			const submitted = await createBakeryReview(reviewModal.bakeryId, reviewRating, reviewComment);
+			const submitted = await createBakeryReview(
+				reviewModal.bakeryId,
+				reviewRating,
+				reviewComment,
+				reviewGuestName
+			);
 			const status = (submitted?.status ?? '').toLowerCase();
 			if (status === 'rejected') {
 				const short = truncateModerationMessage(submitted?.moderationMessage);
@@ -119,6 +126,7 @@
 		if (!name) return '';
 		const label = name.trim();
 		if (/^guest(\s+customer|\s+c\.?)?$/i.test(label)) return 'GC';
+		if (/^anonymous$/i.test(label)) return 'A';
 		const parts = name.trim().split(/\s+/);
 		return parts.length >= 2
 			? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
@@ -366,6 +374,15 @@
 					>
 				{/each}
 			</div>
+
+			{#if !$user}
+				<input
+					bind:value={reviewGuestName}
+					placeholder="Your name (optional)"
+					disabled={reviewSubmitting}
+					class="mt-4 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
+				/>
+			{/if}
 
 			<textarea
 				bind:value={reviewComment}

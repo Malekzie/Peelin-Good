@@ -44,6 +44,7 @@
 	let sheetQty = $state(1);
 	let sheetAdded = $state(false);
 	let showAllReviews = $state(false);
+	let reviewGuestName = $state('');
 
 	let todaySpecial = $state(null);
 
@@ -72,6 +73,7 @@
 		reviewSuccess = false;
 		reviewModal = true;
 		sheetOpen = false;
+		reviewGuestName = '';
 	}
 
 	function closeReviewModal() {
@@ -92,7 +94,8 @@
 			const result = await submitMenuProductReview({
 				productId: selectedProduct.id,
 				rating: reviewRating,
-				comment: reviewComment
+				comment: reviewComment,
+				guestName: reviewGuestName
 			});
 
 			if (result.ok) {
@@ -245,6 +248,7 @@
 	bind:submitting={reviewSubmitting}
 	bind:error={reviewError}
 	bind:success={reviewSuccess}
+	bind:guestName={reviewGuestName}
 	onClose={closeReviewModal}
 	onSubmit={submitProductReview}
 />
