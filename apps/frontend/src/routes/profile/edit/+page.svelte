@@ -113,6 +113,8 @@
 	const missingFields = $derived(
 		(reason === 'checkout' || reason === 'oauth') && profile
 			? {
+					firstName: !profile.firstName,
+					lastName: !profile.lastName,
 					phone: !profile.phone || profile.phone.toUpperCase().startsWith('OAUTH-'),
 					addressLine1: !profile.address?.line1,
 					city: !profile.address?.city,
@@ -284,6 +286,8 @@
 					{#if Object.values(missingFields).some(Boolean)}
 						<p class="mt-1">The following fields are required:</p>
 						<ul class="mt-1 list-disc pl-5">
+							{#if missingFields.firstName}<li>First name</li>{/if}
+							{#if missingFields.lastName}<li>Last name</li>{/if}
 							{#if missingFields.phone}<li>Phone number</li>{/if}
 							{#if missingFields.addressLine1}<li>Address line 1</li>{/if}
 							{#if missingFields.city}<li>City</li>{/if}
@@ -429,7 +433,11 @@
 									type="text"
 									bind:value={fields.firstName}
 									class="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm transition focus:ring-2 focus:ring-primary focus:outline-none
-										{errors.firstName ? 'border-destructive ring-1 ring-destructive' : ''}"
+										{errors.firstName
+										? 'border-destructive ring-1 ring-destructive'
+										: missingFields.firstName
+											? 'border-amber-400 ring-1 ring-amber-400'
+											: ''}"
 								/>
 								{#if errors.firstName}<p class="text-xs text-destructive">
 										{errors.firstName}
@@ -446,7 +454,11 @@
 									type="text"
 									bind:value={fields.lastName}
 									class="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm transition focus:ring-2 focus:ring-primary focus:outline-none
-										{errors.lastName ? 'border-destructive ring-1 ring-destructive' : ''}"
+										{errors.lastName
+										? 'border-destructive ring-1 ring-destructive'
+										: missingFields.lastName
+											? 'border-amber-400 ring-1 ring-amber-400'
+											: ''}"
 								/>
 								{#if errors.lastName}<p class="text-xs text-destructive">{errors.lastName}</p>{/if}
 							</div>

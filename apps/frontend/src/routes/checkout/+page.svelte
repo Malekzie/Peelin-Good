@@ -4,6 +4,7 @@
 	import { cart } from '$lib/stores/cart';
 	import { onMount, untrack } from 'svelte';
 	import { api } from '$lib/utils/apiClient';
+	import { isProfileComplete } from '$lib/utils/profile';
 	import {
 		validateField,
 		generateTimeSlots,
@@ -219,6 +220,10 @@
 	onMount(() => {
 		if ($cart.items.length === 0) {
 			goto(resolve('/'));
+			return;
+		}
+		if (!isGuest && customer && !isProfileComplete(customer)) {
+			goto(resolve('/profile/edit?reason=checkout'));
 			return;
 		}
 
