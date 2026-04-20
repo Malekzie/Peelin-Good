@@ -36,7 +36,11 @@
 		},
 		{ label: 'Username', value: profile.username },
 		{ label: 'Email', value: profile.email },
-		{ label: 'Phone', value: profile.phone ?? '—' }
+		{
+			label: 'Phone',
+			value:
+				profile.phone && !profile.phone.toUpperCase().startsWith('OAUTH-') ? profile.phone : '—'
+		}
 	]);
 </script>
 
