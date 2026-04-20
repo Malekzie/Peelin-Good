@@ -10,8 +10,10 @@ import com.sait.peelin.model.ChatThread;
 import com.sait.peelin.model.Customer;
 import com.sait.peelin.model.User;
 import com.sait.peelin.model.UserRole;
+import com.sait.peelin.model.Employee;
 import com.sait.peelin.repository.ChatMessageRepository;
 import com.sait.peelin.repository.ChatThreadRepository;
+import com.sait.peelin.repository.EmployeeRepository;
 import com.sait.peelin.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
@@ -39,6 +41,7 @@ public class ChatService {
     private final SimpMessagingTemplate messagingTemplate;
     private final ChatRoutingService chatRoutingService;
     private final UserRepository userRepository;
+    private final EmployeeRepository employeeRepository;
 
     @org.springframework.beans.factory.annotation.Qualifier("systemUserId")
     private final java.util.UUID systemUserId;
@@ -200,14 +203,24 @@ public class ChatService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
         ChatThread t = chatThreadRepository.findById(threadId).orElseThrow(() -> new ResourceNotFoundException("Thread not found"));
+        boolean newlyAssigned = false;
         if (t.getEmployeeUser() == null) {
             t.setEmployeeUser(staff);
             t.setUpdatedAt(OffsetDateTime.now());
+            newlyAssigned = true;
         }
         if (t.getCustomerUser() != null && t.getCustomerUser().getUserId() != null) {
             chatLookupCacheService.evictOpenThreadForCustomer(t.getCustomerUser().getUserId());
         }
-        return threadDto(chatThreadRepository.save(t));
+        ChatThread saved = chatThreadRepository.save(t);
+        if (newlyAssigned) {
+            postSystemMessage(saved, ChatSystemMessages.assignedTo(displayNameFor(staff)));
+        }
+        ChatThreadDto dto = threadDto(saved);
+        if (newlyAssigned) {
+            messagingTemplate.convertAndSend(ChatTopics.status(threadId), dto);
+        }
+        return dto;
     }
 
     @Transactional
@@ -379,6 +392,7 @@ public class ChatService {
         Customer customer = (actor != null && actor.getUserRole() == UserRole.customer)
                 ? null
                 : customerLookupCacheService.findByUserId(customerUser.getUserId());
+        User employeeUser = t.getEmployeeUser();
         return new ChatThreadDto(
                 t.getId(),
                 customerUser.getUserId(),
@@ -386,7 +400,9 @@ public class ChatService {
                 customerUser.getUsername(),
                 resolveCustomerEmail(customer, customerUser),
                 customerUser.getProfilePhotoPath(),
-                t.getEmployeeUser() != null ? t.getEmployeeUser().getUserId() : null,
+                employeeUser != null ? employeeUser.getUserId() : null,
+                resolveEmployeeDisplayName(employeeUser),
+                employeeUser != null ? employeeUser.getUsername() : null,
                 t.getStatus(),
                 t.getCategory(),
                 t.getCreatedAt(),
@@ -451,6 +467,24 @@ public class ChatService {
                 ? ChatTopics.staffMessages(thread.getId())
                 : ChatTopics.messages(thread.getId());
         messagingTemplate.convertAndSend(topic, dto);
+    }
+
+    private String resolveEmployeeDisplayName(User employeeUser) {
+        if (employeeUser == null) return null;
+        Optional<Employee> emp = employeeRepository.findByUser_UserId(employeeUser.getUserId());
+        if (emp.isPresent()) {
+            String first = emp.get().getEmployeeFirstName();
+            String last = emp.get().getEmployeeLastName();
+            StringBuilder sb = new StringBuilder();
+            if (first != null && !first.isBlank()) sb.append(first.trim());
+            if (last != null && !last.isBlank()) {
+                if (sb.length() > 0) sb.append(' ');
+                sb.append(last.trim());
+            }
+            if (sb.length() > 0) return sb.toString();
+        }
+        String username = employeeUser.getUsername();
+        return username != null && !username.isBlank() ? username : null;
     }
 
     private String displayNameFor(User u) {

@@ -49,7 +49,7 @@ class ChatRestControllerTest {
 
     ChatThreadDto thread(String status, String category) {
         return new ChatThreadDto(1, UUID.randomUUID(), "Alice", "alice",
-                "alice@test.com", null, null, status, category,
+                "alice@test.com", null, null, null, null, status, category,
                 OffsetDateTime.now(), OffsetDateTime.now(), null);
     }
 
@@ -91,7 +91,7 @@ class ChatRestControllerTest {
     void closeThread_Returns200WithClosedStatus() throws Exception {
         when(chatService.closeThread(5)).thenReturn(
                 new ChatThreadDto(5, UUID.randomUUID(), "Bob", "bob",
-                        "bob@test.com", null, UUID.randomUUID(), "closed", "general",
+                        "bob@test.com", null, UUID.randomUUID(), "Agent Bob", "agentbob", "closed", "general",
                         OffsetDateTime.now(), OffsetDateTime.now(), OffsetDateTime.now()));
 
         mockMvc.perform(post("/api/v1/chat/threads/5/close"))

@@ -139,6 +139,8 @@ export interface ChatThread {
 	customerEmail: string | null;
 	customerProfilePhotoPath: string | null;
 	employeeUserId: string | null;
+	employeeDisplayName: string | null;
+	employeeUsername: string | null;
 	status: string;
 	category: string;
 	createdAt: string;
