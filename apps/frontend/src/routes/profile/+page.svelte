@@ -16,6 +16,7 @@
 	let profile = $state(null);
 	let loading = $state(true);
 	let error = $state(null);
+	let showOAuthModal = $state(true);
 
 	onMount(async () => {
 		try {
@@ -83,6 +84,20 @@
 	</div>
 {:else}
 	<main class="flex-1 overflow-y-auto p-8 lg:p-10">
+		{#if profile && profile.phone?.toUpperCase().startsWith('OAUTH-') && showOAuthModal}
+			<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+				<div class="mx-4 w-full max-w-md rounded-xl bg-card p-6 shadow-xl">
+					<h2 class="text-lg font-bold text-foreground">Complete your profile</h2>
+					<p class="mt-2 text-sm text-muted-foreground">
+						Add your phone number and address to place orders.
+					</p>
+					<div class="mt-6 flex justify-end gap-3">
+						<Button variant="outline" onclick={() => (showOAuthModal = false)}>Skip for now</Button>
+						<Button onclick={() => goto(resolve('/profile/edit'))}>Complete profile</Button>
+					</div>
+				</div>
+			</div>
+		{/if}
 		{#if profile && !isProfileComplete(profile)}
 			<div
 				class="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
