@@ -14,6 +14,7 @@
 	}
 
 	interface Order {
+		id: string;
 		orderNumber: string;
 		status: string;
 		orderMethod: string;
@@ -43,13 +44,32 @@
 			: null;
 	const guestEmail = storedGuestEmail ?? page.url.searchParams.get('email') ?? '';
 
+	// Stripe appends these when redirecting back from redirect-based payment methods (e.g. Klarna).
+	const redirectStatus = page.url.searchParams.get('redirect_status');
+	const paymentIntentId = page.url.searchParams.get('payment_intent');
+
 	async function fetchOrder() {
+		// Stripe redirected back with a non-success status — payment was declined or cancelled.
+		if (redirectStatus && redirectStatus !== 'succeeded') {
+			error = 'Your payment was declined or cancelled. Please return to checkout and try again.';
+			loading = false;
+			return;
+		}
+
 		try {
 			const path = guestEmail
 				? `/orders/by-number/${encodeURIComponent(orderNumber)}?email=${encodeURIComponent(guestEmail)}`
 				: `/orders/by-number/${encodeURIComponent(orderNumber)}`;
 			const [orderData, productsData] = await Promise.all([api.get<Order>(path), getProducts()]);
 			order = orderData;
+
+			// Redirect-based payments (e.g. Klarna) land here on success without going through
+			// CheckoutPayment's confirm call — fulfil the order now before showing confirmation.
+			if (redirectStatus === 'succeeded' && paymentIntentId && order.status === 'pending_payment') {
+				await api.post(`/orders/${order.id}/confirm-stripe-payment`, { paymentIntentId });
+				order = await api.get<Order>(path);
+			}
+
 			const map: Record<string | number, string | null> = {};
 			for (const p of productsData ?? []) {
 				if (p.id !== undefined) {
@@ -75,7 +95,15 @@
 			class="rounded-xl border border-destructive bg-destructive/10 p-6 text-center text-destructive"
 		>
 			<p>{error}</p>
-			<a href={resolve('/')} class="mt-4 inline-block text-primary hover:underline">Return home</a>
+			<div class="mt-4 flex flex-col gap-2 sm:flex-row sm:justify-center">
+				{#if redirectStatus && redirectStatus !== 'succeeded'}
+					<a href={resolve('/checkout')} class="inline-block text-primary hover:underline">
+						Return to checkout
+					</a>
+				{:else}
+					<a href={resolve('/')} class="inline-block text-primary hover:underline">Return home</a>
+				{/if}
+			</div>
 		</div>
 	{:else if order}
 		<div class="mb-10 flex flex-col items-center gap-2 text-center">

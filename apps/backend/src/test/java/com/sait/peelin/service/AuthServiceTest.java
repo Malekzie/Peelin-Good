@@ -119,7 +119,7 @@ class AuthServiceTest {
                 .thenReturn(false);
 
         RegisterAvailabilityResponse res =
-                authService.getRegisterAvailability("newcust", "staff@bakery.ca");
+                authService.getRegisterAvailability("newcust", "staff@bakery.ca", null);
 
         assertTrue(res.isUsernameAvailable());
         assertTrue(res.isEmailAvailable());
@@ -131,7 +131,7 @@ class AuthServiceTest {
         when(userRepository.existsByUserEmailIgnoreCaseAndUserRole(eq("taken@bakery.ca"), eq("customer")))
                 .thenReturn(true);
 
-        RegisterAvailabilityResponse res = authService.getRegisterAvailability("x", "taken@bakery.ca");
+        RegisterAvailabilityResponse res = authService.getRegisterAvailability("x", "taken@bakery.ca", null);
 
         assertTrue(res.isUsernameAvailable());
         assertFalse(res.isEmailAvailable());
