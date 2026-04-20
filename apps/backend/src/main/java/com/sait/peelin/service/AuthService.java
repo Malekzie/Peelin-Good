@@ -157,6 +157,9 @@ public class AuthService {
             if (match.isPresent()) {
                 User empUser = match.get().getUser();
                 employeeLinkOffered = empUser != null && StringUtils.hasText(empUser.getUserPasswordHash());
+            } else if (!employeeRepository.findByWorkEmailNormalized(e).isEmpty()) {
+                // Employee exists but is already linked — block registration with this email
+                emailAvailable = false;
             }
         }
         return new RegisterAvailabilityResponse(usernameAvailable, emailAvailable, employeeLinkOffered);
